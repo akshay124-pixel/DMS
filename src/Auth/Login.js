@@ -13,17 +13,14 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle input changes
   const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData((prevForm) => ({ ...prevForm, [name]: value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
     if (!formData.email || !formData.password) {
       toast.error("Please fill in both fields.", {
         position: "top-right",
@@ -44,25 +41,17 @@ function Login() {
       if (response.status === 200) {
         const { token, user } = response.data;
 
-        // Save token and user data in localStorage
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("userId", user.id); // Save user ID
+        localStorage.setItem("role", user.role); // Save role
 
-        // Show success toast
         toast.success("Login successful! Redirecting...", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",
         });
 
-        // Redirect based on user role
-        if (user.role === "Admin") {
-          navigate("/dashboard");
-        } else if (user.role === "Others") {
-          navigate("/dashboard");
-        } else {
-          navigate("/"); // Default redirection for other roles
-        }
+        navigate("/dashboard");
       } else {
         toast.error("Unexpected response. Please try again.", {
           position: "top-right",
@@ -81,7 +70,7 @@ function Login() {
         }
       );
     } finally {
-      setLoading(false); // Stop loading animation
+      setLoading(false);
     }
   };
 

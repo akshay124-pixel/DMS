@@ -11,7 +11,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = JSON.parse(localStorage.getItem("user"));
 
     setIsAuthenticated(!!token);
     setUserName(user?.username || "User");

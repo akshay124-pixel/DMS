@@ -1,5 +1,5 @@
 /* Navbar */
-/* Navbar Container */
+
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -614,3 +614,196 @@ background: linear-gradient(135deg, #2575fc, #6a11cb);
     }
 }
 /* Spinner Ends */
+.virtual-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    border-bottom: 1px solid #ddd;
+    align-items: center;
+    padding: 10px 0;
+    background-color: #fff;
+}
+
+.virtual-row:hover {
+    background-color: #f5f5f5;
+}
+
+.virtual-cell {
+    padding: 5px;
+    text-align: center;
+    overflow: hidden;
+    /* text-overflow: ellipsis; */
+    /* white-space: nowrap; */
+}
+
+/* .editBtn,
+.bin-button {
+    margin: 0 5px;
+    cursor: pointer;
+} */
+
+.virtual-row:nth-child(even) {
+    background-color: #f9f9f9;
+}
+/* Virtualized Table Styles */
+.table-container {
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.table-header {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+    color: white;
+    font-size: 1.1rem;
+    padding: 15px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-Index: 2;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr) 150px;
+    font-weight: bold;
+    border-bottom: 2px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.virtual-row {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr) 150px;
+    border-bottom: 1px solid #e0e0e0;
+    align-items: center;
+    padding: 10px 0;
+    background-color: #fff;
+    transition: background-color 0.2s ease;
+}
+
+.virtual-row:hover {
+    background-color: #f5f7fa;
+}
+
+.virtual-cell {
+    padding: 5px 10px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+/* Actions Cell */
+.actions-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+}
+
+/* Alternating row colors */
+.virtual-row:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Existing Search Bar and Other Styles */
+.enhanced-search-bar-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.enhanced-search-bar {
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    width: 30%;
+}
+
+.enhanced-filter-dropdown {
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+}
+
+.footer-container {
+    text-align: center;
+    padding: 20px 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Loading Wave Animation */
+.loading-wave {
+    display: flex;
+    gap: 5px;
+}
+
+.loading-bar {
+    width: 10px;
+    height: 30px;
+    background: #2575fc;
+    animation: wave 1s infinite ease-in-out;
+}
+
+.loading-bar:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.loading-bar:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.loading-bar:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+@keyframes wave {
+
+    0%,
+    100% {
+        transform: scaleY(1);
+    }
+
+    50% {
+        transform: scaleY(1.5);
+    }
+}
+.virtual-row {
+    transition: background-color 0.2s ease;
+    /* Smooth transition for background changes */
+}
+
+.virtual-row.selected {
+    background-color: #e0e0e0;
+    /* Background for selected rows */
+}
+
+.virtual-row:hover {
+    background-color: #f0f0f0;
+    /* Background when hovered */
+}
+.virtual-row:not(.selected):hover {
+    background-color: #f0f0f0;
+}
+/* Date Range Filtering */
+.date-range-picker {
+    display: inline-block;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.date-range-picker input {
+    border: none;
+    outline: none;
+    font-size: 16px;
+
+}
