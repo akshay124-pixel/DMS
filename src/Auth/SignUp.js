@@ -37,7 +37,7 @@ function Signup() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/user/signup",
+        "https://dms-server-eneu.onrender.com/user/signup",
         form
       );
 

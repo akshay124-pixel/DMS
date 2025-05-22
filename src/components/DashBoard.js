@@ -361,7 +361,7 @@ function DashBoard() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:4000/api/fetch-entry",
+        "https://dms-server-eneu.onrender.com/api/fetch-entry",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -382,9 +382,12 @@ function DashBoard() {
         setIsAdmin(false);
         return;
       }
-      const response = await axios.get("http://localhost:4000/api/user-role", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "https://dms-server-eneu.onrender.com/api/user-role",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setIsAdmin(response.data.isAdmin || false);
     } catch (error) {
       console.error("Error fetching admin status:", error.message);
@@ -670,7 +673,7 @@ function DashBoard() {
           const chunk = chunks[i];
           try {
             const response = await axios.post(
-              "http://localhost:4000/api/entries",
+              "https://dms-server-eneu.onrender.com/api/entries",
               chunk,
               {
                 headers: {

@@ -175,7 +175,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       }
 
       const response = await axios.put(
-        `http://localhost:4000/api/editentry/${entryToEdit._id}`,
+        `https://dms-server-eneu.onrender.com/api/editentry/${entryToEdit._id}`,
         { ...data, ...updateData },
         {
           headers: {
@@ -227,7 +227,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       }
 
       const response = await axios.put(
-        `http://localhost:4000/api/editentry/${entryToEdit._id}`,
+        `https://dms-server-eneu.onrender.com/api/editentry/${entryToEdit._id}`,
         { ...formData, ...updateData },
         {
           headers: {
