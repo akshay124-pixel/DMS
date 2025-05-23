@@ -553,106 +553,23 @@ function DashBoard() {
         const worksheet = workbook.Sheets[sheetName];
         const parsedData = XLSX.utils.sheet_to_json(worksheet);
 
-        const validProducts = ["Ed-Tech", "Furniture", "AV"];
-        const validCategories = ["Private", "Government"];
-        const validStatuses = [
-          "Interested",
-          "Not Interested",
-          "Maybe",
-          "Not Found",
-        ];
-        const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-        const mobileRegex = /^\d{10}$/;
-
-        const newEntries = parsedData.map((item, index) => {
-          const entry = {
-            customerName: item["Customer Name"]?.trim(),
-            email: item["Email"]?.trim(),
-            mobileNumber: item["Mobile Number"]?.trim(),
-            product: item["Product"]?.trim(),
-            address: item["Address"]?.trim(),
-            organization: item["Organization"]?.trim(),
-            category: item["Category"]?.trim(),
-            city: item["District"]?.trim(),
-            state: item["State"]?.trim(),
-            status: item["Status"]?.trim(),
-            remarks: item["Remarks"]?.trim(),
-          };
-
-          // Validate required fields
-          const requiredFields = {
-            "Customer Name": entry.customerName,
-            Email: entry.email,
-            "Mobile Number": entry.mobileNumber,
-            Product: entry.product,
-            Address: entry.address,
-            Organization: entry.organization,
-            Category: entry.category,
-            District: entry.city,
-            State: entry.state,
-          };
-
-          for (const [fieldName, value] of Object.entries(requiredFields)) {
-            if (!value || value === "") {
-              throw new Error(`Row ${index + 1}: ${fieldName} is required`);
-            }
-          }
-
-          // Validate email format
-          if (!emailRegex.test(entry.email)) {
-            throw new Error(
-              `Row ${index + 1}: Email must be a valid email address`
-            );
-          }
-
-          // Validate mobile number
-          if (!mobileRegex.test(entry.mobileNumber)) {
-            throw new Error(
-              `Row ${index + 1}: Mobile Number must be exactly 10 digits`
-            );
-          }
-
-          // Validate product
-          if (!validProducts.includes(entry.product)) {
-            throw new Error(
-              `Row ${
-                index + 1
-              }: Product must be one of 'Ed-Tech', 'Furniture', or 'AV'`
-            );
-          }
-
-          // Validate category
-          if (!validCategories.includes(entry.category)) {
-            throw new Error(
-              `Row ${
-                index + 1
-              }: Category must be one of 'Private' or 'Government'`
-            );
-          }
-
-          // Validate status if provided
-          if (entry.status && !validStatuses.includes(entry.status)) {
-            throw new Error(
-              `Row ${
-                index + 1
-              }: Status must be one of 'Interested', 'Not Interested', 'Maybe', or 'Not Found'`
-            );
-          }
-
-          return {
-            customerName: entry.customerName,
-            email: entry.email,
-            mobileNumber: entry.mobileNumber,
-            product: entry.product,
-            address: entry.address,
-            organization: entry.organization,
-            category: entry.category,
-            city: entry.city,
-            state: entry.state,
-            status: entry.status || "Not Found",
-            remarks: entry.remarks || "",
-          };
-        });
+        const newEntries = parsedData.map((item) => ({
+          customerName: item["Customer Name"]
+            ? item["Customer Name"].trim()
+            : "",
+          email: item["Email"] ? item["Email"].trim() : "",
+          mobileNumber: item["Mobile Number"]
+            ? item["Mobile Number"].trim()
+            : "",
+          product: item["Product"] ? item["Product"].trim() : "",
+          address: item["Address"] ? item["Address"].trim() : "",
+          organization: item["Organization"] ? item["Organization"].trim() : "",
+          category: item["Category"] ? item["Category"].trim() : "",
+          city: item["District"] ? item["District"].trim() : "",
+          state: item["State"] ? item["State"].trim() : "",
+          status: item["Status"] ? item["Status"].trim() : "Not Found",
+          remarks: item["Remarks"] ? item["Remarks"].trim() : "",
+        }));
 
         if (newEntries.length === 0) {
           toast.error("No valid entries found in the Excel file!");
@@ -744,7 +661,6 @@ function DashBoard() {
     };
     reader.readAsArrayBuffer(file);
   };
-
   const handleExport = () => {
     if (filteredData.length === 0) {
       toast.error("No entries to export!");
