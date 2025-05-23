@@ -10,6 +10,7 @@ function Login() {
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -73,7 +74,9 @@ function Login() {
       setLoading(false);
     }
   };
-
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   return (
     <div
       className="login-container"
@@ -102,19 +105,36 @@ function Login() {
               required
               aria-label="Email Address"
             />
-            <input
-              className="input"
-              style={{ backgroundColor: "white" }}
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleInput}
-              required
-              aria-label="Password"
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                style={{ backgroundColor: "white", paddingRight: "80px" }}
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleInput}
+                required
+                aria-label="Password"
+              />
+              <button
+                type="button"
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: "blue",
+                  cursor: "pointer",
+                }}
+                onClick={togglePasswordVisibility}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
-
           <button
             type="submit"
             className="button1"

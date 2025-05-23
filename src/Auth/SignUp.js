@@ -13,7 +13,7 @@ function Signup() {
     role: "Admin",
   });
   const [error, setError] = useState(null);
-
+  const [showPassword, setShowPassword] = useState(false);
   const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData((prevForm) => ({ ...prevForm, [name]: value }));
@@ -100,6 +100,9 @@ function Signup() {
       }
     }
   };
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
     <div
@@ -138,17 +141,35 @@ function Signup() {
               value={form.email}
               onChange={handleInput}
               required
-            />
-            <input
-              type="password"
-              style={{ backgroundColor: "white" }}
-              className="input"
-              placeholder="Password"
-              name="password"
-              value={form.password}
-              onChange={handleInput}
-              required
-            />
+            />{" "}
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                style={{ backgroundColor: "white", paddingRight: "80px" }}
+                className="input"
+                placeholder="Password"
+                name="password"
+                value={form.password}
+                onChange={handleInput}
+                required
+              />{" "}
+              <button
+                type="button"
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: "blue",
+                  cursor: "pointer",
+                }}
+                onClick={togglePasswordVisibility}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
             <select
               name="role"
               style={{ backgroundColor: "white" }}
