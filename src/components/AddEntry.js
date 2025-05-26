@@ -119,13 +119,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       }
     }
 
-    // Validate email format
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address!");
-      return;
-    }
-
     // Validate mobile number
     if (formData.mobileNumber.length !== 10) {
       toast.error("Mobile number must be exactly 10 digits!");
