@@ -251,9 +251,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               maxLength={100}
               aria-label="Email"
             />
-            <Form.Text style={{ color: "red" }}>
-              Please enter a valid email address
-            </Form.Text>
           </Form.Group>
 
           <Form.Group controlId="mobileNumber" className="mb-3">
