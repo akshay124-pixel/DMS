@@ -258,14 +258,9 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               maxLength={100}
               aria-label="Email"
             />
-            {formData.email &&
-              !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
-                formData.email
-              ) && (
-                <Form.Text style={{ color: "red" }}>
-                  Please enter a valid email address
-                </Form.Text>
-              )}
+            <Form.Text style={{ color: "red" }}>
+              Please enter a valid email address
+            </Form.Text>
           </Form.Group>
           <Form.Group controlId="mobileNumber" className="mb-3">
             <Form.Label>📱 Mobile Number</Form.Label>
