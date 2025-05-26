@@ -102,8 +102,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       "mobileNumber",
       "product",
       "address",
-      "state",
-      "city",
+
       "organization",
       ...(isCustomOrganization ? ["customOrganization"] : []),
     ];
@@ -111,9 +110,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       if (!formData[field] || formData[field].trim() === "") {
         toast.error(
           `${
-            field === "city"
-              ? "District"
-              : field === "customOrganization"
+            field === "customOrganization"
               ? "Custom Organization"
               : field.charAt(0).toUpperCase() + field.slice(1)
           } is required!`
@@ -342,7 +339,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="state"
               value={selectedState}
               onChange={handleStateChange}
-              required
               disabled={loading}
               style={formControlStyle}
               aria-label="State"
@@ -363,7 +359,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               value={selectedDistrict}
               onChange={handleDistrictChange}
               disabled={!selectedState || loading}
-              required
               style={formControlStyle}
               aria-label="District"
             >
