@@ -208,7 +208,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       centered
       backdrop="static"
       keyboard={false}
-      size="lg"
+      size="mt"
     >
       <Modal.Header
         closeButton
