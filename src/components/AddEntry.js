@@ -104,8 +104,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       { key: "mobileNumber", label: "Mobile Number" },
       { key: "product", label: "Product" },
       { key: "address", label: "Address" },
-      { key: "state", label: "State" },
-      { key: "city", label: "District" },
+
       { key: "organization", label: "Organization" },
       ...(isCustomOrganization
         ? [{ key: "customOrganization", label: "Custom Organization" }]
@@ -337,7 +336,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="state"
               value={selectedState}
               onChange={handleStateChange}
-              required
               disabled={loading}
               style={formControlStyle}
               aria-label="Select state"
@@ -359,7 +357,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="city"
               value={selectedDistrict}
               onChange={handleDistrictChange}
-              required
               disabled={!selectedState || loading}
               style={formControlStyle}
               aria-label="Select district"
