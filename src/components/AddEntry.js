@@ -17,6 +17,9 @@ const buttonStyle = {
   transition: "all 0.3s ease",
 };
 
+// Valid products list
+const validProducts = ["Ed-Tech", "Furniture", "AV"];
+
 function AddEntry({ isOpen, onClose, onEntryAdded }) {
   const initialFormData = {
     customerName: "",
@@ -25,17 +28,17 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
     product: "",
     address: "",
     state: "",
-    city: "", // Named 'city' to match Mongoose schema
+    city: "",
     organization: "",
     category: "",
-    customOrganization: "", // New field for custom organization input
+    customOrganization: "",
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isCustomOrganization, setIsCustomOrganization] = useState(false); // Track if "Others" is selected
+  const [isCustomOrganization, setIsCustomOrganization] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -47,7 +50,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
     }
   }, [isOpen]);
 
-  // Handle input changes for form fields
+  // Handle input changes
   const handleInput = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -60,7 +63,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
           : value,
     }));
 
-    // Check if "Others" is selected for organization
     if (name === "organization") {
       setIsCustomOrganization(value === "Others");
       if (value !== "Others") {
@@ -70,26 +72,26 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
   }, []);
 
   // Handle state selection
-  const handleStateChange = (e) => {
+  const handleStateChange = useCallback((e) => {
     const state = e.target.value;
     setSelectedState(state);
     setSelectedDistrict("");
     setFormData((prev) => ({
       ...prev,
       state,
-      city: "", // Named 'city' to match Mongoose schema
+      city: "",
     }));
-  };
+  }, []);
 
   // Handle district selection
-  const handleDistrictChange = (e) => {
+  const handleDistrictChange = useCallback((e) => {
     const district = e.target.value;
     setSelectedDistrict(district);
     setFormData((prev) => ({
       ...prev,
-      city: district, // Named 'city' to match Mongoose schema
+      city: district,
     }));
-  };
+  }, []);
 
   // Form submission
   const handleSubmit = async (e) => {
@@ -97,24 +99,23 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
 
     // Validate required fields
     const requiredFields = [
-      "customerName",
-      "email",
-      "mobileNumber",
-      "product",
-      "address",
-
-      "organization",
-      ...(isCustomOrganization ? ["customOrganization"] : []),
+      { key: "customerName", label: "Customer Name" },
+      { key: "email", label: "Email" },
+      { key: "mobileNumber", label: "Mobile Number" },
+      { key: "product", label: "Product" },
+      { key: "address", label: "Address" },
+      { key: "state", label: "State" },
+      { key: "city", label: "District" },
+      { key: "organization", label: "Organization" },
+      ...(isCustomOrganization
+        ? [{ key: "customOrganization", label: "Custom Organization" }]
+        : []),
+      { key: "category", label: "Category" },
     ];
-    for (const field of requiredFields) {
-      if (!formData[field] || formData[field].trim() === "") {
-        toast.error(
-          `${
-            field === "customOrganization"
-              ? "Custom Organization"
-              : field.charAt(0).toUpperCase() + field.slice(1)
-          } is required!`
-        );
+
+    for (const { key, label } of requiredFields) {
+      if (!formData[key] || formData[key].trim() === "") {
+        toast.error(`${label} is required!`);
         return;
       }
     }
@@ -126,13 +127,24 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
     }
 
     // Validate product
-    const validProducts = ["Ed-Tech", "Furniture", "AV"];
     if (!validProducts.includes(formData.product)) {
       toast.error("Please select a valid product!");
       return;
     }
 
-    // Validate custom organization length
+    // Validate field lengths
+    if (formData.customerName.length > 100) {
+      toast.error("Customer name cannot exceed 100 characters!");
+      return;
+    }
+    if (formData.address.length < 5) {
+      toast.error("Address must be at least 5 characters!");
+      return;
+    }
+    if (formData.address.length > 200) {
+      toast.error("Address cannot exceed 200 characters!");
+      return;
+    }
     if (isCustomOrganization && formData.customOrganization.length > 100) {
       toast.error("Custom organization cannot exceed 100 characters!");
       return;
@@ -171,10 +183,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         }
       );
 
-      const newEntry = response.data.data;
       toast.success("Entry added successfully!");
-      onEntryAdded(newEntry);
-
+      onEntryAdded(response.data.data);
       setFormData(initialFormData);
       setSelectedState("");
       setSelectedDistrict("");
@@ -198,7 +208,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       centered
       backdrop="static"
       keyboard={false}
-      size="mt"
+      size="lg"
     >
       <Modal.Header
         closeButton
@@ -209,7 +219,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         }}
       >
         <Modal.Title style={{ fontWeight: "bold", fontSize: "1.5rem" }}>
-          <span role="img" aria-label="add-entry">
+          <span role="img" aria-label="add-entry-emoji">
             ✨
           </span>{" "}
           Add New Entry
@@ -229,15 +239,15 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               disabled={loading}
               style={formControlStyle}
               maxLength={100}
-              aria-label="Customer Name"
+              aria-label="Enter customer name"
             />
-            {formData.customerName && formData.customerName.length > 100 && (
+            {formData.customerName.length > 100 && (
               <Form.Text style={{ color: "red" }}>
                 Customer name cannot exceed 100 characters
               </Form.Text>
             )}
           </Form.Group>
-          <Form.Group controlId="formCustomeremail" className="mb-3">
+          <Form.Group controlId="formCustomerEmail" className="mb-3">
             <Form.Label>📧 Email</Form.Label>
             <Form.Control
               type="email"
@@ -249,11 +259,10 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               disabled={loading}
               style={formControlStyle}
               maxLength={100}
-              aria-label="Email"
+              aria-label="Enter customer email"
             />
           </Form.Group>
-
-          <Form.Group controlId="mobileNumber" className="mb-3">
+          <Form.Group controlId="formMobileNumber" className="mb-3">
             <Form.Label>📱 Mobile Number</Form.Label>
             <Form.Control
               type="text"
@@ -265,13 +274,14 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               maxLength={10}
               disabled={loading}
               style={formControlStyle}
-              aria-label="Mobile Number"
+              aria-label="Enter mobile number"
             />
-            {formData.mobileNumber && formData.mobileNumber.length !== 10 && (
-              <Form.Text style={{ color: "red" }}>
-                Mobile number must be exactly 10 digits
-              </Form.Text>
-            )}
+            {formData.mobileNumber.length > 0 &&
+              formData.mobileNumber.length !== 10 && (
+                <Form.Text style={{ color: "red" }}>
+                  Mobile number must be exactly 10 digits
+                </Form.Text>
+              )}
           </Form.Group>
           <Form.Group controlId="formProduct" className="mb-3">
             <Form.Label>📦 Product</Form.Label>
@@ -283,14 +293,16 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               required
               disabled={loading}
               style={formControlStyle}
-              aria-label="Product"
+              aria-label="Select product"
             >
               <option value="" disabled>
                 -- Select Product --
               </option>
-              <option value="Ed-Tech">Ed-Tech</option>
-              <option value="Furniture">Furniture</option>
-              <option value="AV">AV</option>
+              {validProducts.map((product) => (
+                <option key={product} value={product}>
+                  {product}
+                </option>
+              ))}
             </Form.Control>
           </Form.Group>
           <Form.Group controlId="formAddress" className="mb-3">
@@ -305,14 +317,14 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               disabled={loading}
               style={formControlStyle}
               maxLength={200}
-              aria-label="Address"
+              aria-label="Enter address"
             />
-            {formData.address && formData.address.length < 5 && (
+            {formData.address.length > 0 && formData.address.length < 5 && (
               <Form.Text style={{ color: "red" }}>
                 Address must be at least 5 characters
               </Form.Text>
             )}
-            {formData.address && formData.address.length > 200 && (
+            {formData.address.length > 200 && (
               <Form.Text style={{ color: "red" }}>
                 Address cannot exceed 200 characters
               </Form.Text>
@@ -325,11 +337,14 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="state"
               value={selectedState}
               onChange={handleStateChange}
+              required
               disabled={loading}
               style={formControlStyle}
-              aria-label="State"
+              aria-label="Select state"
             >
-              <option value="">-- Select State --</option>
+              <option value="" disabled>
+                -- Select State --
+              </option>
               {Object.keys(statesAndDistricts).map((state) => (
                 <option key={state} value={state}>
                   {state}
@@ -341,14 +356,17 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
             <Form.Label>🌆 District</Form.Label>
             <Form.Control
               as="select"
-              name="city" // Named 'city' to match Mongoose schema
+              name="city"
               value={selectedDistrict}
               onChange={handleDistrictChange}
+              required
               disabled={!selectedState || loading}
               style={formControlStyle}
-              aria-label="District"
+              aria-label="Select district"
             >
-              <option value="">-- Select District --</option>
+              <option value="" disabled>
+                -- Select District --
+              </option>
               {selectedState &&
                 statesAndDistricts[selectedState].map((district) => (
                   <option key={district} value={district}>
@@ -367,7 +385,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               required
               disabled={loading}
               style={formControlStyle}
-              aria-label="Organization"
+              aria-label="Select organization"
             >
               <option value="" disabled>
                 -- Select Organization --
@@ -394,14 +412,13 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 disabled={loading}
                 style={formControlStyle}
                 maxLength={100}
-                aria-label="Custom Organization"
+                aria-label="Enter custom organization"
               />
-              {formData.customOrganization &&
-                formData.customOrganization.length > 100 && (
-                  <Form.Text style={{ color: "red" }}>
-                    Custom organization cannot exceed 100 characters
-                  </Form.Text>
-                )}
+              {formData.customOrganization.length > 100 && (
+                <Form.Text style={{ color: "red" }}>
+                  Custom organization cannot exceed 100 characters
+                </Form.Text>
+              )}
             </Form.Group>
           )}
           <Form.Group controlId="formCategory" className="mb-3">
@@ -414,9 +431,11 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               required
               disabled={loading}
               style={formControlStyle}
-              aria-label="Category"
+              aria-label="Select category"
             >
-              <option value="">-- Select Category --</option>
+              <option value="" disabled>
+                -- Select Category --
+              </option>
               <option value="Private">Private</option>
               <option value="Government">Government</option>
             </Form.Control>
@@ -433,7 +452,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
             }}
             onMouseOver={(e) => (e.target.style.backgroundColor = "#1a5ad7")}
             onMouseOut={(e) => (e.target.style.backgroundColor = "#2575fc")}
-            aria-label="Save Entry"
+            aria-label="Save entry"
           >
             {loading ? "Saving..." : "Save"}
           </Button>
