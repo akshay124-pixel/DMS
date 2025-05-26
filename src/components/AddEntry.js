@@ -262,6 +262,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               Please enter a valid email address
             </Form.Text>
           </Form.Group>
+
           <Form.Group controlId="mobileNumber" className="mb-3">
             <Form.Label>📱 Mobile Number</Form.Label>
             <Form.Control
