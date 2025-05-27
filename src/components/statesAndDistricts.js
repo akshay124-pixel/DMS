@@ -519,6 +519,7 @@ export const statesAndDistricts = {
     "Kapurthala",
     "Ludhiana",
     "Malerkotla",
+    "Nabha", 
     "Mansa",
     "Moga",
     "Muktsar",
