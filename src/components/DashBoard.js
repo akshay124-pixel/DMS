@@ -671,7 +671,8 @@ function DashBoard() {
     const exportData = filteredData.map((entry) => ({
       "Customer Name": entry.customerName || "",
       Email: entry.email || "",
-      "Mobile Number": entry.mobileNumber || "",
+      "Contact Number": entry.mobileNumber || "",
+      "Alternate Number": entry.AlterNumber || "",
       Product: entry.product || "",
       Address: entry.address || "",
       Organization: entry.organization || "",
