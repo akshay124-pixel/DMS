@@ -507,6 +507,7 @@ export const statesAndDistricts = {
   ],
   Punjab: [
     "Amritsar",
+    "Nawanshahr",
     "Barnala",
     "Bathinda",
     "Faridkot",
@@ -519,7 +520,7 @@ export const statesAndDistricts = {
     "Kapurthala",
     "Ludhiana",
     "Malerkotla",
-    "Nabha", 
+    "Nabha",
     "Mansa",
     "Moga",
     "Muktsar",
