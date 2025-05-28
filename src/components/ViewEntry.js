@@ -34,15 +34,14 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       }
       Customer Name: ${entry.customerName || "N/A"}
       Mobile Number: ${entry.mobileNumber || "N/A"}
+      Alternate Number: ${entry.AlterNumber || "N/A"}
       Products: ${productsText}
-     
       Address: ${entry.address || "N/A"}
       City: ${entry.city || "N/A"}
       State: ${entry.state || "N/A"}
       Organization: ${entry.organization || "N/A"}
       Category: ${entry.category || "N/A"}
       Status: ${entry.status || "Not Interested"}
-    
       Remarks: ${entry.remarks || "N/A"}
       Updated At: ${
         entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : "N/A"
@@ -143,7 +142,10 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
               <strong>Name:</strong> {entry.customerName || "N/A"}
             </span>
             <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Mobile:</strong> {entry.mobileNumber || "N/A"}
+              <strong>Contact Number:</strong> {entry.mobileNumber || "N/A"}
+            </span>{" "}
+            <span style={{ fontSize: "1rem", color: "#555" }}>
+              <strong>Alternate Number:</strong> {entry.AlterNumber || "N/A"}
             </span>
             <span style={{ fontSize: "1rem", color: "#555" }}>
               <strong>Email:</strong> {entry.email || "N/A"}

@@ -73,6 +73,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       customerName: "",
       email: "",
       mobileNumber: "",
+      AlterNumber: "",
       address: "",
       product: "",
       state: "",
@@ -86,7 +87,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   const initialUpdateData = useMemo(
     () => ({
       status: "",
-
       remarks: "",
     }),
     []
