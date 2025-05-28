@@ -25,6 +25,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
     customerName: "",
     email: "",
     mobileNumber: "",
+    AlterNumber: "",
     product: "",
     address: "",
     state: "",
@@ -102,6 +103,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       { key: "customerName", label: "Customer Name" },
       { key: "email", label: "Email" },
       { key: "mobileNumber", label: "Mobile Number" },
+
       { key: "product", label: "Product" },
       { key: "address", label: "Address" },
 
@@ -161,6 +163,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         customerName: formData.customerName,
         email: formData.email,
         mobileNumber: formData.mobileNumber,
+        AlterNumber: formData.AlterNumber,
         product: formData.product,
         address: formData.address,
         state: formData.state,
@@ -262,7 +265,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
             />
           </Form.Group>
           <Form.Group controlId="formMobileNumber" className="mb-3">
-            <Form.Label>📱 Mobile Number</Form.Label>
+            <Form.Label>📱 Contact Number</Form.Label>
             <Form.Control
               type="text"
               name="mobileNumber"
@@ -282,6 +285,27 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 </Form.Text>
               )}
           </Form.Group>
+          <Form.Group controlId="formAlterNumber" className="mb-3">
+            <Form.Label>📞 Alternate Number</Form.Label>
+            <Form.Control
+              type="text"
+              name="AlterNumber"
+              value={formData.AlterNumber}
+              onChange={handleInput}
+              placeholder="Enter alternate number"
+              maxLength={10}
+              disabled={loading}
+              style={formControlStyle}
+              aria-label="Enter alternate number"
+            />
+            {formData.AlterNumber.length > 0 &&
+              formData.AlterNumber.length !== 10 && (
+                <Form.Text style={{ color: "red" }}>
+                  Alternate number must be exactly 10 digits
+                </Form.Text>
+              )}
+          </Form.Group>
+
           <Form.Group controlId="formProduct" className="mb-3">
             <Form.Label>📦 Product</Form.Label>
             <Form.Control

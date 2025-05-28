@@ -122,6 +122,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         customerName: entryToEdit.customerName || "",
         email: entryToEdit.email || "",
         mobileNumber: entryToEdit.mobileNumber || "",
+        AlterNumber: entryToEdit.AlterNumber || "",
         address: entryToEdit.address || "",
         product: entryToEdit.product || "",
         state: entryToEdit.state || "",
@@ -191,6 +192,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         customerName: updatedEntry.customerName || "",
         email: updatedEntry.email || "",
         mobileNumber: updatedEntry.mobileNumber || "",
+        AlterNumber: updatedEntry.AlterNumber || "",
         address: updatedEntry.address || "",
         product: updatedEntry.product || "",
         state: updatedEntry.state || "",
@@ -1226,6 +1228,24 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             {errors.mobileNumber?.message}
           </Form.Control.Feedback>
         </Form.Group>
+        <Form.Group controlId="alterNumber">
+          <Form.Label>📞 Alternate Number</Form.Label>
+          <Form.Control
+            {...register("AlterNumber", {
+              pattern: { value: /^\d{10}$/, message: "Must be 10 digits" },
+            })}
+            onChange={(e) =>
+              debouncedHandleInputChange("AlterNumber", e.target.value)
+            }
+            isInvalid={!!errors.AlterNumber}
+            style={formControlStyle}
+            aria-label="Alternate Number"
+          />
+          <Form.Control.Feedback type="invalid">
+            {errors.alterNumber?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
         <Form.Group controlId="product" className="mb-3">
           <Form.Label>📦 Product</Form.Label>
           <Form.Control
