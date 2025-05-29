@@ -1532,7 +1532,15 @@ function DashBoard() {
     Lakshadweep: ["Lakshadweep"],
     Puducherry: ["Karaikal", "Mahe", "Puducherry", "Yanam"],
   };
-
+  
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
   const rowRenderer = ({ index, key, style }) => {
     const row = filteredData[index];
     const isSelected = selectedEntries.includes(row._id);
@@ -1546,7 +1554,7 @@ function DashBoard() {
       >
         <div className="virtual-cell">{index + 1}</div>
         <div className="virtual-cell">
-          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A"}
+          <div className="virtual-cell">{formatDate(row.createdAt)}</div>
         </div>
         <div className="virtual-cell">{row.customerName}</div>
         <div className="virtual-cell">{row.mobileNumber}</div>
