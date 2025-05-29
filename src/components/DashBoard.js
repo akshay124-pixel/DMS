@@ -554,21 +554,19 @@ function DashBoard() {
         const parsedData = XLSX.utils.sheet_to_json(worksheet);
 
         const newEntries = parsedData.map((item) => ({
-          customerName: item["Customer Name"]
-            ? item["Customer Name"].trim()
-            : "",
-          email: item["Email"] ? item["Email"].trim() : "",
-          mobileNumber: item["Mobile Number"]
-            ? item["Mobile Number"].trim()
-            : "",
-          product: item["Product"] ? item["Product"].trim() : "",
-          address: item["Address"] ? item["Address"].trim() : "",
-          organization: item["Organization"] ? item["Organization"].trim() : "",
-          category: item["Category"] ? item["Category"].trim() : "",
-          city: item["District"] ? item["District"].trim() : "",
-          state: item["State"] ? item["State"].trim() : "",
-          status: item["Status"] ? item["Status"].trim() : "Not Found",
-          remarks: item["Remarks"] ? item["Remarks"].trim() : "",
+          // Match the export format exactly
+          "Customer Name": item["Customer Name"] || "",
+          Email: item["Email"] || "",
+          "Contact Number": item["Contact Number"] || "",
+          "Alternate Number": item["Alternate Number"] || "",
+          Product: item["Product"] || "",
+          Address: item["Address"] || "",
+          Organization: item["Organization"] || "",
+          Category: item["Category"] || "",
+          District: item["District"] || "",
+          State: item["State"] || "",
+          Status: item["Status"] || "Not Found",
+          Remarks: item["Remarks"] || "",
         }));
 
         if (newEntries.length === 0) {
@@ -609,7 +607,11 @@ function DashBoard() {
                 ...chunk.map((entry) => ({
                   ...entry,
                   _id: `temp-${Date.now()}-${Math.random()}`,
-                  createdBy: { username: "Unknown" },
+                  createdBy: {
+                    username: localStorage.getItem("username") || "Unknown",
+                  },
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 })),
               ]);
               toast.success(
@@ -625,7 +627,11 @@ function DashBoard() {
                 ...chunk.map((entry) => ({
                   ...entry,
                   _id: `temp-${Date.now()}-${Math.random()}`,
-                  createdBy: { username: "Unknown" },
+                  createdBy: {
+                    username: localStorage.getItem("username") || "Unknown",
+                  },
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 })),
               ]);
               toast.warn(
