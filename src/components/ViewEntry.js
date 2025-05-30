@@ -70,8 +70,10 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       keyboard={false}
       size="lg"
       aria-labelledby="view-entry-modal-title"
-      dialogClassName="modern-modal"
       centered
+      style={{
+        animation: isOpen ? "fadeIn 0.3s ease-out" : "fadeOut 0.3s ease-in",
+      }}
     >
       <Modal.Header
         closeButton
@@ -80,23 +82,27 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           color: "#fff",
           padding: "1.5rem",
           borderBottom: "none",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+          borderTopLeftRadius: "12px",
+          borderTopRightRadius: "12px",
         }}
       >
         <Modal.Title
           id="view-entry-modal-title"
           style={{
-            fontWeight: "600",
-            fontSize: "1.5rem",
-            letterSpacing: "0.5px",
+            fontFamily:
+              "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+            fontWeight: 700,
+            fontSize: "1.75rem",
+            letterSpacing: "-0.02em",
             display: "flex",
             alignItems: "center",
-            gap: "0.5rem",
+            gap: "0.75rem",
           }}
         >
-          <span role="img" aria-label="profile">
+          <span role="img" aria-label="profile" style={{ fontSize: "1.5rem" }}>
             👤
-          </span>{" "}
+          </span>
           Client Profile
         </Modal.Title>
       </Modal.Header>
@@ -104,79 +110,93 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       <Modal.Body
         style={{
           padding: "2rem",
-          background: "#f8fafc",
-          maxHeight: "70vh",
+          background: "#f9fafb",
+          maxHeight: "75vh",
           overflowY: "auto",
-          borderRadius: "0 0 12px 12px",
+          borderBottomLeftRadius: "12px",
+          borderBottomRightRadius: "12px",
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         }}
       >
         {/* Personal Info Section */}
-        <section style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>Personal Information</h3>
-          <div style={gridStyle}>
+        <Section title="Personal Information">
+          <Grid>
             <DataItem label="Customer Name" value={entry.customerName} />
             <DataItem label="Contact Person" value={entry.contactName} />
             <DataItem label="Mobile Number" value={entry.mobileNumber} />
             <DataItem label="Alternate Number" value={entry.AlterNumber} />
             <DataItem label="Email" value={entry.email} />
-          </div>
-        </section>
+          </Grid>
+        </Section>
 
         {/* Location Section */}
-        <section style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>Location Details</h3>
-          <div style={gridStyle}>
+        <Section title="Location Details">
+          <Grid>
             <DataItem label="Address" value={entry.address} />
             <DataItem label="City" value={entry.city} />
             <DataItem label="State" value={entry.state} />
-          </div>
-        </section>
+          </Grid>
+        </Section>
 
         {/* Business Info Section */}
-        <section style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>Business Information</h3>
-          <div style={gridStyle}>
+        <Section title="Business Information">
+          <Grid>
             <DataItem label="Organization" value={entry.organization} />
             <DataItem label="Category" value={entry.category} />
             <DataItem label="Product" value={entry.product} />
-          </div>
-        </section>
+          </Grid>
+        </Section>
 
         {/* Products Section */}
         {Array.isArray(entry.products) && entry.products.length > 0 && (
-          <section style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>Products</h3>
+          <Section title="Products">
             <div
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.5rem",
+                gap: "0.75rem",
               }}
             >
               {entry.products.map((product, index) => (
                 <div
                   key={index}
                   style={{
-                    padding: "0.8rem",
+                    padding: "1rem",
                     background: "#ffffff",
-                    borderRadius: "6px",
-                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                    borderRadius: "8px",
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    cursor: "default",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 12px rgba(0, 0, 0, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow =
+                      "0 2px 6px rgba(0, 0, 0, 0.1)";
                   }}
                 >
-                  <strong>Product {index + 1}:</strong> {product.name || "N/A"}{" "}
-                  | Specification: {product.specification || "N/A"} | Size:{" "}
-                  {product.size || "N/A"} | Quantity:{" "}
-                  {product.quantity || "N/A"}
+                  <strong style={{ color: "#1f2937" }}>
+                    Product {index + 1}:
+                  </strong>{" "}
+                  <span style={{ color: "#4b5563" }}>
+                    {product.name || "N/A"} | Specification:{" "}
+                    {product.specification || "N/A"} | Size:{" "}
+                    {product.size || "N/A"} | Quantity:{" "}
+                    {product.quantity || "N/A"}
+                  </span>
                 </div>
               ))}
             </div>
-          </section>
+          </Section>
         )}
 
         {/* Follow-up Section */}
-        <section style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>Follow-up Details</h3>
-          <div style={gridStyle}>
+        <Section title="Follow-up Details">
+          <Grid>
             <DataItem label="Status" value={entry.status || "Not Interested"} />
             <DataItem label="Remarks" value={entry.remarks} />
             <DataItem
@@ -196,73 +216,149 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
               }
             />
             <DataItem label="Created By" value={entry.createdBy?.username} />
-          </div>
-        </section>
+          </Grid>
+        </Section>
 
         <Button
           variant="primary"
           onClick={handleCopy}
           disabled={!isAdmin}
           style={{
-            marginTop: "1.5rem",
             background: isAdmin
               ? "linear-gradient(135deg, #2575fc, #6a11cb)"
-              : "#d1d5db",
+              : "#e5e7eb",
             border: "none",
-            borderRadius: "8px",
-            padding: "0.75rem 1.5rem",
-            fontWeight: "600",
+            borderRadius: "10px",
+            padding: "0.75rem 2rem",
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 600,
             fontSize: "1rem",
             width: "100%",
-            transition: "all 0.2s ease",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
             boxShadow: isAdmin ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "none",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
           }}
           onMouseEnter={(e) =>
-            isAdmin && (e.target.style.transform = "translateY(-2px)")
+            isAdmin && (e.target.style.transform = "translateY(-3px)")
           }
           onMouseLeave={(e) =>
             isAdmin && (e.target.style.transform = "translateY(0)")
           }
+          aria-label={copied ? "Copied to clipboard" : "Copy client details"}
         >
-          {copied ? "✅ Copied!" : "📋 Copy Details"}
+          {copied ? (
+            <>
+              <span>✅ Copied!</span>
+            </>
+          ) : (
+            <>
+              <span>📋</span> Copy Details
+            </>
+          )}
         </Button>
       </Modal.Body>
     </Modal>
   );
 }
 
-// Helper component for consistent data display
-const DataItem = ({ label, value }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-    <strong style={{ fontSize: "0.9rem", color: "#374151" }}>{label}:</strong>
-    <span style={{ fontSize: "0.95rem", color: "#4b5563" }}>
+// Helper Components
+const Section = React.memo(({ title, children }) => (
+  <section
+    style={{
+      background: "#ffffff",
+      borderRadius: "10px",
+      padding: "1.5rem",
+      marginBottom: "1.5rem",
+      boxShadow: "0 3px 8px rgba(0, 0, 0, 0.08)",
+      borderLeft: "4px solid #2575fc",
+      transition: "transform 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+  >
+    <h3
+      style={{
+        fontFamily: "'Inter', sans-serif",
+        fontSize: "1.25rem",
+        fontWeight: 700,
+        color: "#1f2937",
+        marginBottom: "1rem",
+        borderBottom: "2px solid #e5e7eb",
+        paddingBottom: "0.5rem",
+      }}
+    >
+      {title}
+    </h3>
+    {children}
+  </section>
+));
+
+const DataItem = React.memo(({ label, value }) => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: "0.3rem",
+      padding: "0.5rem",
+    }}
+    role="region"
+    aria-label={`${label}: ${value || "N/A"}`}
+  >
+    <strong
+      style={{
+        fontFamily: "'Inter', sans-serif",
+        fontSize: "0.95rem",
+        fontWeight: 600,
+        color: "#374151",
+      }}
+    >
+      {label}:
+    </strong>
+    <span
+      style={{
+        fontFamily: "'Inter', sans-serif",
+        fontSize: "0.95rem",
+        color: "#4b5563",
+        lineHeight: "1.5",
+      }}
+    >
       {value || "N/A"}
     </span>
   </div>
+));
+
+const Grid = ({ children }) => (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+      gap: "1.25rem",
+      padding: "0.5rem 0",
+    }}
+  >
+    {children}
+  </div>
 );
 
-// Common styles
-const sectionStyle = {
-  background: "#ffffff",
-  borderRadius: "8px",
-  padding: "1.25rem",
-  marginBottom: "1.5rem",
-  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)",
-};
+// CSS for Modal Animation
+const styles = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(20px); }
+  }
+`;
 
-const sectionTitleStyle = {
-  fontSize: "1.25rem",
-  fontWeight: "600",
-  color: "#1f2937",
-  marginBottom: "1rem",
-  borderBottom: "1px solid #e5e7eb",
-  paddingBottom: "0.5rem",
-};
-
-const gridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-  gap: "1rem",
-};
+// Inject styles
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default ViewEntry;
