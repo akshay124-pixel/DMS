@@ -554,7 +554,6 @@ function DashBoard() {
         const parsedData = XLSX.utils.sheet_to_json(worksheet);
 
         const newEntries = parsedData.map((item) => ({
-          // Match the export format exactly
           "Customer Name": item["Customer Name"] || "",
           "Contact Person": item["Contact Person"] || "",
           Email: item["Email"] || "",
