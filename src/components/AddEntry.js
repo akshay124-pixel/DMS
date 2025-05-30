@@ -23,6 +23,7 @@ const validProducts = ["Ed-Tech", "Furniture", "AV"];
 function AddEntry({ isOpen, onClose, onEntryAdded }) {
   const initialFormData = {
     customerName: "",
+    contactName: "",
     email: "",
     mobileNumber: "",
     AlterNumber: "",
@@ -161,6 +162,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
 
       const submitData = {
         customerName: formData.customerName,
+        contactName: formData.contactName,
         email: formData.email,
         mobileNumber: formData.mobileNumber,
         AlterNumber: formData.AlterNumber,
@@ -249,6 +251,26 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               </Form.Text>
             )}
           </Form.Group>
+          <Form.Group controlId="formContactName" className="mb-3">
+            <Form.Label>🧑‍💼 Contact Person Name</Form.Label>
+            <Form.Control
+              type="text"
+              name="contactName"
+              value={formData.contactName}
+              onChange={handleInput}
+              placeholder="Enter contact name"
+              disabled={loading}
+              style={formControlStyle}
+              maxLength={100}
+              aria-label="Enter contact name"
+            />
+            {formData.contactName.length > 100 && (
+              <Form.Text style={{ color: "red" }}>
+                Contact name cannot exceed 100 characters
+              </Form.Text>
+            )}
+          </Form.Group>
+
           <Form.Group controlId="formCustomerEmail" className="mb-3">
             <Form.Label>📧 Email</Form.Label>
             <Form.Control

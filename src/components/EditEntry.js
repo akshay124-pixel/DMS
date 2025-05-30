@@ -71,6 +71,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   const initialFormData = useMemo(
     () => ({
       customerName: "",
+      contactName: "",
       email: "",
       mobileNumber: "",
       AlterNumber: "",
@@ -120,6 +121,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     if (isOpen && entryToEdit) {
       const newFormData = {
         customerName: entryToEdit.customerName || "",
+        contactName: entryToEdit.contactName || "",
         email: entryToEdit.email || "",
         mobileNumber: entryToEdit.mobileNumber || "",
         AlterNumber: entryToEdit.AlterNumber || "",
@@ -190,6 +192,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       onEntryUpdated(updatedEntry);
       setFormData({
         customerName: updatedEntry.customerName || "",
+        contactName: updatedEntry.contactName || "",
         email: updatedEntry.email || "",
         mobileNumber: updatedEntry.mobileNumber || "",
         AlterNumber: updatedEntry.AlterNumber || "",
@@ -1185,6 +1188,22 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             {errors.customerName?.message}
           </Form.Control.Feedback>
         </Form.Group>
+        <Form.Group controlId="contactName">
+          <Form.Label>🧑‍💼 Contact Person Name</Form.Label>
+          <Form.Control
+            {...register("contactName")}
+            onChange={(e) =>
+              debouncedHandleInputChange("contactName", e.target.value)
+            }
+            isInvalid={!!errors.contactName}
+            style={formControlStyle}
+            aria-label="Contact Name"
+          />
+          <Form.Control.Feedback type="invalid">
+            {errors.contactName?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
         <Form.Group controlId="email">
           <Form.Label>📧 Email</Form.Label>
           <Form.Control
