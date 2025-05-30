@@ -88,8 +88,6 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           padding: "1.5rem",
           borderBottom: "none",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-          borderTopLeftRadius: "12px",
-          borderTopRightRadius: "12px",
         }}
       >
         <Modal.Title
@@ -114,22 +112,6 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           </span>
           Client Profile
         </Modal.Title>
-        <Button
-          variant="light"
-          onClick={onClose}
-          aria-label="Close modal"
-          style={{
-            borderRadius: "50%",
-            width: "36px",
-            height: "36px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-          }}
-        >
-          ✕
-        </Button>
       </Modal.Header>
 
       <Modal.Body
