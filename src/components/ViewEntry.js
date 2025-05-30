@@ -14,7 +14,6 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
 
     if (!entry) return;
 
-    // Format products for copying
     const productsText = Array.isArray(entry.products)
       ? entry.products
           .map(
@@ -71,34 +70,33 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       keyboard={false}
       size="lg"
       aria-labelledby="view-entry-modal-title"
-      dialogClassName="compact-modal"
+      dialogClassName="modern-modal"
+      centered
     >
       <Modal.Header
         closeButton
         style={{
-          background: "linear-gradient(135deg, #2575fc, #6a11cb)",
+          background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
           color: "#fff",
-          padding: "1.5rem 2rem",
+          padding: "1.5rem",
           borderBottom: "none",
-          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
         }}
       >
         <Modal.Title
           id="view-entry-modal-title"
           style={{
-            fontWeight: "700",
-            fontSize: "1.8rem",
-            letterSpacing: "1px",
-            textTransform: "uppercase",
-            textShadow: "1px 1px 3px rgba(0, 0, 0, 0.2)",
+            fontWeight: "600",
+            fontSize: "1.5rem",
+            letterSpacing: "0.5px",
             display: "flex",
             alignItems: "center",
+            gap: "0.5rem",
           }}
         >
-          <span style={{ marginRight: "10px", fontSize: "1.5rem" }}>📋</span>{" "}
+          <span role="img" aria-label="profile">
+            👤
+          </span>{" "}
           Client Profile
         </Modal.Title>
       </Modal.Header>
@@ -106,197 +104,100 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       <Modal.Body
         style={{
           padding: "2rem",
-          background: "#ffffff",
-          borderRadius: "0 0 15px 15px",
-          minHeight: "550px",
-          boxShadow: "inset 0 -4px 15px rgba(0, 0, 0, 0.1)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1.5rem",
+          background: "#f8fafc",
+          maxHeight: "70vh",
+          overflowY: "auto",
+          borderRadius: "0 0 12px 12px",
         }}
       >
         {/* Personal Info Section */}
-        <div
-          style={{
-            background: "#fafafa",
-            borderRadius: "10px",
-            padding: "1.2rem",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.8rem",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: "600",
-              color: "#333",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Personal Info
-          </h3>
-          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Customer Name:</strong> {entry.customerName || "N/A"}
-            </span>{" "}
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Contact Person Name:</strong> {entry.contactName || "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Contact Number:</strong> {entry.mobileNumber || "N/A"}
-            </span>{" "}
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Alternate Number:</strong> {entry.AlterNumber || "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Email:</strong> {entry.email || "N/A"}
-            </span>
+        <section style={sectionStyle}>
+          <h3 style={sectionTitleStyle}>Personal Information</h3>
+          <div style={gridStyle}>
+            <DataItem label="Customer Name" value={entry.customerName} />
+            <DataItem label="Contact Person" value={entry.contactName} />
+            <DataItem label="Mobile Number" value={entry.mobileNumber} />
+            <DataItem label="Alternate Number" value={entry.AlterNumber} />
+            <DataItem label="Email" value={entry.email} />
           </div>
-        </div>
+        </section>
 
         {/* Location Section */}
-        <div
-          style={{
-            background: "#fafafa",
-            borderRadius: "10px",
-            padding: "1.2rem",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.8rem",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: "600",
-              color: "#333",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Location
-          </h3>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Address:</strong> {entry.address || "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>City:</strong> {entry.city || "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>State:</strong> {entry.state || "N/A"}
-            </span>
+        <section style={sectionStyle}>
+          <h3 style={sectionTitleStyle}>Location Details</h3>
+          <div style={gridStyle}>
+            <DataItem label="Address" value={entry.address} />
+            <DataItem label="City" value={entry.city} />
+            <DataItem label="State" value={entry.state} />
           </div>
-        </div>
+        </section>
 
         {/* Business Info Section */}
-        <div
-          style={{
-            background: "#fafafa",
-            borderRadius: "10px",
-            padding: "1.2rem",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.8rem",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: "600",
-              color: "#333",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Business Info
-          </h3>
-          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Organization:</strong> {entry.organization || "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Category:</strong> {entry.category || "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Product:</strong> {entry.product || "N/A"}
-            </span>
+        <section style={sectionStyle}>
+          <h3 style={sectionTitleStyle}>Business Information</h3>
+          <div style={gridStyle}>
+            <DataItem label="Organization" value={entry.organization} />
+            <DataItem label="Category" value={entry.category} />
+            <DataItem label="Product" value={entry.product} />
           </div>
-        </div>
+        </section>
+
+        {/* Products Section */}
+        {Array.isArray(entry.products) && entry.products.length > 0 && (
+          <section style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>Products</h3>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+              }}
+            >
+              {entry.products.map((product, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: "0.8rem",
+                    background: "#ffffff",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                  }}
+                >
+                  <strong>Product {index + 1}:</strong> {product.name || "N/A"}{" "}
+                  | Specification: {product.specification || "N/A"} | Size:{" "}
+                  {product.size || "N/A"} | Quantity:{" "}
+                  {product.quantity || "N/A"}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Follow-up Section */}
-        <div
-          style={{
-            background: "#fafafa",
-            borderRadius: "10px",
-            padding: "1.2rem",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.8rem",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: "600",
-              color: "#333",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Follow-up
-          </h3>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Status:</strong> {entry.status || "Not Interested"}
-            </span>
-
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Remarks:</strong> {entry.remarks || "N/A"}
-            </span>
+        <section style={sectionStyle}>
+          <h3 style={sectionTitleStyle}>Follow-up Details</h3>
+          <div style={gridStyle}>
+            <DataItem label="Status" value={entry.status || "Not Interested"} />
+            <DataItem label="Remarks" value={entry.remarks} />
+            <DataItem
+              label="Created"
+              value={
+                entry.createdAt
+                  ? new Date(entry.createdAt).toLocaleDateString()
+                  : "N/A"
+              }
+            />
+            <DataItem
+              label="Updated"
+              value={
+                entry.updatedAt
+                  ? new Date(entry.updatedAt).toLocaleDateString()
+                  : "N/A"
+              }
+            />
+            <DataItem label="Created By" value={entry.createdBy?.username} />
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Created:</strong>{" "}
-              {entry.createdAt
-                ? new Date(entry.createdAt).toLocaleDateString()
-                : "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Updated:</strong>{" "}
-              {entry.updatedAt
-                ? new Date(entry.updatedAt).toLocaleDateString()
-                : "N/A"}
-            </span>
-            <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Created By:</strong>{" "}
-              {entry.createdBy?.username || "Unknown User"}
-            </span>
-          </div>
-        </div>
+        </section>
 
         <Button
           variant="primary"
@@ -305,53 +206,63 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           style={{
             marginTop: "1.5rem",
             background: isAdmin
-              ? "linear-gradient(135deg, #2575fc, #6a11cb)"
-              : "#cccccc",
-            color: "#fff",
-            width: "100%",
-            borderRadius: "40px",
-            padding: "12px 0",
-            fontSize: "1.1rem",
-            fontWeight: "600",
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-            transition: "all 0.3s ease",
-            boxShadow: "0 6px 15px rgba(0, 0, 0, 0.2)",
+              ? "linear-gradient(135deg, #1e3a8a, #3b82f6)"
+              : "#d1d5db",
             border: "none",
+            borderRadius: "8px",
+            padding: "0.75rem 1.5rem",
+            fontWeight: "600",
+            fontSize: "1rem",
+            width: "100%",
+            transition: "all 0.2s ease",
+            boxShadow: isAdmin ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "none",
           }}
           onMouseEnter={(e) =>
-            isAdmin && (e.target.style.transform = "translateY(-3px)")
+            isAdmin && (e.target.style.transform = "translateY(-2px)")
           }
           onMouseLeave={(e) =>
             isAdmin && (e.target.style.transform = "translateY(0)")
           }
         >
-          {copied ? "✅ Copied!" : "📑 Copy Details"}
+          {copied ? "✅ Copied!" : "📋 Copy Details"}
         </Button>
       </Modal.Body>
     </Modal>
   );
 }
 
+// Helper component for consistent data display
+const DataItem = ({ label, value }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+    <strong style={{ fontSize: "0.9rem", color: "#374151" }}>{label}:</strong>
+    <span style={{ fontSize: "0.95rem", color: "#4b5563" }}>
+      {value || "N/A"}
+    </span>
+  </div>
+);
+
+// Common styles
+const sectionStyle = {
+  background: "#ffffff",
+  borderRadius: "8px",
+  padding: "1.25rem",
+  marginBottom: "1.5rem",
+  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)",
+};
+
+const sectionTitleStyle = {
+  fontSize: "1.25rem",
+  fontWeight: "600",
+  color: "#1f2937",
+  marginBottom: "1rem",
+  borderBottom: "1px solid #e5e7eb",
+  paddingBottom: "0.5rem",
+};
+
+const gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+  gap: "1rem",
+};
+
 export default ViewEntry;
-
-// Add this CSS to your global stylesheet (e.g., index.css)
-const customStyles = `
-  .compact-modal {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    max-width: 900px !important;
-    width: 85% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .compact-modal .modal-content {
-    border: none !important;
-    border-radius: 15px !important;
-    overflow: hidden !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
-  }
-`;
