@@ -1173,10 +1173,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="customerName">
           <Form.Label>👤 Customer Name</Form.Label>
           <Form.Control
-            {...register("customerName", {
-              required: "Customer name is required",
-              maxLength: { value: 100, message: "Max 100 characters" },
-            })}
+            {...register("customerName")}
             onChange={(e) =>
               debouncedHandleInputChange("customerName", e.target.value)
             }
@@ -1232,10 +1229,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="mobileNumber">
           <Form.Label>📱 Mobile Number</Form.Label>
           <Form.Control
-            {...register("mobileNumber", {
-              required: "Mobile number is required",
-              pattern: { value: /^\d{10}$/, message: "Must be 10 digits" },
-            })}
+            {...register("mobileNumber")}
             onChange={(e) =>
               debouncedHandleInputChange("mobileNumber", e.target.value)
             }
@@ -1250,9 +1244,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="alterNumber">
           <Form.Label>📞 Alternate Number</Form.Label>
           <Form.Control
-            {...register("AlterNumber", {
-              pattern: { value: /^\d{10}$/, message: "Must be 10 digits" },
-            })}
+            {...register("AlterNumber")}
             onChange={(e) =>
               debouncedHandleInputChange("AlterNumber", e.target.value)
             }
@@ -1269,9 +1261,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>📦 Product</Form.Label>
           <Form.Control
             as="select"
-            {...register("product", {
-              required: "Product is required",
-            })}
+            {...register("product")}
             onChange={(e) =>
               debouncedHandleInputChange("product", e.target.value)
             }
@@ -1294,10 +1284,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>🏠 Address</Form.Label>
           <Form.Control
             as="textarea"
-            {...register("address", {
-              required: "Address is required",
-              minLength: { value: 5, message: "Min 5 characters" },
-            })}
+            {...register("address")}
             onChange={(e) =>
               debouncedHandleInputChange("address", e.target.value)
             }
@@ -1315,7 +1302,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Controller
             name="state"
             control={control}
-            rules={{ required: "State is required" }}
             render={({ field }) => (
               <Form.Control
                 as="select"
@@ -1346,7 +1332,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Controller
             name="city"
             control={control}
-            rules={{ required: "District is required" }}
             render={({ field }) => (
               <Form.Control
                 as="select"
@@ -1378,9 +1363,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>🏢 Organization</Form.Label>
           <Form.Control
             as="select"
-            {...register("organization", {
-              required: "Organization is required",
-            })}
+            {...register("organization")}
             onChange={(e) =>
               debouncedHandleInputChange("organization", e.target.value)
             }
@@ -1407,7 +1390,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>📁 Category</Form.Label>
           <Form.Control
             as="select"
-            {...register("category", { required: "Category is required" })}
+            {...register("category")}
             onChange={(e) =>
               debouncedHandleInputChange("category", e.target.value)
             }

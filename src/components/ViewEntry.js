@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Badge } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
 
@@ -29,7 +29,9 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
 
     const textToCopy = `
       Date: ${
-        entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "N/A"
+        entry.createdAt
+          ? new Date(entry.createdAt).toLocaleDateString("en-GB")
+          : "N/A"
       }
       Customer Name: ${entry.customerName || "N/A"}
       Mobile Number: ${entry.mobileNumber || "N/A"}
@@ -43,7 +45,9 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       Status: ${entry.status || "Not Interested"}
       Remarks: ${entry.remarks || "N/A"}
       Updated At: ${
-        entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : "N/A"
+        entry.updatedAt
+          ? new Date(entry.updatedAt).toLocaleDateString("en-GB")
+          : "N/A"
       }
     `.trim();
 
@@ -73,6 +77,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       centered
       style={{
         animation: isOpen ? "fadeIn 0.3s ease-out" : "fadeOut 0.3s ease-in",
+        backdropFilter: "blur(5px)",
       }}
     >
       <Modal.Header
@@ -83,6 +88,8 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           padding: "1.5rem",
           borderBottom: "none",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+          borderTopLeftRadius: "12px",
+          borderTopRightRadius: "12px",
         }}
       >
         <Modal.Title
@@ -98,11 +105,31 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
             gap: "0.75rem",
           }}
         >
-          <span role="img" aria-label="profile" style={{ fontSize: "1.5rem" }}>
+          <span
+            role="img"
+            aria-label="Client profile icon"
+            style={{ fontSize: "1.5rem" }}
+          >
             👤
           </span>
           Client Profile
         </Modal.Title>
+        <Button
+          variant="light"
+          onClick={onClose}
+          aria-label="Close modal"
+          style={{
+            borderRadius: "50%",
+            width: "36px",
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+          }}
+        >
+          ✕
+        </Button>
       </Modal.Header>
 
       <Modal.Body
@@ -114,6 +141,8 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           borderBottomLeftRadius: "12px",
           borderBottomRightRadius: "12px",
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          scrollbarWidth: "thin",
+          scrollbarColor: "#2575fc #e6f0fa",
         }}
       >
         {/* Personal Info Section */}
@@ -165,6 +194,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                     boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
                     transition: "transform 0.2s ease, box-shadow 0.2s ease",
                     cursor: "default",
+                    borderLeft: "3px solid #6a11cb",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-2px)";
@@ -176,11 +206,13 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                     e.currentTarget.style.boxShadow =
                       "0 2px 6px rgba(0, 0, 0, 0.1)";
                   }}
+                  role="region"
+                  aria-label={`Product ${index + 1}`}
                 >
-                  <strong style={{ color: "#1f2937" }}>
+                  <strong style={{ color: "#1f2937", fontSize: "1rem" }}>
                     Product {index + 1}:
                   </strong>{" "}
-                  <span style={{ color: "#4b5563" }}>
+                  <span style={{ color: "#4b5563", fontSize: "0.95rem" }}>
                     {product.name || "N/A"} | Specification:{" "}
                     {product.specification || "N/A"} | Size:{" "}
                     {product.size || "N/A"} | Quantity:{" "}
@@ -195,13 +227,35 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
         {/* Follow-up Section */}
         <Section title="Follow-up Details">
           <Grid>
-            <DataItem label="Status" value={entry.status || "Not Interested"} />
+            <DataItem
+              label="Status"
+              value={
+                <Badge
+                  style={{
+                    background:
+                      entry.status === "Interested"
+                        ? "linear-gradient(135deg, #10b981, #059669)"
+                        : entry.status === "Not Interested"
+                        ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                        : entry.status === "Maybe"
+                        ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                        : "linear-gradient(135deg, #6b7280, #4b5563)",
+                    color: "#fff",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "6px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {entry.status || "Not Interested"}
+                </Badge>
+              }
+            />
             <DataItem label="Remarks" value={entry.remarks} />
             <DataItem
               label="Created"
               value={
                 entry.createdAt
-                  ? new Date(entry.createdAt).toLocaleDateString()
+                  ? new Date(entry.createdAt).toLocaleDateString("en-GB")
                   : "N/A"
               }
             />
@@ -209,7 +263,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
               label="Updated"
               value={
                 entry.updatedAt
-                  ? new Date(entry.updatedAt).toLocaleDateString()
+                  ? new Date(entry.updatedAt).toLocaleDateString("en-GB")
                   : "N/A"
               }
             />
@@ -224,15 +278,16 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           style={{
             background: isAdmin
               ? "linear-gradient(135deg, #2575fc, #6a11cb)"
-              : "#e5e7eb",
+              : "linear-gradient(135deg, #d1d5db, #e5e7eb)",
             border: "none",
             borderRadius: "10px",
-            padding: "0.75rem 2rem",
+            padding: "0.85rem 2rem",
             fontFamily: "'Inter', sans-serif",
             fontWeight: 600,
-            fontSize: "1rem",
+            fontSize: "1.1rem",
             width: "100%",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            transition:
+              "transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease",
             boxShadow: isAdmin ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "none",
             color: "#fff",
             display: "flex",
@@ -240,21 +295,43 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
             justifyContent: "center",
             gap: "0.5rem",
           }}
-          onMouseEnter={(e) =>
-            isAdmin && (e.target.style.transform = "translateY(-3px)")
-          }
-          onMouseLeave={(e) =>
-            isAdmin && (e.target.style.transform = "translateY(0)")
-          }
+          onMouseEnter={(e) => {
+            if (isAdmin) {
+              e.target.style.transform = "translateY(-3px)";
+              e.target.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.2)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (isAdmin) {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+            }
+          }}
+          onFocus={(e) => {
+            if (isAdmin) {
+              e.target.style.outline = "2px solid #2575fc";
+              e.target.style.outlineOffset = "2px";
+            }
+          }}
+          onBlur={(e) => {
+            e.target.style.outline = "none";
+          }}
           aria-label={copied ? "Copied to clipboard" : "Copy client details"}
+          tabIndex={0}
         >
           {copied ? (
             <>
-              <span>✅ Copied!</span>
+              <span role="img" aria-label="Checkmark">
+                ✅
+              </span>{" "}
+              Copied!
             </>
           ) : (
             <>
-              <span>📋</span> Copy Details
+              <span role="img" aria-label="Clipboard">
+                📋
+              </span>{" "}
+              Copy Details
             </>
           )}
         </Button>
@@ -273,20 +350,31 @@ const Section = React.memo(({ title, children }) => (
       marginBottom: "1.5rem",
       boxShadow: "0 3px 8px rgba(0, 0, 0, 0.08)",
       borderLeft: "4px solid #2575fc",
-      transition: "transform 0.2s ease",
+      transition: "transform 0.2s ease, box-shadow 0.2s ease",
     }}
-    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "0 3px 8px rgba(0, 0, 0, 0.08)";
+    }}
+    role="region"
+    aria-label={title}
   >
     <h3
       style={{
         fontFamily: "'Inter', sans-serif",
-        fontSize: "1.25rem",
+        fontSize: "1.3rem",
         fontWeight: 700,
         color: "#1f2937",
         marginBottom: "1rem",
-        borderBottom: "2px solid #e5e7eb",
+        borderBottom: "2px solid #2575fc",
         paddingBottom: "0.5rem",
+        background: "linear-gradient(135deg, #2575fc10, #6a11cb10)",
+        padding: "0.5rem 1rem",
+        borderRadius: "6px",
       }}
     >
       {title}
@@ -329,20 +417,20 @@ const DataItem = React.memo(({ label, value }) => (
   </div>
 ));
 
-const Grid = ({ children }) => (
+const Grid = React.memo(({ children }) => (
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+      gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
       gap: "1.25rem",
       padding: "0.5rem 0",
     }}
   >
     {children}
   </div>
-);
+));
 
-// CSS for Modal Animation
+// CSS for Modal Animation and Scrollbar
 const styles = `
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -352,11 +440,28 @@ const styles = `
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(20px); }
   }
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #e6f0fa;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2575fc;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6a11cb;
+  }
 `;
 
 // Inject styles
-const styleSheet = document.createElement("style");
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
+if (!document.getElementById("view-entry-styles")) {
+  const styleSheet = document.createElement("style");
+  styleSheet.id = "view-entry-styles";
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default ViewEntry;
