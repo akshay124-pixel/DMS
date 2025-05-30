@@ -76,7 +76,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       <Modal.Header
         closeButton
         style={{
-          background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
+          background: "linear-gradient(135deg, #2575fc, #6a11cb)",
           color: "#fff",
           padding: "1.5rem",
           borderBottom: "none",
@@ -206,7 +206,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           style={{
             marginTop: "1.5rem",
             background: isAdmin
-              ? "linear-gradient(135deg, #1e3a8a, #3b82f6)"
+              ? "linear-gradient(135deg, #2575fc, #6a11cb)"
               : "#d1d5db",
             border: "none",
             borderRadius: "8px",
