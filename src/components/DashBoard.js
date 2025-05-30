@@ -556,6 +556,7 @@ function DashBoard() {
         const newEntries = parsedData.map((item) => ({
           // Match the export format exactly
           "Customer Name": item["Customer Name"] || "",
+          "Contact Person": item["Contact Person"] || "",
           Email: item["Email"] || "",
           "Contact Number": item["Contact Number"] || "",
           "Alternate Number": item["Alternate Number"] || "",
@@ -676,6 +677,7 @@ function DashBoard() {
     // Prepare data for export, excluding Created At and Updated At
     const exportData = filteredData.map((entry) => ({
       "Customer Name": entry.customerName || "",
+      "Contact Person": entry.contactName || "",
       Email: entry.email || "",
       "Contact Number": entry.mobileNumber || "",
       "Alternate Number": entry.AlterNumber || "",
@@ -1532,7 +1534,7 @@ function DashBoard() {
     Lakshadweep: ["Lakshadweep"],
     Puducherry: ["Karaikal", "Mahe", "Puducherry", "Yanam"],
   };
-  
+
   const formatDate = (date) => {
     if (!date) return "N/A";
     const d = new Date(date);
