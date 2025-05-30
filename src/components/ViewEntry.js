@@ -139,7 +139,10 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           </h3>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
             <span style={{ fontSize: "1rem", color: "#555" }}>
-              <strong>Name:</strong> {entry.customerName || "N/A"}
+              <strong>Customer Name:</strong> {entry.customerName || "N/A"}
+            </span>{" "}
+            <span style={{ fontSize: "1rem", color: "#555" }}>
+              <strong>Contact Person Name:</strong> {entry.contactName || "N/A"}
             </span>
             <span style={{ fontSize: "1rem", color: "#555" }}>
               <strong>Contact Number:</strong> {entry.mobileNumber || "N/A"}
