@@ -81,6 +81,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       city: "",
       organization: "",
       category: "",
+      status: "",
+      remarks: "",
     }),
     []
   );
@@ -131,6 +133,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         city: entryToEdit.city || "",
         organization: entryToEdit.organization || "",
         category: entryToEdit.category || "",
+        status: entryToEdit.status || "",
+        remarks: entryToEdit.remarks || "",
       };
       const newUpdateData = {
         status: entryToEdit.status || "",
@@ -202,6 +206,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         city: updatedEntry.city || "",
         organization: updatedEntry.organization || "",
         category: updatedEntry.category || "",
+        status: updatedEntry.status || "",
+
+        remarks: updatedEntry.remarks || "",
       });
       setUpdateData({
         status: updatedEntry.status || "",
@@ -1405,6 +1412,37 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Control.Feedback type="invalid">
             {errors.category?.message}
           </Form.Control.Feedback>
+        </Form.Group>
+        <Form.Group controlId="status">
+          <Form.Label>📊 Status</Form.Label>
+          <Form.Control
+            as="select"
+            value={updateData.status}
+            onChange={handleUpdateInputChange}
+            name="status"
+            style={formControlStyle}
+            aria-label="Status"
+          >
+            <option value="">-- Select Status --</option>
+            <option value="Maybe">Maybe</option>
+            <option value="Interested">Interested</option>
+            <option value="Not Interested">Not Interested</option>
+          </Form.Control>
+        </Form.Group>
+
+        <Form.Group controlId="remarks">
+          <Form.Label>✏️ Remarks</Form.Label>
+          <Form.Control
+            as="textarea"
+            value={updateData.remarks}
+            onChange={handleUpdateInputChange}
+            name="remarks"
+            rows={3}
+            maxLength={500}
+            style={formControlStyle}
+            aria-label="Remarks"
+          />
+          <Form.Text>{updateData.remarks.length}/500</Form.Text>
         </Form.Group>
       </FormSection>
     </Form>

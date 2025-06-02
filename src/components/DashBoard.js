@@ -1558,6 +1558,7 @@ function DashBoard() {
           <div className="virtual-cell">{formatDate(row.createdAt)}</div>
         </div>
         <div className="virtual-cell">{row.customerName}</div>
+        <div className="virtual-cell">{row.contactName}</div>
         <div className="virtual-cell">{row.mobileNumber}</div>
         <div className="virtual-cell">{row.address}</div>
         <div className="virtual-cell">{row.city}</div>
@@ -2030,6 +2031,15 @@ function DashBoard() {
               }}
             >
               Customer
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              Contact Person
             </div>
             <div
               style={{
