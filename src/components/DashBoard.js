@@ -1563,7 +1563,6 @@ function DashBoard() {
         <div className="virtual-cell">{row.address}</div>
         <div className="virtual-cell">{row.city}</div>
         <div className="virtual-cell">{row.state}</div>
-        <div className="virtual-cell">{row.organization}</div>
 
         <div className="virtual-cell">{row.createdBy?.username}</div>
         <div
@@ -2076,15 +2075,6 @@ function DashBoard() {
               }}
             >
               State
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              Organization
             </div>
 
             <div
