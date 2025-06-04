@@ -246,6 +246,7 @@ function DashBoard() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
   const [dashboardFilter, setDashboardFilter] = useState("total");
+  const [selectedOrganization, setSelectedOrganization] = useState("");
   const [dateRange, setDateRange] = useState([
     {
       startDate: null,
@@ -267,7 +268,10 @@ function DashBoard() {
     setSelectedStatus(e.target.value);
     setDashboardFilter("");
   };
-
+  const handleOrganizationChange = (e) => {
+    setSelectedOrganization(e.target.value);
+    setDashboardFilter("");
+  };
   const handleStateChangeA = (e) => {
     const state = e.target.value;
     setSelectedStateA(state);
@@ -281,6 +285,7 @@ function DashBoard() {
     setSelectedStatus(category === "total" ? "" : category);
   };
 
+  // Update filteredData useMemo: Replace status filter with organization filter
   const filteredData = useMemo(() => {
     return entries
       .filter((row) => {
@@ -292,10 +297,11 @@ function DashBoard() {
           row.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
           row.mobileNumber.includes(searchTerm);
 
-        const matchesStatus =
+        const matchesOrganization =
           dashboardFilter === "total"
             ? true
-            : !selectedStatus || row.status === selectedStatus;
+            : !selectedOrganization ||
+              row.organization === selectedOrganization;
 
         const matchesState = !selectedStateA || row.state === selectedStateA;
         const matchesCity = !selectedCityA || row.city === selectedCityA;
@@ -309,17 +315,17 @@ function DashBoard() {
 
         return (
           matchesSearch &&
-          matchesStatus &&
+          matchesOrganization &&
           matchesState &&
           matchesCity &&
           matchesDate
         );
       })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by createdAt in descending order
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [
     entries,
     searchTerm,
-    selectedStatus,
+    selectedOrganization,
     selectedStateA,
     selectedCityA,
     dashboardFilter,
@@ -1672,13 +1678,17 @@ function DashBoard() {
         />
         <select
           className="enhanced-filter-dropdown"
-          value={selectedStatus}
-          onChange={handleCategoryChange}
+          value={selectedOrganization}
+          onChange={handleOrganizationChange}
         >
-          <option value="">-- Select Status --</option>
-          <option value="Interested">Interested</option>
-          <option value="Maybe">Maybe</option>
-          <option value="Not Interested">Not Interested</option>
+          <option value="">-- Select Organization --</option>
+          <option value="School">School</option>
+          <option value="College">College</option>
+          <option value="University">University</option>
+          <option value="Office">Office</option>
+          <option value="Corporates">Corporates</option>
+          <option value="Partner">Partner</option>
+          <option value="Others">Others</option>
         </select>
         <div>
           <input

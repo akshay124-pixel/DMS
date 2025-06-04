@@ -98,6 +98,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   // State Management
   const [formData, setFormData] = useState(initialFormData);
   const [updateData, setUpdateData] = useState(initialUpdateData);
+
   const [view, setView] = useState("options");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
