@@ -334,6 +334,7 @@ function DashBoard() {
 
   const handleReset = () => {
     setSearchTerm("");
+    setSelectedOrganization("");
     setSelectedStatus("");
     setSelectedStateA("");
     setSelectedCityA("");
