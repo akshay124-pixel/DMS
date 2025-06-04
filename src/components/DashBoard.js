@@ -242,7 +242,6 @@ function DashBoard() {
   const [selectedCityA, setSelectedCityA] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedOrganization, setSelectedOrganization] = useState("");
   const [selectedEntries, setSelectedEntries] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
@@ -263,6 +262,11 @@ function DashBoard() {
   );
 
   const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
+
+  const handleCategoryChange = (e) => {
+    setSelectedStatus(e.target.value);
+    setDashboardFilter("");
+  };
 
   const handleStateChangeA = (e) => {
     const state = e.target.value;
@@ -295,8 +299,7 @@ function DashBoard() {
 
         const matchesState = !selectedStateA || row.state === selectedStateA;
         const matchesCity = !selectedCityA || row.city === selectedCityA;
-        const matchorganization =
-          !matchorganization || row.organization === matchorganization;
+
         const matchesDate =
           (!dateRange[0]?.startDate && !dateRange[0]?.endDate) ||
           (dateRange[0]?.startDate &&
@@ -306,7 +309,6 @@ function DashBoard() {
 
         return (
           matchesSearch &&
-          matchorganization &&
           matchesStatus &&
           matchesState &&
           matchesCity &&
@@ -317,7 +319,6 @@ function DashBoard() {
   }, [
     entries,
     searchTerm,
-    selectedOrganization,
     selectedStatus,
     selectedStateA,
     selectedCityA,
@@ -1671,20 +1672,13 @@ function DashBoard() {
         />
         <select
           className="enhanced-filter-dropdown"
-          value={selectedOrganization}
-          onChange={(e) => {
-            setSelectedOrganization(e.target.value);
-            setDashboardFilter("");
-          }}
+          value={selectedStatus}
+          onChange={handleCategoryChange}
         >
-          <option value="">-- Select Organization --</option>
-          <option value="School">School</option>
-          <option value="College">College</option>
-          <option value="University">University</option>
-          <option value="Office">Office</option>
-          <option value="Corporates">Corporates</option>
-          <option value="Partner">Partner</option>
-          <option value="Others">Others</option>
+          <option value="">-- Select Status --</option>
+          <option value="Interested">Interested</option>
+          <option value="Maybe">Maybe</option>
+          <option value="Not Interested">Not Interested</option>
         </select>
         <div>
           <input
