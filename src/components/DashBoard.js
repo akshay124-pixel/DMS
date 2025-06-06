@@ -1688,6 +1688,7 @@ function DashBoard() {
           <option value="University">University</option>
           <option value="Office">Office</option>
           <option value="Corporates">Corporates</option>
+          <option value="Customer">Customer</option>
           <option value="Partner">Partner</option>
           <option value="Others">Others</option>
         </select>
