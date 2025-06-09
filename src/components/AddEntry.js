@@ -480,7 +480,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 -- Select Category --
               </option>
               <option value="Private">Private</option>
-              <option value="Government">Government</option>
+              <option value="Goverment">Goverment</option>
             </Form.Control>
           </Form.Group>
           <Button
