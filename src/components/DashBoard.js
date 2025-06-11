@@ -240,6 +240,7 @@ function DashBoard() {
   const [itemIdsToDelete, setItemIdsToDelete] = useState([]);
   const [selectedStateA, setSelectedStateA] = useState("");
   const [selectedCityA, setSelectedCityA] = useState("");
+  const [selectedCreatedBy, setSelectedCreatedBy] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedEntries, setSelectedEntries] = useState([]);
@@ -266,6 +267,10 @@ function DashBoard() {
 
   const handleCategoryChange = (e) => {
     setSelectedStatus(e.target.value);
+    setDashboardFilter("");
+  };
+  const handleCreatedByChange = (e) => {
+    setSelectedCreatedBy(e.target.value);
     setDashboardFilter("");
   };
   const handleOrganizationChange = (e) => {
@@ -313,12 +318,16 @@ function DashBoard() {
             createdAt >= new Date(dateRange[0]?.startDate) &&
             createdAt <= new Date(dateRange[0]?.endDate));
 
+        const matchesCreatedBy =
+          !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
+
         return (
           matchesSearch &&
           matchesOrganization &&
           matchesState &&
           matchesCity &&
-          matchesDate
+          matchesDate &&
+          matchesCreatedBy
         );
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -330,8 +339,8 @@ function DashBoard() {
     selectedCityA,
     dashboardFilter,
     dateRange,
+    selectedCreatedBy,
   ]);
-
   const handleReset = () => {
     setSearchTerm("");
     setSelectedOrganization("");
@@ -342,6 +351,7 @@ function DashBoard() {
     setIsSelectionMode(false);
     setDoubleClickInitiated(false);
     setDashboardFilter("total");
+    setSelectedCreatedBy("");
     setDateRange([
       {
         startDate: null,
@@ -352,7 +362,11 @@ function DashBoard() {
   };
 
   const [anchorEl, setAnchorEl] = useState(null);
-
+  const uniqueCreatedBy = [
+    ...new Set(
+      entries.map((entry) => entry.createdBy?.username).filter(Boolean)
+    ),
+  ];
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -1671,7 +1685,7 @@ function DashBoard() {
     <>
       <div className="enhanced-search-bar-container">
         <input
-          style={{ width: "30%" }}
+          style={{ width: "25%" }}
           type="text"
           className="enhanced-search-bar"
           placeholder="🔍 Search..."
@@ -1692,6 +1706,20 @@ function DashBoard() {
           <option value="Partner">Partner</option>
           <option value="Others">Others</option>
         </select>
+        {isAdmin && (
+          <select
+            className="enhanced-filter-dropdown"
+            value={selectedCreatedBy}
+            onChange={handleCreatedByChange}
+          >
+            <option value="">-- Select Usernames --</option>
+            {uniqueCreatedBy.map((username) => (
+              <option key={username} value={username}>
+                {username}
+              </option>
+            ))}
+          </select>
+        )}
         <div>
           <input
             type="text"
@@ -1781,7 +1809,6 @@ function DashBoard() {
           </span>
         </button>
       </div>
-
       <div
         className="dashboard-container"
         style={{ width: "90%", margin: "auto", padding: "20px" }}
