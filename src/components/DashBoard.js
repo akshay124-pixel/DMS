@@ -243,7 +243,7 @@ function DashBoard() {
   const [selectedCityA, setSelectedCityA] = useState("");
   const [selectedCreatedBy, setSelectedCreatedBy] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
+
   const [selectedEntries, setSelectedEntries] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
@@ -263,35 +263,6 @@ function DashBoard() {
     () => debounce((value) => setSearchTerm(value), 300),
     []
   );
-
-  const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
-
-  const handleCategoryChange = (e) => {
-    setSelectedStatus(e.target.value);
-    setDashboardFilter("");
-  };
-  const handleCreatedByChange = (e) => {
-    setSelectedCreatedBy(e.target.value);
-    setDashboardFilter("");
-  };
-  const handleOrganizationChange = (e) => {
-    setSelectedOrganization(e.target.value);
-    setDashboardFilter("");
-  };
-  const handleStateChangeA = (e) => {
-    const state = e.target.value;
-    setSelectedStateA(state);
-    setSelectedCityA("");
-  };
-
-  const handleCityChangeA = (e) => setSelectedCityA(e.target.value);
-
-  const handleDashboardFilterChange = (category) => {
-    setDashboardFilter(category);
-    setSelectedStatus(category === "total" ? "" : category);
-  };
-
-  // Update filteredData useMemo: Replace status filter with organization filter
   // Update filteredData useMemo
   const filteredData = useMemo(() => {
     return entries
@@ -344,10 +315,32 @@ function DashBoard() {
     dateRange,
     selectedCreatedBy,
   ]);
+
+  const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
+
+  const handleCreatedByChange = (e) => {
+    setSelectedCreatedBy(e.target.value);
+  };
+
+  const handleOrganizationChange = (e) => {
+    setSelectedOrganization(e.target.value);
+  };
+  const handleStateChangeA = (e) => {
+    const state = e.target.value;
+    setSelectedStateA(state);
+    setSelectedCityA("");
+  };
+
+  const handleCityChangeA = (e) => setSelectedCityA(e.target.value);
+
+  const handleDashboardFilterChange = (category) => {
+    setDashboardFilter(category);
+  };
+
   const handleReset = () => {
     setSearchTerm("");
     setSelectedOrganization("");
-    setSelectedStatus("");
+
     setSelectedStateA("");
     setSelectedCityA("");
     setSelectedEntries([]);
