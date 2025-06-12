@@ -292,6 +292,7 @@ function DashBoard() {
   };
 
   // Update filteredData useMemo: Replace status filter with organization filter
+  // Update filteredData useMemo
   const filteredData = useMemo(() => {
     return entries
       .filter((row) => {
@@ -304,10 +305,7 @@ function DashBoard() {
           row.mobileNumber.includes(searchTerm);
 
         const matchesOrganization =
-          dashboardFilter === "total"
-            ? true
-            : !selectedOrganization ||
-              row.organization === selectedOrganization;
+          !selectedOrganization || row.organization === selectedOrganization;
 
         const matchesState = !selectedStateA || row.state === selectedStateA;
         const matchesCity = !selectedCityA || row.city === selectedCityA;
@@ -321,6 +319,7 @@ function DashBoard() {
 
         const matchesCreatedBy =
           !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
+
         const matchesDashboardFilter =
           dashboardFilter === "total" || row.status === dashboardFilter;
 
