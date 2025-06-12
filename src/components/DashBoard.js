@@ -319,7 +319,9 @@ function DashBoard() {
             createdAt <= new Date(dateRange[0]?.endDate));
 
         const matchesCreatedBy =
-          !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
+          !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy; // Add condition for dashboardFilter
+        const matchesDashboardFilter =
+          dashboardFilter === "total" || row.status === dashboardFilter;
 
         return (
           matchesSearch &&
@@ -327,7 +329,8 @@ function DashBoard() {
           matchesState &&
           matchesCity &&
           matchesDate &&
-          matchesCreatedBy
+          matchesCreatedBy &&
+          matchesDashboardFilter
         );
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
