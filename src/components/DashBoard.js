@@ -506,7 +506,8 @@ function DashBoard() {
   }, []);
 
   const handleDoubleClick = (id) => {
-    if (!doubleClickInitiated && isAdmin) {
+    if (!doubleClickInitiated && (isAdmin || isSuperadmin)) {
+      // Changed from isAdmin
       setIsSelectionMode(true);
       setDoubleClickInitiated(true);
       setSelectedEntries([id]);
@@ -514,7 +515,8 @@ function DashBoard() {
   };
 
   const handleSingleClick = (id) => {
-    if (isSelectionMode && isAdmin) {
+    if (isSelectionMode && (isAdmin || isSuperadmin)) {
+      // Changed from isAdmin
       setSelectedEntries((prev) =>
         prev.includes(id)
           ? prev.filter((entryId) => entryId !== id)
@@ -524,12 +526,12 @@ function DashBoard() {
   };
 
   const handleSelectAll = () => {
-    if (isSelectionMode && isAdmin) {
+    if (isSelectionMode && (isAdmin || isSuperadmin)) {
+      // Changed from isAdmin
       const allFilteredIds = filteredData.map((entry) => entry._id);
       setSelectedEntries(allFilteredIds);
     }
   };
-
   const handleCopySelected = () => {
     const selectedData = entries.filter((entry) =>
       selectedEntries.includes(entry._id)
@@ -1713,7 +1715,7 @@ function DashBoard() {
           <option value="Partner">Partner</option>
           <option value="Others">Others</option>
         </select>
-        {isAdmin && (
+        {(isAdmin || isSuperadmin) && (
           <select
             className="enhanced-filter-dropdown"
             value={selectedCreatedBy}
@@ -1822,7 +1824,7 @@ function DashBoard() {
       >
         <CallTrackingDashboard
           entries={entries}
-          isAdmin={isAdmin}
+          isAdmin={isAdmin || isSuperadmin}
           onFilterChange={handleDashboardFilterChange}
           selectedCategory={dashboardFilter}
         />
@@ -1913,7 +1915,7 @@ function DashBoard() {
               Export To Excel
             </button>
           )}
-          {isAdmin && filteredData.length > 0 && (
+          {(isAdmin || isSuperadmin) && filteredData.length > 0 && (
             <div style={{ marginTop: "10px", marginLeft: "50px" }}>
               {isSelectionMode && (
                 <Button
