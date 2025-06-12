@@ -319,7 +319,7 @@ function DashBoard() {
             createdAt <= new Date(dateRange[0]?.endDate));
 
         const matchesCreatedBy =
-          !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy; // Add condition for dashboardFilter
+          !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
         const matchesDashboardFilter =
           dashboardFilter === "total" || row.status === dashboardFilter;
 
