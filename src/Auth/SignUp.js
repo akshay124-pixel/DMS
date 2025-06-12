@@ -178,6 +178,7 @@ function Signup() {
               className="input"
               required
             >
+              <option value="Superadmin">SuperAdmin</option>
               <option value="Admin">Admin</option>
               <option value="Others">Others</option>
             </select>

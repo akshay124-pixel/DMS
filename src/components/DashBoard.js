@@ -232,6 +232,7 @@ function DashBoard() {
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -404,6 +405,7 @@ function DashBoard() {
       const token = localStorage.getItem("token");
       if (!token) {
         setIsAdmin(false);
+        setIsSuperadmin(false);
         return;
       }
       const response = await axios.get(
@@ -413,9 +415,11 @@ function DashBoard() {
         }
       );
       setIsAdmin(response.data.isAdmin || false);
+      setIsSuperadmin(response.data.isSuperadmin || false);
     } catch (error) {
       console.error("Error fetching admin status:", error.message);
       setIsAdmin(false);
+      setIsSuperadmin(false);
     }
   }, []);
 
@@ -1881,7 +1885,7 @@ function DashBoard() {
           >
             Add New Entry
           </button>
-          {isAdmin && (
+          {isSuperadmin && (
             <button
               className="button mx-1"
               onClick={handleExport}
