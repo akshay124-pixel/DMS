@@ -1,12 +1,26 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Button } from "react-bootstrap";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { Button, Modal } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../App.css";
+import {
+  FaEye,
+  FaUpload,
+  FaPlus,
+  FaFileExport,
+  FaChartBar,
+} from "react-icons/fa";
+import { jwtDecode } from "jwt-decode";
 import { DateRangePicker } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Popover } from "@mui/material";
-import { FaEye } from "react-icons/fa";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
@@ -17,6 +31,9 @@ import DeleteModal from "./Delete";
 import ViewEntry from "./ViewEntry";
 import { AutoSizer, List } from "react-virtualized";
 import debounce from "lodash/debounce";
+import ValueAnalyticsDrawer from "./Anylitics/ValueAnalyticsDrawer";
+import AdminDrawer from "./Anylitics/AdminDrawer";
+import { statesAndCities } from "./Options";
 import {
   Card,
   CardContent,
@@ -26,13 +43,13 @@ import {
   Divider,
   Chip,
 } from "@mui/material";
+import { normalizeId } from "./Anylitics/sharedUtilities";
 import { motion } from "framer-motion";
 
 // Separate Call Tracking Dashboard Component
 const CallTrackingDashboard = ({
   entries,
-  isAdmin,
-  onFilterChange,
+  onFilterClick,
   selectedCategory,
 }) => {
   const callStats = useMemo(() => {
@@ -40,6 +57,8 @@ const CallTrackingDashboard = ({
       cold: 0,
       warm: 0,
       hot: 0,
+      closedWon: 0,
+      closedLost: 0,
       total: entries.length,
     };
 
@@ -57,18 +76,28 @@ const CallTrackingDashboard = ({
         default:
           break;
       }
+      switch (entry.closetype) {
+        case "Closed Won":
+          stats.closedWon += 1;
+          break;
+        case "Closed Lost":
+          stats.closedLost += 1;
+          break;
+        default:
+          break;
+      }
     });
 
-    stats.total = stats.total - (stats.cold + stats.warm + stats.hot);
+    stats.total =
+      stats.total -
+      (stats.cold +
+        stats.warm +
+        stats.hot +
+        stats.closedWon +
+        stats.closedLost);
 
     return stats;
   }, [entries]);
-
-  const handleCategoryClick = (category) => {
-    onFilterChange(category);
-  };
-
-  if (!isAdmin) return null;
 
   return (
     <motion.div
@@ -76,10 +105,10 @@ const CallTrackingDashboard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Box sx={{ mb: 4 }}>
-        <Divider sx={{ mb: 3 }} />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={3}>
+      <Box sx={{ mb: 2 }}>
+        <Divider sx={{ mb: 2 }} />
+        <Grid container spacing={1.5}>
+          <Grid item xs={6} sm={2}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
@@ -87,103 +116,143 @@ const CallTrackingDashboard = ({
               <Card
                 sx={{
                   backgroundColor: "#e3f2fd",
-                  boxShadow: 3,
+                  boxShadow: 2,
                   border:
-                    selectedCategory === "total" ? "2px solid #1976d2" : "none",
+                    selectedCategory === "total" ? "2px solid #1565c0" : "none",
+                  padding: "16px",
+                  minHeight: "180px",
                 }}
-                onClick={() => handleCategoryClick("total")}
+                onClick={() => onFilterClick("total")}
               >
-                <CardContent>
-                  <Typography variant="h6" color="textSecondary">
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
                     Total Leads
                   </Typography>
                   <Typography
                     variant="h4"
-                    sx={{ fontWeight: "bold", color: "#0288d1" }}
+                    sx={{ fontWeight: "bold", color: "#1976d2" }}
                   >
                     {callStats.total}
                   </Typography>
                   <Chip
                     label="All Leads"
-                    size="small"
-                    color="primary"
-                    sx={{ mt: 1 }}
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: "#1e88e5", color: "#fff" }}
                   />
                 </CardContent>
               </Card>
             </motion.div>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={2}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
               <Card
                 sx={{
-                  backgroundColor: "#ffebee",
-                  boxShadow: 3,
+                  backgroundColor: "#e0f2f1",
+                  boxShadow: 2,
                   border:
                     selectedCategory === "Interested"
-                      ? "2px solid #d32f2f"
+                      ? "2px solid #00695c"
                       : "none",
+                  padding: "16px",
+                  minHeight: "180px",
                 }}
-                onClick={() => handleCategoryClick("Interested")}
+                onClick={() => onFilterClick("Interested")}
               >
-                <CardContent>
-                  <Typography variant="h6" color="textSecondary">
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
                     Hot Calls
                   </Typography>
                   <Typography
                     variant="h4"
-                    sx={{ fontWeight: "bold", color: "#d32f2f" }}
+                    sx={{ fontWeight: "bold", color: "#00897b" }}
                   >
                     {callStats.hot}
                   </Typography>
                   <Chip
                     label="Interested"
-                    size="small"
-                    color="error"
-                    sx={{ mt: 1 }}
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: "#26a69a", color: "#fff" }}
                   />
                 </CardContent>
               </Card>
             </motion.div>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={2}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
               <Card
                 sx={{
-                  backgroundColor: "#fff3e0",
-                  boxShadow: 3,
+                  backgroundColor: "#fff8e1",
+                  boxShadow: 2,
                   border:
-                    selectedCategory === "Maybe" ? "2px solid #f57c00" : "none",
+                    selectedCategory === "Maybe" ? "2px solid #e65100" : "none",
+                  padding: "16px",
+                  minHeight: "180px",
                 }}
-                onClick={() => handleCategoryClick("Maybe")}
+                onClick={() => onFilterClick("Maybe")}
               >
-                <CardContent>
-                  <Typography variant="h6" color="textSecondary">
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
                     Warm Calls
                   </Typography>
                   <Typography
                     variant="h4"
-                    sx={{ fontWeight: "bold", color: "#f57c00" }}
+                    sx={{ fontWeight: "bold", color: "#ef6c00" }}
                   >
                     {callStats.warm}
                   </Typography>
                   <Chip
                     label="Maybe"
-                    size="small"
-                    color="warning"
-                    sx={{ mt: 1 }}
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: "#fb8c00", color: "#fff" }}
                   />
                 </CardContent>
               </Card>
             </motion.div>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={2}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card
+                sx={{
+                  backgroundColor: "#e0f7fa",
+                  boxShadow: 2,
+                  border:
+                    selectedCategory === "Not Interested"
+                      ? "2px solid #006064"
+                      : "none",
+                  padding: "16px",
+                  minHeight: "180px",
+                }}
+                onClick={() => onFilterClick("Not Interested")}
+              >
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    Cold Calls
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: "bold", color: "#00838f" }}
+                  >
+                    {callStats.cold}
+                  </Typography>
+                  <Chip
+                    label="Not Interested"
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: "#00acc1", color: "#fff" }}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </Grid>
+          <Grid item xs={6} sm={2}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
@@ -191,29 +260,67 @@ const CallTrackingDashboard = ({
               <Card
                 sx={{
                   backgroundColor: "#e8f5e9",
-                  boxShadow: 3,
+                  boxShadow: 2,
                   border:
-                    selectedCategory === "Not Interested"
-                      ? "2px solid #388e3c"
+                    selectedCategory === "Closed Won"
+                      ? "2px solid #2e7d32"
                       : "none",
+                  padding: "16px",
+                  minHeight: "180px",
                 }}
-                onClick={() => handleCategoryClick("Not Interested")}
+                onClick={() => onFilterClick("Closed Won")}
               >
-                <CardContent>
-                  <Typography variant="h6" color="textSecondary">
-                    Cold Calls
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    Closed Won
                   </Typography>
                   <Typography
                     variant="h4"
                     sx={{ fontWeight: "bold", color: "#388e3c" }}
                   >
-                    {callStats.cold}
+                    {callStats.closedWon}
                   </Typography>
                   <Chip
-                    label="Not Interested"
-                    size="small"
-                    color="success"
-                    sx={{ mt: 1 }}
+                    label="Closed Won"
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: "#4caf50", color: "#fff" }}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </Grid>
+          <Grid item xs={6} sm={2}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card
+                sx={{
+                  backgroundColor: "#f3e5f5",
+                  boxShadow: 2,
+                  border:
+                    selectedCategory === "Closed Lost"
+                      ? "2px solid #6a1b9a"
+                      : "none",
+                  padding: "16px",
+                  minHeight: "180px",
+                }}
+                onClick={() => onFilterClick("Closed Lost")}
+              >
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    Closed Lost
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: "bold", color: "#7b1fa2" }}
+                  >
+                    {callStats.closedLost}
+                  </Typography>
+                  <Chip
+                    label="Closed Lost"
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: "#ab47bc", color: "#fff" }}
                   />
                 </CardContent>
               </Card>
@@ -242,8 +349,14 @@ function DashBoard() {
   const [selectedStateA, setSelectedStateA] = useState("");
   const [selectedCityA, setSelectedCityA] = useState("");
   const [selectedCreatedBy, setSelectedCreatedBy] = useState("");
+  const [role, setRole] = useState(localStorage.getItem("role") || "");
+  const [userId, setUserId] = useState(localStorage.getItem("userId") || "");
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [isValueAnalyticsOpen, setIsValueAnalyticsOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
@@ -256,6 +369,11 @@ function DashBoard() {
       key: "selection",
     },
   ]);
+  const [userInfo, setUserInfo] = useState({ userId: "", role: "" });
+  const [listKey, setListKey] = useState(Date.now());
+  const listRef = useRef(null); // Ref for List component
+
+  const navigate = useNavigate();
 
   const handleClosed = () => setShowDetails(false);
 
@@ -263,7 +381,7 @@ function DashBoard() {
     () => debounce((value) => setSearchTerm(value), 300),
     []
   );
-  // Update filteredData useMemo
+
   const filteredData = useMemo(() => {
     return entries
       .filter((row) => {
@@ -292,7 +410,12 @@ function DashBoard() {
           !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
 
         const matchesDashboardFilter =
-          dashboardFilter === "total" || row.status === dashboardFilter;
+          dashboardFilter === "total" ||
+          (dashboardFilter === "Closed Won" &&
+            row.closetype === "Closed Won") ||
+          (dashboardFilter === "Closed Lost" &&
+            row.closetype === "Closed Lost") ||
+          row.status === dashboardFilter;
 
         return (
           matchesSearch &&
@@ -316,6 +439,21 @@ function DashBoard() {
     selectedCreatedBy,
   ]);
 
+  const monthlyCalls = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const validStatuses = ["Interested", "Not Interested", "Maybe"];
+    return entries.filter((entry) => {
+      const updatedAt = new Date(entry.updatedAt);
+      return (
+        updatedAt.getMonth() === currentMonth &&
+        updatedAt.getFullYear() === currentYear &&
+        validStatuses.includes(entry.status)
+      );
+    }).length;
+  }, [entries]);
+
   const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
 
   const handleCreatedByChange = (e) => {
@@ -325,6 +463,7 @@ function DashBoard() {
   const handleOrganizationChange = (e) => {
     setSelectedOrganization(e.target.value);
   };
+
   const handleStateChangeA = (e) => {
     const state = e.target.value;
     setSelectedStateA(state);
@@ -333,14 +472,13 @@ function DashBoard() {
 
   const handleCityChangeA = (e) => setSelectedCityA(e.target.value);
 
-  const handleDashboardFilterChange = (category) => {
+  const handleDashboardFilterClick = (category) => {
     setDashboardFilter(category);
   };
 
   const handleReset = () => {
     setSearchTerm("");
     setSelectedOrganization("");
-
     setSelectedStateA("");
     setSelectedCityA("");
     setSelectedEntries([]);
@@ -355,6 +493,11 @@ function DashBoard() {
         key: "selection",
       },
     ]);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+    }
   };
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -363,6 +506,7 @@ function DashBoard() {
       entries.map((entry) => entry.createdBy?.username).filter(Boolean)
     ),
   ];
+
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -373,52 +517,132 @@ function DashBoard() {
 
   const open = Boolean(anchorEl);
 
+  // Inside fetchEntries
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("No token found");
+
+      // Log decoded token for debugging
+      try {
+        const decoded = jwtDecode(token);
+        console.log("Decoded token:", decoded);
+      } catch (decodeError) {
+        console.error("Token decode error:", decodeError.message);
+        toast.error("Invalid token. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
+      console.log("Fetching entries with userId:", userId, "role:", role);
+
       const response = await axios.get(
         "https://dms-server-eneu.onrender.com/api/fetch-entry",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setEntries(response.data);
+
+      if (!Array.isArray(response.data.data)) {
+        console.error("Invalid entries data:", response.data);
+        toast.error("Invalid data received from server.");
+        setEntries([]);
+        return;
+      }
+
+      let fetchedEntries = response.data.data;
+
+      if (role !== "Superadmin" && role !== "Admin") {
+        fetchedEntries = fetchedEntries.filter(
+          (entry) => normalizeId(entry.createdBy?._id) === userId
+        );
+      }
+
+      console.log("Fetched and filtered entries:", fetchedEntries.length);
+      setEntries(fetchedEntries);
     } catch (error) {
-      console.error("Error fetching data:", error.message);
+      console.error("Error fetching data:", {
+        message: error.message,
+        response: error.response?.data,
+      });
       toast.error("Failed to fetch entries!");
+      setEntries([]);
     } finally {
       setLoading(false);
+      setListKey(Date.now());
+      if (listRef.current) {
+        listRef.current.recomputeRowHeights();
+        listRef.current.forceUpdateGrid();
+      }
     }
-  }, []);
+  }, [userId, role, navigate]);
 
   const fetchAdmin = useCallback(async () => {
+    setAuthLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         setIsAdmin(false);
         setIsSuperadmin(false);
+        setRole("Others");
+        setUserId("");
+        toast.error("Please log in to continue.");
+        navigate("/login");
         return;
       }
+
+      const decoded = jwtDecode(token);
+      const userRole = decoded.role || "Others";
+      const userId = decoded.id;
+
       const response = await axios.get(
         "https://dms-server-eneu.onrender.com/api/user-role",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
       setIsAdmin(response.data.isAdmin || false);
       setIsSuperadmin(response.data.isSuperadmin || false);
+      setRole(userRole);
+      setUserId(userId);
+
+      console.log("Fetched user info:", { userId, role: userRole });
+      localStorage.setItem("userId", userId);
+      localStorage.setItem("role", userRole);
     } catch (error) {
       console.error("Error fetching admin status:", error.message);
       setIsAdmin(false);
       setIsSuperadmin(false);
+      setRole("Others");
+      setUserId("");
+      toast.error("Session expired. Please log in again.");
+      navigate("/login");
+    } finally {
+      setAuthLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
-    fetchEntries();
-    fetchAdmin();
-  }, [fetchEntries, fetchAdmin]);
+    let isMounted = true;
+    const fetchData = async () => {
+      await fetchAdmin();
+      if (isMounted) {
+        await fetchEntries();
+      }
+    };
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchAdmin, fetchEntries]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearchChange.cancel();
+    };
+  }, [debouncedSearchChange]);
 
   const handleShowDetails = useCallback((entry) => {
     setSelectedEntry(entry);
@@ -450,6 +674,11 @@ function DashBoard() {
       prev && deletedIds.includes(prev._id) ? null : prev
     );
     setSelectedEntries((prev) => prev.filter((id) => !deletedIds.includes(id)));
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+    }
   }, []);
 
   const handleEntryAdded = useCallback((newEntry) => {
@@ -476,6 +705,11 @@ function DashBoard() {
       updatedAt: newEntry.updatedAt || new Date().toISOString(),
     };
     setEntries((prev) => [completeEntry, ...prev]);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+    }
   }, []);
 
   const handleEntryUpdated = useCallback((updatedEntry) => {
@@ -495,11 +729,15 @@ function DashBoard() {
         : prevEntryToEdit
     );
     setEditModalOpen(false);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+    }
   }, []);
 
   const handleDoubleClick = (id) => {
     if (!doubleClickInitiated && (isAdmin || isSuperadmin)) {
-      // Changed from isAdmin
       setIsSelectionMode(true);
       setDoubleClickInitiated(true);
       setSelectedEntries([id]);
@@ -508,7 +746,6 @@ function DashBoard() {
 
   const handleSingleClick = (id) => {
     if (isSelectionMode && (isAdmin || isSuperadmin)) {
-      // Changed from isAdmin
       setSelectedEntries((prev) =>
         prev.includes(id)
           ? prev.filter((entryId) => entryId !== id)
@@ -519,11 +756,11 @@ function DashBoard() {
 
   const handleSelectAll = () => {
     if (isSelectionMode && (isAdmin || isSuperadmin)) {
-      // Changed from isAdmin
       const allFilteredIds = filteredData.map((entry) => entry._id);
       setSelectedEntries(allFilteredIds);
     }
   };
+
   const handleCopySelected = () => {
     const selectedData = entries.filter((entry) =>
       selectedEntries.includes(entry._id)
@@ -689,13 +926,13 @@ function DashBoard() {
     };
     reader.readAsArrayBuffer(file);
   };
+
   const handleExport = () => {
     if (filteredData.length === 0) {
       toast.error("No entries to export!");
       return;
     }
 
-    // Prepare data for export, excluding Created At and Updated At
     const exportData = filteredData.map((entry) => ({
       "Customer Name": entry.customerName || "",
       "Contact Person": entry.contactName || "",
@@ -713,857 +950,54 @@ function DashBoard() {
       "Created By": entry.createdBy?.username || "",
     }));
 
-    // Create worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
 
-    // Export to Excel
     XLSX.writeFile(workbook, "entries.xlsx");
     toast.success("Entries exported successfully!");
-  };
-  const statesAndCities = {
-    "Andhra Pradesh": [
-      "Alluri Sitharama Raju",
-      "Anakapalli",
-      "Anantapur",
-      "Annamayya",
-      "Bapatla",
-      "Chittoor",
-      "Dr. B.R. Ambedkar Konaseema",
-      "East Godavari",
-      "Eluru",
-      "Guntur",
-      "Kadapa",
-      "Kakinada",
-      "Krishna",
-      "Kurnool",
-      "Nandyal",
-      "Nellore",
-      "Palnadu",
-      "Parvathipuram Manyam",
-      "Prakasam",
-      "Sri Balaji",
-      "Sri Potti Sriramulu Nellore",
-      "Sri Sathya Sai",
-      "Srikakulam",
-      "Tirupati",
-      "Visakhapatnam",
-      "Vizianagaram",
-      "West Godavari",
-    ],
-    "Arunachal Pradesh": [
-      "Anjaw",
-      "Changlang",
-      "Dibang Valley",
-      "East Kameng",
-      "East Siang",
-      "Itanagar Capital Complex",
-      "Kamle",
-      "Kra Daadi",
-      "Kurung Kumey",
-      "Lepa Rada",
-      "Lohit",
-      "Longding",
-      "Lower Dibang Valley",
-      "Lower Siang",
-      "Lower Subansiri",
-      "Namsai",
-      "Pakke-Kessang",
-      "Papum Pare",
-      "Shi-Yomi",
-      "Siang",
-      "Tawang",
-      "Tirap",
-      "Upper Siang",
-      "Upper Subansiri",
-      "West Kameng",
-      "West Siang",
-    ],
-    Assam: [
-      "Bajali",
-      "Baksa",
-      "Barpeta",
-      "Biswanath",
-      "Bongaigaon",
-      "Cachar",
-      "Charaideo",
-      "Chirang",
-      "Darrang",
-      "Dhemaji",
-      "Dhubri",
-      "Dibrugarh",
-      "Dima Hasao",
-      "Goalpara",
-      "Golaghat",
-      "Hailakandi",
-      "Hojai",
-      "Jorhat",
-      "Kamrup",
-      "Kamrup Metropolitan",
-      "Karbi Anglong",
-      "Karimganj",
-      "Kokrajhar",
-      "Lakhimpur",
-      "Majuli",
-      "Morigaon",
-      "Nagaon",
-      "Nalbari",
-      "Sivasagar",
-      "Sonitpur",
-      "South Salmara-Mankachar",
-      "Tamulpur",
-      "Tinsukia",
-      "Udalguri",
-      "West Karbi Anglong",
-    ],
-    Bihar: [
-      "Araria",
-      "Arwal",
-      "Aurangabad",
-      "Banka",
-      "Begusarai",
-      "Bhagalpur",
-      "Bhojpur",
-      "Buxar",
-      "Darbhanga",
-      "East Champaran",
-      "Gaya",
-      "Gopalganj",
-      "Jamui",
-      "Jehanabad",
-      "Kaimur",
-      "Katihar",
-      "Khagaria",
-      "Kishanganj",
-      "Lakhisarai",
-      "Madhepura",
-      "Madhubani",
-      "Munger",
-      "Muzaffarpur",
-      "Nalanda",
-      "Nawada",
-      "Patna",
-      "Purnia",
-      "Rohtas",
-      "Saharsa",
-      "Samastipur",
-      "Saran",
-      "Sheikhpura",
-      "Sheohar",
-      "Sitamarhi",
-      "Siwan",
-      "Supaul",
-      "Vaishali",
-      "West Champaran",
-    ],
-    Chhattisgarh: [
-      "Balod",
-      "Baloda Bazar",
-      "Balrampur-Ramanujganj",
-      "Bastar",
-      "Bemetara",
-      "Bijapur",
-      "Bilaspur",
-      "Dantewada",
-      "Dhamtari",
-      "Durg",
-      "Gariaband",
-      "Gaurela-Pendra-Marwahi",
-      "Janjgir-Champa",
-      "Jashpur",
-      "Kanker",
-      "Khairagarh-Chhuri-Khalari",
-      "Kondagaon",
-      "Korba",
-      "Korea",
-      "Mahasamund",
-      "Manendragarh-Chirmiri-Bharatpur",
-      "Mohla-Manpur-Ambagarh Chowki",
-      "Mungeli",
-      "Narayanpur",
-      "Raigarh",
-      "Raipur",
-      "Rajnandgaon",
-      "Sakti",
-      "Sarangarh-Bilaigarh",
-      "Sukma",
-      "Surajpur",
-      "Surguja",
-    ],
-    Goa: ["North Goa", "South Goa"],
-    Gujarat: [
-      "Ahmedabad",
-      "Amreli",
-      "Anand",
-      "Aravalli",
-      "Banaskantha",
-      "Bharuch",
-      "Bhavnagar",
-      "Botad",
-      "Chhota Udaipur",
-      "Dahod",
-      "Dang",
-      "Devbhoomi Dwarka",
-      "Gandhinagar",
-      "Gir Somnath",
-      "Jamnagar",
-      "Junagadh",
-      "Kheda",
-      "Kutch",
-      "Mahisagar",
-      "Mehsana",
-      "Morbi",
-      "Narmada",
-      "Navsari",
-      "Panchmahal",
-      "Patan",
-      "Porbandar",
-      "Rajkot",
-      "Sabarkantha",
-      "Surat",
-      "Surendranagar",
-      "Tapi",
-      "Vadodara",
-      "Valsad",
-    ],
-    Haryana: [
-      "Ambala",
-      "Bhiwani",
-      "Charkhi Dadri",
-      "Faridabad",
-      "Fatehabad",
-      "Gurugram",
-      "Hisar",
-      "Jhajjar",
-      "Jind",
-      "Kaithal",
-      "Karnal",
-      "Kurukshetra",
-      "Mahendragarh",
-      "Nuh",
-      "Palwal",
-      "Panchkula",
-      "Panipat",
-      "Rewari",
-      "Rohtak",
-      "Sirsa",
-      "Sonipat",
-      "Yamunanagar",
-    ],
-    "Himachal Pradesh": [
-      "Bilaspur",
-      "Chamba",
-      "Hamirpur",
-      "Kangra",
-      "Kinnaur",
-      "Kullu",
-      "Lahaul and Spiti",
-      "Mandi",
-      "Shimla",
-      "Sirmaur",
-      "Solan",
-      "Una",
-    ],
-    Jharkhand: [
-      "Bokaro",
-      "Chatra",
-      "Deoghar",
-      "Dhanbad",
-      "Dumka",
-      "East Singhbhum",
-      "Garhwa",
-      "Giridih",
-      "Godda",
-      "Gumla",
-      "Hazaribagh",
-      "Jamtara",
-      "Khunti",
-      "Koderma",
-      "Latehar",
-      "Lohardaga",
-      "Pakur",
-      "Palamu",
-      "Ramgarh",
-      "Ranchi",
-      "Sahibganj",
-      "Seraikela-Kharsawan",
-      "Simdega",
-      "West Singhbhum",
-    ],
-    Karnataka: [
-      "Bagalkot",
-      "Ballari",
-      "Belagavi",
-      "Bengaluru Rural",
-      "Bengaluru Urban",
-      "Bidar",
-      "Chamarajanagar",
-      "Chikkaballapura",
-      "Chikkamagaluru",
-      "Chitradurga",
-      "Dakshina Kannada",
-      "Davanagere",
-      "Dharwad",
-      "Gadag",
-      "Hassan",
-      "Haveri",
-      "Kalaburagi",
-      "Kodagu",
-      "Kolar",
-      "Koppal",
-      "Mandya",
-      "Mysuru",
-      "Raichur",
-      "Ramanagara",
-      "Shivamogga",
-      "Tumakuru",
-      "Udupi",
-      "Uttara Kannada",
-      "Vijayanagara",
-      "Vijayapura",
-      "Yadgir",
-    ],
-    Kerala: [
-      "Alappuzha",
-      "Ernakulam",
-      "Idukki",
-      "Kannur",
-      "Kasaragod",
-      "Kollam",
-      "Kottayam",
-      "Kozhikode",
-      "Malappuram",
-      "Palakkad",
-      "Pathanamthitta",
-      "Thiruvananthapuram",
-      "Thrissur",
-      "Wayanad",
-    ],
-    "Madhya Pradesh": [
-      "Agar Malwa",
-      "Alirajpur",
-      "Anuppur",
-      "Ashoknagar",
-      "Balaghat",
-      "Barwani",
-      "Betul",
-      "Bhind",
-      "Bhopal",
-      "Burhanpur",
-      "Chhatarpur",
-      "Chhindwara",
-      "Damoh",
-      "Datia",
-      "Dewas",
-      "Dhar",
-      "Dindori",
-      "Guna",
-      "Gwalior",
-      "Harda",
-      "Hoshangabad",
-      "Indore",
-      "Jabalpur",
-      "Jhabua",
-      "Katni",
-      "Khandwa",
-      "Khargone",
-      "Mandla",
-      "Mandsaur",
-      "Maihar",
-      "Mauganj",
-      "Morena",
-      "Narsinghpur",
-      "Neemuch",
-      "Niwari",
-      "Pandhurna",
-      "Panna",
-      "Raisen",
-      "Rajgarh",
-      "Ratlam",
-      "Rewa",
-      "Sagar",
-      "Satna",
-      "Sehore",
-      "Seoni",
-      "Shahdol",
-      "Shajapur",
-      "Sheopur",
-      "Shivpuri",
-      "Sidhi",
-      "Singrauli",
-      "Tikamgarh",
-      "Ujjain",
-      "Umaria",
-      "Vidisha",
-    ],
-    Maharashtra: [
-      "Ahmednagar",
-      "Akola",
-      "Amravati",
-      "Aurangabad",
-      "Beed",
-      "Bhandara",
-      "Buldhana",
-      "Chandrapur",
-      "Dhule",
-      "Gadchiroli",
-      "Gondia",
-      "Hingoli",
-      "Jalgaon",
-      "Jalna",
-      "Kolhapur",
-      "Latur",
-      "Mumbai City",
-      "Mumbai Suburban",
-      "Nagpur",
-      "Nanded",
-      "Nandurbar",
-      "Nashik",
-      "Osmanabad",
-      "Palghar",
-      "Parbhani",
-      "Pune",
-      "Raigad",
-      "Ratnagiri",
-      "Sangli",
-      "Satara",
-      "Sindhudurg",
-      "Solapur",
-      "Thane",
-      "Wardha",
-      "Washim",
-      "Yavatmal",
-    ],
-    Manipur: [
-      "Bishnupur",
-      "Chandel",
-      "Churachandpur",
-      "Imphal East",
-      "Imphal West",
-      "Jiribam",
-      "Kakching",
-      "Kamjong",
-      "Kangpokpi",
-      "Noney",
-      "Pherzawl",
-      "Senapati",
-      "Tamenglong",
-      "Tengnoupal",
-      "Thoubal",
-      "Ukhrul",
-    ],
-    Meghalaya: [
-      "East Garo Hills",
-      "East Jaintia Hills",
-      "East Khasi Hills",
-      "North Garo Hills",
-      "Ri-Bhoi",
-      "South Garo Hills",
-      "South West Garo Hills",
-      "South West Khasi Hills",
-      "West Garo Hills",
-      "West Jaintia Hills",
-      "West Khasi Hills",
-    ],
-    Mizoram: [
-      "Aizawl",
-      "Champhai",
-      "Hnahthial",
-      "Khawzawl",
-      "Kolasib",
-      "Lawngtlai",
-      "Lunglei",
-      "Mamit",
-      "Saiha",
-      "Saitual",
-      "Serchhip",
-    ],
-    Nagaland: [
-      "Chumukedima",
-      "Dimapur",
-      "Kiphire",
-      "Kohima",
-      "Longleng",
-      "Mokokchung",
-      "Mon",
-      "Niuland",
-      "Noklak",
-      "Peren",
-      "Phek",
-      "Shamator",
-      "Tsemenyu",
-      "Tuensang",
-      "Wokha",
-      "Zunheboto",
-    ],
-    Odisha: [
-      "Angul",
-      "Balangir",
-      "Balasore",
-      "Bargarh",
-      "Bhadrak",
-      "Boudh",
-      "Cuttack",
-      "Deogarh",
-      "Dhenkanal",
-      "Gajapati",
-      "Ganjam",
-      "Jagatsinghpur",
-      "Jajpur",
-      "Jharsuguda",
-      "Kalahandi",
-      "Kandhamal",
-      "Kendrapara",
-      "Kendujhar",
-      "Khordha",
-      "Koraput",
-      "Malkangiri",
-      "Mayurbhanj",
-      "Nabarangpur",
-      "Nayagarh",
-      "Nuapada",
-      "Puri",
-      "Rayagada",
-      "Sambalpur",
-      "Subarnapur",
-      "Sundargarh",
-    ],
-    Punjab: [
-      "Amritsar",
-      "Barnala",
-      "Bathinda",
-      "Faridkot",
-      "Fatehgarh Sahib",
-      "Fazilka",
-      "Firozpur",
-      "Gurdaspur",
-      "Hoshiarpur",
-      "Jalandhar",
-      "Kapurthala",
-      "Ludhiana",
-      "Malerkotla",
-      "Mansa",
-      "Moga",
-      "Pathankot",
-      "Patiala",
-      "Rupnagar",
-      "S.A.S. Nagar",
-      "Sangrur",
-      "Shahid Bhagat Singh Nagar",
-      "Sri Muktsar Sahib",
-      "Tarn Taran",
-    ],
-    Rajasthan: [
-      "Ajmer",
-      "Alwar",
-      "Anupgarh",
-      "Balotra",
-      "Banswara",
-      "Baran",
-      "Barmer",
-      "Beawar",
-      "Bharatpur",
-      "Bhilwara",
-      "Bikaner",
-      "Bundi",
-      "Chittorgarh",
-      "Churu",
-      "Dausa",
-      "Deeg",
-      "Dholpur",
-      "Dudu",
-      "Dungarpur",
-      "Ganganagar",
-      "Gangapur City",
-      "Hanumangarh",
-      "Jaipur",
-      "Jaisalmer",
-      "Jalore",
-      "Jhalawar",
-      "Jhunjhunu",
-      "Jodhpur",
-      "Karauli",
-      "Kekri",
-      "Khairthal-Tijara",
-      "Kota",
-      "Nagaur",
-      "Neem ka Thana",
-      "Pali",
-      "Phalodi",
-      "Pratapgarh",
-      "Rajsamand",
-      "Sanchore",
-      "Sawai Madhopur",
-      "Shahpura",
-      "Sikar",
-      "Sirohi",
-      "Sri Ganganagar",
-      "Tonk",
-      "Udaipur",
-    ],
-    Sikkim: ["Gyalshing", "Mangan", "Namchi", "Pakyong", "Soreng"],
-    "Tamil Nadu": [
-      "Ariyalur",
-      "Chengalpattu",
-      "Chennai",
-      "Coimbatore",
-      "Cuddalore",
-      "Dharmapuri",
-      "Dindigul",
-      "Erode",
-      "Kallakurichi",
-      "Kancheepuram",
-      "Kanyakumari",
-      "Karur",
-      "Krishnagiri",
-      "Madurai",
-      "Mayiladuthurai",
-      "Nagapattinam",
-      "Namakkal",
-      "Nilgiris",
-      "Perambalur",
-      "Pudukkottai",
-      "Ramanathapuram",
-      "Ranipet",
-      "Salem",
-      "Sivaganga",
-      "Tenkasi",
-      "Thanjavur",
-      "Theni",
-      "Thoothukudi",
-      "Tiruchirappalli",
-      "Tirunelveli",
-      "Tirupathur",
-      "Tiruppur",
-      "Tiruvallur",
-      "Tiruvannamalai",
-      "Tiruvarur",
-      "Vellore",
-      "Viluppuram",
-      "Virudhunagar",
-    ],
-    Telangana: [
-      "Adilabad",
-      "Bhadradri Kothagudem",
-      "Hanumakonda",
-      "Hyderabad",
-      "Jagtial",
-      "Jangaon",
-      "Jayashankar Bhupalpally",
-      "Jogulamba Gadwal",
-      "Kamareddy",
-      "Karimnagar",
-      "Khammam",
-      "Komaram Bheem",
-      "Mahabubabad",
-      "Mahbubnagar",
-      "Mancherial",
-      "Medak",
-      "Medchal-Malkajgiri",
-      "Mulugu",
-      "Nagarkurnool",
-      "Nalgonda",
-      "Narayanpet",
-      "Nirmal",
-      "Nizamabad",
-      "Peddapalli",
-      "Rajanna Sircilla",
-      "Rangareddy",
-      "Sangareddy",
-      "Siddipet",
-      "Suryapet",
-      "Vikarabad",
-      "Wanaparthy",
-      "Warangal",
-      "Yadadri Bhuvanagiri",
-    ],
-    Tripura: [
-      "Dhalai",
-      "Gomati",
-      "Khowai",
-      "North Tripura",
-      "Sepahijala",
-      "South Tripura",
-      "Unakoti",
-      "West Tripura",
-    ],
-    "Uttar Pradesh": [
-      "Agra",
-      "Aligarh",
-      "Ambedkar Nagar",
-      "Amethi",
-      "Amroha",
-      "Auraiya",
-      "Ayodhya",
-      "Azamgarh",
-      "Baghpat",
-      "Bahraich",
-      "Ballia",
-      "Balrampur",
-      "Banda",
-      "Barabanki",
-      "Bareilly",
-      "Basti",
-      "Bhadohi",
-      "Bijnor",
-      "Budaun",
-      "Bulandshahr",
-      "Chandauli",
-      "Chitrakoot",
-      "Deoria",
-      "Etah",
-      "Etawah",
-      "Farrukhabad",
-      "Fatehpur",
-      "Firozabad",
-      "Gautam Buddha Nagar",
-      "Ghaziabad",
-      "Ghazipur",
-      "Gonda",
-      "Gorakhpur",
-      "Hamirpur",
-      "Hapur",
-      "Hardoi",
-      "Hathras",
-      "Jalaun",
-      "Jaunpur",
-      "Jhansi",
-      "Kannauj",
-      "Kanpur Dehat",
-      "Kanpur Nagar",
-      "Kasganj",
-      "Kaushambi",
-      "Kushinagar",
-      "Lakhimpur Kheri",
-      "Lalitpur",
-      "Lucknow",
-      "Maharajganj",
-      "Mahoba",
-      "Mainpuri",
-      "Mathura",
-      "Mau",
-      "Meerut",
-      "Mirzapur",
-      "Moradabad",
-      "Muzaffarnagar",
-      "Pilibhit",
-      "Pratapgarh",
-      "Prayagraj",
-      "Raebareli",
-      "Rampur",
-      "Saharanpur",
-      "Sambhal",
-      "Sant Kabir Nagar",
-      "Shahjahanpur",
-      "Shamli",
-      "Shravasti",
-      "Siddharthnagar",
-      "Sitapur",
-      "Sonbhadra",
-      "Sultanpur",
-      "Unnao",
-      "Varanasi",
-    ],
-    Uttarakhand: [
-      "Almora",
-      "Bageshwar",
-      "Chamoli",
-      "Champawat",
-      "Dehradun",
-      "Haridwar",
-      "Nainital",
-      "Pauri Garhwal",
-      "Pithoragarh",
-      "Rudraprayag",
-      "Tehri Garhwal",
-      "Udham Singh Nagar",
-      "Uttarkashi",
-    ],
-    "West Bengal": [
-      "Alipurduar",
-      "Bankura",
-      "Birbhum",
-      "Cooch Behar",
-      "Dakshin Dinajpur",
-      "Darjeeling",
-      "Hooghly",
-      "Howrah",
-      "Jalpaiguri",
-      "Jhargram",
-      "Kalimpong",
-      "Kolkata",
-      "Maldah",
-      "Murshidabad",
-      "Nadia",
-      "North 24 Parganas",
-      "Paschim Bardhaman",
-      "Paschim Medinipur",
-      "Purba Bardhaman",
-      "Purba Medinipur",
-      "Purulia",
-      "South 24 Parganas",
-      "Uttar Dinajpur",
-    ],
-    "Andaman and Nicobar Islands": [
-      "Nicobar",
-      "North and Middle Andaman",
-      "South Andaman",
-    ],
-    Chandigarh: ["Chandigarh"],
-    "Dadra and Nagar Haveli and Daman and Diu": [
-      "Dadra and Nagar Haveli",
-      "Daman",
-      "Diu",
-    ],
-    Delhi: [
-      "Central Delhi",
-      "East Delhi",
-      "New Delhi",
-      "North Delhi",
-      "North East Delhi",
-      "North West Delhi",
-      "Shahdara",
-      "South Delhi",
-      "South East Delhi",
-      "South West Delhi",
-      "West Delhi",
-    ],
-    "Jammu and Kashmir": [
-      "Anantnag",
-      "Bandipora",
-      "Baramulla",
-      "Budgam",
-      "Doda",
-      "Ganderbal",
-      "Jammu",
-      "Kathua",
-      "Kishtwar",
-      "Kulgam",
-      "Kupwara",
-      "Poonch",
-      "Pulwama",
-      "Rajouri",
-      "Ramban",
-      "Reasi",
-      "Samba",
-      "Shopian",
-      "Srinagar",
-      "Udhampur",
-    ],
-    Ladakh: ["Kargil", "Leh"],
-    Lakshadweep: ["Lakshadweep"],
-    Puducherry: ["Karaikal", "Mahe", "Puducherry", "Yanam"],
   };
 
   const formatDate = (date) => {
     if (!date) return "N/A";
     const d = new Date(date);
     const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  const handleAnalyticsDrawerClose = () => {
+    setIsAnalyticsOpen(false);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+      listRef.current.scrollToPosition(0);
+      window.dispatchEvent(new Event("resize"));
+    }
+  };
+
+  const handleValueAnalyticsDrawerClose = () => {
+    setIsValueAnalyticsOpen(false);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+      listRef.current.scrollToPosition(0);
+      window.dispatchEvent(new Event("resize"));
+    }
+  };
+  useEffect(() => {
+    if (isAnalyticsOpen || isValueAnalyticsOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isAnalyticsOpen, isValueAnalyticsOpen]);
   const rowRenderer = ({ index, key, style }) => {
     const row = filteredData[index];
     const isSelected = selectedEntries.includes(row._id);
@@ -1585,7 +1019,6 @@ function DashBoard() {
         <div className="virtual-cell">{row.address}</div>
         <div className="virtual-cell">{row.city}</div>
         <div className="virtual-cell">{row.state}</div>
-
         <div className="virtual-cell">{row.createdBy?.username}</div>
         <div
           className="virtual-cell actions-cell"
@@ -1816,11 +1249,9 @@ function DashBoard() {
       >
         <CallTrackingDashboard
           entries={entries}
-          isAdmin={isAdmin || isSuperadmin}
-          onFilterChange={handleDashboardFilterChange}
+          onFilterClick={handleDashboardFilterClick}
           selectedCategory={dashboardFilter}
         />
-
         <div style={{ textAlign: "center" }}>
           <label
             style={{
@@ -1835,6 +1266,9 @@ function DashBoard() {
               fontSize: "1rem",
               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = "translateY(-2px)";
@@ -1845,6 +1279,7 @@ function DashBoard() {
               e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
             }}
           >
+            <FaUpload />
             Bulk Upload via Excel
             <input
               type="file"
@@ -1867,6 +1302,9 @@ function DashBoard() {
               fontSize: "1rem",
               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = "translateY(-2px)";
@@ -1877,6 +1315,7 @@ function DashBoard() {
               e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
             }}
           >
+            <FaPlus />
             Add New Entry
           </button>
           {isSuperadmin && (
@@ -1894,6 +1333,9 @@ function DashBoard() {
                 fontSize: "1rem",
                 boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
                 transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
               }}
               onMouseEnter={(e) => {
                 e.target.style.transform = "translateY(-2px)";
@@ -1904,9 +1346,40 @@ function DashBoard() {
                 e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
               }}
             >
+              <FaFileExport />
               Export To Excel
             </button>
           )}
+          <button
+            className="button mx-1"
+            onClick={() => setIsAnalyticsModalOpen(true)}
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              color: "white",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              border: "none",
+              fontSize: "1rem",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+            <FaChartBar />
+            Analytics
+          </button>
           {(isAdmin || isSuperadmin) && filteredData.length > 0 && (
             <div style={{ marginTop: "10px", marginLeft: "50px" }}>
               {isSelectionMode && (
@@ -2008,23 +1481,41 @@ function DashBoard() {
           </p>
         </div>
         <DisableCopy isAdmin={isAdmin} />
-        <div
-          style={{
-            marginBottom: "10px",
-            fontWeight: "600",
-            fontSize: "1rem",
-            color: "#fff",
-            background: "linear-gradient(90deg, #6a11cb, #2575fc)",
-            padding: "5px 15px",
-            borderRadius: "20px",
-            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-            display: "inline-block",
-            textAlign: "center",
-            width: "auto",
-            textTransform: "capitalize",
-          }}
-        >
-          Total Results: {filteredData.length}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+          <div
+            style={{
+              fontWeight: "600",
+              fontSize: "1rem",
+              color: "#fff",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              padding: "5px 15px",
+              borderRadius: "20px",
+              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+              display: "inline-block",
+              textAlign: "center",
+              width: "auto",
+              textTransform: "capitalize",
+            }}
+          >
+            Total Results: {filteredData.length}
+          </div>
+          <div
+            style={{
+              fontWeight: "600",
+              fontSize: "1rem",
+              color: "#fff",
+              background: "linear-gradient(90deg, #ff4444, #cc0000)",
+              padding: "5px 15px",
+              borderRadius: "20px",
+              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+              display: "inline-block",
+              textAlign: "center",
+              width: "auto",
+              textTransform: "capitalize",
+            }}
+          >
+            Monthly Calls: {monthlyCalls}
+          </div>
         </div>
         <div
           className="table-container"
@@ -2032,7 +1523,7 @@ function DashBoard() {
             width: "100%",
             height: "75vh",
             margin: "0 auto",
-            overflowX: "hidden",
+            overflow: "auto",
             boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
             borderRadius: "15px",
             marginTop: "20px",
@@ -2156,6 +1647,8 @@ function DashBoard() {
             <AutoSizer>
               {({ height, width }) => (
                 <List
+                  ref={listRef}
+                  key={listKey}
                   width={width}
                   height={height - 60}
                   rowCount={filteredData.length}
@@ -2168,7 +1661,6 @@ function DashBoard() {
             </AutoSizer>
           )}
         </div>
-
         <AddEntry
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
@@ -2193,6 +1685,69 @@ function DashBoard() {
           entry={selectedEntry}
           isAdmin={isAdmin}
         />
+        <AdminDrawer
+          entries={entries}
+          isOpen={isAnalyticsOpen && !loading}
+          onClose={handleAnalyticsDrawerClose}
+          role={role}
+          userId={userId}
+          dateRange={dateRange}
+        />
+        <ValueAnalyticsDrawer
+          entries={entries}
+          isOpen={isValueAnalyticsOpen && !loading}
+          onClose={handleValueAnalyticsDrawerClose}
+          role={role}
+          userId={userId}
+          dateRange={dateRange}
+        />
+        <Modal
+          show={isAnalyticsModalOpen}
+          onHide={() => setIsAnalyticsModalOpen(false)}
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title style={{ fontWeight: "bold" }}>
+              📊 Analytics Options
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body
+            style={{ display: "flex", justifyContent: "center", gap: "20px" }}
+          >
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsAnalyticsOpen(true);
+                setIsAnalyticsModalOpen(false);
+              }}
+              style={{
+                background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              📞 Calls Analytics
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsValueAnalyticsOpen(true);
+                setIsAnalyticsModalOpen(false);
+              }}
+              style={{
+                background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              🚀 Value Analytics
+            </Button>
+          </Modal.Body>
+        </Modal>
       </div>
       <footer className="footer-container">
         <p style={{ marginTop: "15px", color: "white", height: "10px" }}>

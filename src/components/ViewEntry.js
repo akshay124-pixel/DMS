@@ -232,6 +232,12 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                 </Badge>
               }
             />
+            {entry.closetype && (
+              <DataItem label="close-Type" value={entry.closetype} />
+            )}
+            {entry.closeamount && (
+              <DataItem label="closure-Amount" value={entry.closeamount} />
+            )}
             <DataItem label="Remarks" value={entry.remarks} />
             <DataItem
               label="Created"

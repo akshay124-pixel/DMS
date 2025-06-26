@@ -90,6 +90,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   const initialUpdateData = useMemo(
     () => ({
       status: "",
+      closetype: "",
+      closeamount: "",
       remarks: "",
     }),
     []
@@ -139,7 +141,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       };
       const newUpdateData = {
         status: entryToEdit.status || "",
-
+        closeamount: entryToEdit.closeamount || "",
+        closetype: entryToEdit.closetype || "",
         remarks: entryToEdit.remarks || "",
       };
       setFormData(newFormData);
@@ -167,7 +170,10 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
 
   const handleUpdateInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    setUpdateData((prev) => ({ ...prev, [name]: value }));
+    setUpdateData((prev) => ({
+      ...prev,
+      [name]: name === "closeamount" ? (value ? parseFloat(value) : "") : value,
+    }));
   }, []);
 
   const onEditSubmit = async (data) => {
@@ -182,9 +188,30 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         throw new Error("You must be logged in to update an entry.");
       }
 
+      // Prepare payload
+      const payload = {
+        ...data,
+        status: updateData.status,
+        remarks: updateData.remarks,
+      };
+      if (updateData.status === "Closed") {
+        if (!updateData.closetype || !updateData.closeamount) {
+          throw new Error(
+            "Close type and close amount are required when status is 'Closed'."
+          );
+        }
+        payload.closetype = updateData.closetype;
+        payload.closeamount = parseFloat(updateData.closeamount);
+      } else {
+        payload.closetype = "";
+        payload.closeamount = null;
+      }
+
+      console.log("Sending payload (edit):", payload);
+
       const response = await axios.put(
         `https://dms-server-eneu.onrender.com/api/editentry/${entryToEdit._id}`,
-        { ...data, ...updateData },
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -208,19 +235,22 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         organization: updatedEntry.organization || "",
         category: updatedEntry.category || "",
         status: updatedEntry.status || "",
-
         remarks: updatedEntry.remarks || "",
       });
       setUpdateData({
         status: updatedEntry.status || "",
-
+        closeamount: updatedEntry.closeamount || "",
+        closetype: updatedEntry.closetype || "",
         remarks: updatedEntry.remarks || "",
       });
       setView("options");
       onClose();
     } catch (err) {
+      console.error("Edit error:", err.response?.data); // Log full error
       setError(err.response?.data?.message || "Failed to update entry.");
-      toast.error(err.response?.data?.message || "Failed to update entry!");
+      toast.error(
+        err.response?.data?.errors?.join(", ") || "Failed to update entry!"
+      );
     } finally {
       setLoading(false);
       setShowConfirm(false);
@@ -239,9 +269,20 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         throw new Error("You must be logged in to update an entry.");
       }
 
+      const payload = {
+        status: updateData.status,
+        remarks: updateData.remarks,
+      };
+      if (updateData.status === "Closed") {
+        payload.closetype = updateData.closetype;
+        payload.closeamount = updateData.closeamount;
+      }
+
+      console.log("Sending payload:", payload); // Log payload
+
       const response = await axios.put(
         `https://dms-server-eneu.onrender.com/api/editentry/${entryToEdit._id}`,
-        { ...formData, ...updateData },
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -254,20 +295,23 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       onEntryUpdated(updatedEntry);
       setUpdateData({
         status: updatedEntry.status || "",
-
+        closeamount: updatedEntry.closeamount || "",
+        closetype: updatedEntry.closetype || "",
         remarks: updatedEntry.remarks || "",
       });
       setView("options");
       onClose();
     } catch (err) {
+      console.error("Update error:", err.response?.data); // Log full error
       setError(err.response?.data?.message || "Failed to update follow-up.");
-      toast.error(err.response?.data?.message || "Failed to update follow-up!");
+      toast.error(
+        err.response?.data?.errors?.join(", ") || "Failed to update follow-up!"
+      );
     } finally {
       setLoading(false);
       setShowConfirm(false);
     }
   };
-
   // Mock Data (States and Districts)
   const states = [
     "Andhra Pradesh",
@@ -1208,7 +1252,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             {errors.contactName?.message}
           </Form.Control.Feedback>
         </Form.Group>
-
         <Form.Group controlId="email">
           <Form.Label>📧 Email</Form.Label>
           <Form.Control
@@ -1264,7 +1307,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             {errors.alterNumber?.message}
           </Form.Control.Feedback>
         </Form.Group>
-
         <Form.Group controlId="product" className="mb-3">
           <Form.Label>📦 Product</Form.Label>
           <Form.Control
@@ -1428,9 +1470,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             <option value="Maybe">Maybe</option>
             <option value="Interested">Interested</option>
             <option value="Not Interested">Not Interested</option>
+            <option value="Closed">Closed</option>
           </Form.Control>
-        </Form.Group>
-
+        </Form.Group>{" "}
         <Form.Group controlId="remarks">
           <Form.Label>✏️ Remarks</Form.Label>
           <Form.Control
@@ -1466,9 +1508,41 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             <option value="Maybe">Maybe</option>
             <option value="Interested">Interested</option>
             <option value="Not Interested">Not Interested</option>
+            <option value="Closed">Closed</option>
           </Form.Control>
         </Form.Group>
-
+        {updateData.status === "Closed" && (
+          <>
+            <Form.Group controlId="closetype">
+              <Form.Label>🏁 Close Type</Form.Label>
+              <Form.Control
+                as="select"
+                name="closetype"
+                value={updateData.closetype || ""}
+                onChange={handleUpdateInputChange}
+                style={formControlStyle}
+                aria-label="Close Type"
+              >
+                <option value="">-- Select Close Type --</option>
+                <option value="Closed Won">Won</option>
+                <option value="Closed Lost">Lost</option>
+              </Form.Control>
+            </Form.Group>
+            <Form.Group controlId="closeamount">
+              <Form.Label>💰 Close Amount</Form.Label>
+              <Form.Control
+                type="number"
+                name="closeamount"
+                value={updateData.closeamount || ""}
+                onChange={handleUpdateInputChange}
+                min="0"
+                step="0.01"
+                style={formControlStyle}
+                aria-label="Close Amount"
+              />
+            </Form.Group>
+          </>
+        )}
         <Form.Group controlId="remarks">
           <Form.Label>✏️ Remarks</Form.Label>
           <Form.Control
