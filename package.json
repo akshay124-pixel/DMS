@@ -20,6 +20,7 @@
     "date-fns": "^2.30.0",
     "dotenv": "^16.4.7",
     "framer-motion": "^12.4.10",
+    "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
     "moment": "^2.30.1",
