@@ -177,7 +177,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       };
 
       const response = await axios.post(
-        "https://dms-server-eneu.onrender.com/api/entry",
+        "https://dms-server-sfuy.onrender.com/api/entry",
         submitData,
         {
           headers: {

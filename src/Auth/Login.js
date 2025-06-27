@@ -35,7 +35,7 @@ function Login() {
 
     try {
       const response = await axios.post(
-        "https://dms-server-eneu.onrender.com/auth/login",
+        "https://dms-server-sfuy.onrender.com/auth/login",
         formData
       );
 
