@@ -1469,7 +1469,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             <option value="">-- Select Status --</option>
             <option value="Maybe">Maybe</option>
             <option value="Interested">Interested</option>
-            <option value="Not Interested">Not Interested</option>
+            <option value="Not Interested">Not Interested</option>{" "}
+            <option value="Not">Not Connected</option>{" "}
+            <option value="Service">Service Call</option>
             <option value="Closed">Closed</option>
           </Form.Control>
         </Form.Group>{" "}
@@ -1507,7 +1509,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             <option value="">-- Select Status --</option>
             <option value="Maybe">Maybe</option>
             <option value="Interested">Interested</option>
-            <option value="Not Interested">Not Interested</option>
+            <option value="Not Interested">Not Interested</option>{" "}
+            <option value="Not">Not Connected</option>
+            <option value="Service">Service Call</option>
             <option value="Closed">Closed</option>
           </Form.Control>
         </Form.Group>

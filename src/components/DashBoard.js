@@ -59,6 +59,237 @@ const CallTrackingDashboard = ({
       hot: 0,
       closedWon: 0,
       closedLost: 0,
+      Not: 0,
+      Service: 0,
+      total: entries.length,
+    };
+
+    entries.forEach((entry) => {
+      switch (entry.status) {
+        case "Not Interested":
+          stats.cold += 1;
+          break;
+        case "Not":
+          stats.Not += 1;
+          break;
+        case "Service":
+          stats.Service += 1;
+          break;
+        case "Maybe":
+          stats.warm += 1;
+          break;
+        case "Interested":
+          stats.hot += 1;
+          break;
+        default:
+          break;
+      }
+      switch (entry.closetype) {
+        case "Closed Won":
+          stats.closedWon += 1;
+          break;
+        case "Closed Lost":
+          stats.closedLost += 1;
+          break;
+        default:
+          break;
+      }
+    });
+
+    stats.total =
+      stats.total -
+      (stats.cold +
+        stats.Not +
+        stats.warm +
+        stats.hot +
+        stats.Service +
+        stats.closedWon +
+        stats.closedLost);
+
+    return stats;
+  }, [entries]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Box sx={{ mb: 2 }}>
+        <Divider sx={{ mb: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            flexWrap: "wrap", // allows wrap on small screens
+            gap: 2, // spacing between cards
+          }}
+        >
+          {[
+            {
+              title: "Hot Calls",
+              value: callStats.hot,
+              label: "Interested",
+              color: "#00897b",
+              bg: "#e0f2f1",
+              border: "#00695c",
+              category: "Interested",
+              chipBg: "#26a69a",
+            },
+            {
+              title: "Warm Calls",
+              value: callStats.warm,
+              label: "Maybe",
+              color: "#ef6c00",
+              bg: "#fff8e1",
+              border: "#e65100",
+              category: "Maybe",
+              chipBg: "#fb8c00",
+            },
+            {
+              title: "Cold Calls",
+              value: callStats.cold,
+              label: "Not Interested",
+              color: "#00838f",
+              bg: "#e0f7fa",
+              border: "#006064",
+              category: "Not Interested",
+              chipBg: "#00acc1",
+            },
+            {
+              title: "Not Connected",
+              value: callStats.Not,
+              label: "Not Connected",
+              color: "#d32f2f", // A strong red for the text
+              bg: "#ffebee", // Very light red background
+              border: "#c62828", // Deep red border when selected
+              category: "Not",
+              chipBg: "#ef5350", // Medium red for the chip
+            },
+
+            {
+              title: "Service Calls",
+              value: callStats.Service,
+              label: "Service Calls",
+              color: "#1976d2",
+              bg: "#e3f2fd",
+              border: "#1565c0",
+              category: "Service",
+              chipBg: "#1e88e5",
+            },
+            {
+              title: "Closed Won",
+              value: callStats.closedWon,
+              label: "Closed Won",
+              color: "#388e3c",
+              bg: "#e8f5e9",
+              border: "#2e7d32",
+              category: "Closed Won",
+              chipBg: "#4caf50",
+            },
+            {
+              title: "Closed Lost",
+              value: callStats.closedLost,
+              label: "Closed Lost",
+              color: "#7b1fa2",
+              bg: "#f3e5f5",
+              border: "#6a1b9a",
+              category: "Closed Lost",
+              chipBg: "#ab47bc",
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+              style={{ flex: "1 1 13%" }}
+            >
+              <Card
+                sx={{
+                  backgroundColor: item.bg,
+                  boxShadow: 2,
+                  border:
+                    selectedCategory === item.category
+                      ? `2px solid ${item.border}`
+                      : "none",
+                  padding: 2,
+                  minHeight: "180px",
+                }}
+                onClick={() => onFilterClick(item.category)}
+              >
+                <CardContent sx={{ padding: "16px !important" }}>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: "bold", color: item.color }}
+                  >
+                    {item.value}
+                  </Typography>
+                  <Chip
+                    label={item.label}
+                    size="medium"
+                    sx={{ mt: 2, backgroundColor: item.chipBg, color: "#fff" }}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </Box>
+      </Box>
+    </motion.div>
+  );
+};
+
+// Main Dashboard Component
+function DashBoard() {
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [entryToEdit, setEntryToEdit] = useState(null);
+  const [itemIdToDelete, setItemIdToDelete] = useState(null);
+  const [itemIdsToDelete, setItemIdsToDelete] = useState([]);
+  const [selectedStateA, setSelectedStateA] = useState("");
+  const [selectedCityA, setSelectedCityA] = useState("");
+  const [selectedCreatedBy, setSelectedCreatedBy] = useState("");
+  const [role, setRole] = useState(localStorage.getItem("role") || "");
+  const [userId, setUserId] = useState(localStorage.getItem("userId") || "");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isValueAnalyticsOpen, setIsValueAnalyticsOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const [selectedEntries, setSelectedEntries] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
+  const [dashboardFilter, setDashboardFilter] = useState("total");
+  const [selectedOrganization, setSelectedOrganization] = useState("");
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: null,
+      endDate: null,
+      key: "selection",
+    },
+  ]);
+
+  const [listKey, setListKey] = useState(Date.now());
+  const listRef = useRef(null); // Ref for List component
+  const callStats = useMemo(() => {
+    const stats = {
+      cold: 0,
+      warm: 0,
+      hot: 0,
+      closedWon: 0,
+      closedLost: 0,
       total: entries.length,
     };
 
@@ -98,281 +329,6 @@ const CallTrackingDashboard = ({
 
     return stats;
   }, [entries]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Box sx={{ mb: 2 }}>
-        <Divider sx={{ mb: 2 }} />
-        <Grid container spacing={1.5}>
-          <Grid item xs={6} sm={2}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                sx={{
-                  backgroundColor: "#e3f2fd",
-                  boxShadow: 2,
-                  border:
-                    selectedCategory === "total" ? "2px solid #1565c0" : "none",
-                  padding: "16px",
-                  minHeight: "180px",
-                }}
-                onClick={() => onFilterClick("total")}
-              >
-                <CardContent sx={{ padding: "16px !important" }}>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Total Leads
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontWeight: "bold", color: "#1976d2" }}
-                  >
-                    {callStats.total}
-                  </Typography>
-                  <Chip
-                    label="All Leads"
-                    size="medium"
-                    sx={{ mt: 2, backgroundColor: "#1e88e5", color: "#fff" }}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                sx={{
-                  backgroundColor: "#e0f2f1",
-                  boxShadow: 2,
-                  border:
-                    selectedCategory === "Interested"
-                      ? "2px solid #00695c"
-                      : "none",
-                  padding: "16px",
-                  minHeight: "180px",
-                }}
-                onClick={() => onFilterClick("Interested")}
-              >
-                <CardContent sx={{ padding: "16px !important" }}>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Hot Calls
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontWeight: "bold", color: "#00897b" }}
-                  >
-                    {callStats.hot}
-                  </Typography>
-                  <Chip
-                    label="Interested"
-                    size="medium"
-                    sx={{ mt: 2, backgroundColor: "#26a69a", color: "#fff" }}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                sx={{
-                  backgroundColor: "#fff8e1",
-                  boxShadow: 2,
-                  border:
-                    selectedCategory === "Maybe" ? "2px solid #e65100" : "none",
-                  padding: "16px",
-                  minHeight: "180px",
-                }}
-                onClick={() => onFilterClick("Maybe")}
-              >
-                <CardContent sx={{ padding: "16px !important" }}>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Warm Calls
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontWeight: "bold", color: "#ef6c00" }}
-                  >
-                    {callStats.warm}
-                  </Typography>
-                  <Chip
-                    label="Maybe"
-                    size="medium"
-                    sx={{ mt: 2, backgroundColor: "#fb8c00", color: "#fff" }}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                sx={{
-                  backgroundColor: "#e0f7fa",
-                  boxShadow: 2,
-                  border:
-                    selectedCategory === "Not Interested"
-                      ? "2px solid #006064"
-                      : "none",
-                  padding: "16px",
-                  minHeight: "180px",
-                }}
-                onClick={() => onFilterClick("Not Interested")}
-              >
-                <CardContent sx={{ padding: "16px !important" }}>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Cold Calls
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontWeight: "bold", color: "#00838f" }}
-                  >
-                    {callStats.cold}
-                  </Typography>
-                  <Chip
-                    label="Not Interested"
-                    size="medium"
-                    sx={{ mt: 2, backgroundColor: "#00acc1", color: "#fff" }}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                sx={{
-                  backgroundColor: "#e8f5e9",
-                  boxShadow: 2,
-                  border:
-                    selectedCategory === "Closed Won"
-                      ? "2px solid #2e7d32"
-                      : "none",
-                  padding: "16px",
-                  minHeight: "180px",
-                }}
-                onClick={() => onFilterClick("Closed Won")}
-              >
-                <CardContent sx={{ padding: "16px !important" }}>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Closed Won
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontWeight: "bold", color: "#388e3c" }}
-                  >
-                    {callStats.closedWon}
-                  </Typography>
-                  <Chip
-                    label="Closed Won"
-                    size="medium"
-                    sx={{ mt: 2, backgroundColor: "#4caf50", color: "#fff" }}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                sx={{
-                  backgroundColor: "#f3e5f5",
-                  boxShadow: 2,
-                  border:
-                    selectedCategory === "Closed Lost"
-                      ? "2px solid #6a1b9a"
-                      : "none",
-                  padding: "16px",
-                  minHeight: "180px",
-                }}
-                onClick={() => onFilterClick("Closed Lost")}
-              >
-                <CardContent sx={{ padding: "16px !important" }}>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Closed Lost
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontWeight: "bold", color: "#7b1fa2" }}
-                  >
-                    {callStats.closedLost}
-                  </Typography>
-                  <Chip
-                    label="Closed Lost"
-                    size="medium"
-                    sx={{ mt: 2, backgroundColor: "#ab47bc", color: "#fff" }}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-        </Grid>
-      </Box>
-    </motion.div>
-  );
-};
-
-// Main Dashboard Component
-function DashBoard() {
-  const [showDetails, setShowDetails] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [entries, setEntries] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [entryToEdit, setEntryToEdit] = useState(null);
-  const [itemIdToDelete, setItemIdToDelete] = useState(null);
-  const [itemIdsToDelete, setItemIdsToDelete] = useState([]);
-  const [selectedStateA, setSelectedStateA] = useState("");
-  const [selectedCityA, setSelectedCityA] = useState("");
-  const [selectedCreatedBy, setSelectedCreatedBy] = useState("");
-  const [role, setRole] = useState(localStorage.getItem("role") || "");
-  const [userId, setUserId] = useState(localStorage.getItem("userId") || "");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isValueAnalyticsOpen, setIsValueAnalyticsOpen] = useState(false);
-  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
-  const [selectedEntries, setSelectedEntries] = useState([]);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
-  const [dashboardFilter, setDashboardFilter] = useState("total");
-  const [selectedOrganization, setSelectedOrganization] = useState("");
-  const [dateRange, setDateRange] = useState([
-    {
-      startDate: null,
-      endDate: null,
-      key: "selection",
-    },
-  ]);
-  const [userInfo, setUserInfo] = useState({ userId: "", role: "" });
-  const [listKey, setListKey] = useState(Date.now());
-  const listRef = useRef(null); // Ref for List component
-
   const navigate = useNavigate();
 
   const handleClosed = () => setShowDetails(false);
@@ -386,7 +342,7 @@ function DashBoard() {
     return entries
       .filter((row) => {
         const createdAt = new Date(row.createdAt);
-
+        const updatedAt = new Date(row.updatedAt);
         const matchesSearch =
           !searchTerm ||
           row.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -403,8 +359,16 @@ function DashBoard() {
           (!dateRange[0]?.startDate && !dateRange[0]?.endDate) ||
           (dateRange[0]?.startDate &&
             dateRange[0]?.endDate &&
-            createdAt >= new Date(dateRange[0]?.startDate) &&
-            createdAt <= new Date(dateRange[0]?.endDate));
+            (() => {
+              const start = new Date(dateRange[0].startDate);
+              const end = new Date(dateRange[0].endDate);
+              end.setHours(23, 59, 59, 999); // 👈 Important line
+
+              return (
+                (createdAt >= start && createdAt <= end) ||
+                (updatedAt >= start && updatedAt <= end)
+              );
+            })());
 
         const matchesCreatedBy =
           !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
@@ -712,29 +676,43 @@ function DashBoard() {
     }
   }, []);
 
-  const handleEntryUpdated = useCallback((updatedEntry) => {
-    setEntries((prevEntries) =>
-      prevEntries.map((entry) =>
-        entry._id === updatedEntry._id ? { ...updatedEntry } : entry
-      )
-    );
-    setSelectedEntry((prevSelected) =>
-      prevSelected && prevSelected._id === updatedEntry._id
-        ? { ...updatedEntry }
-        : prevSelected
-    );
-    setEntryToEdit((prevEntryToEdit) =>
-      prevEntryToEdit && prevEntryToEdit._id === updatedEntry._id
-        ? { ...updatedEntry }
-        : prevEntryToEdit
-    );
-    setEditModalOpen(false);
-    setListKey(Date.now());
-    if (listRef.current) {
+  const handleEntryUpdated = useCallback(
+    (updatedEntry) => {
+      const currentScrollPosition =
+        listRef.current?.getOffsetForRow({
+          alignment: "start",
+          index: filteredData.findIndex(
+            (entry) => entry._id === updatedEntry._id
+          ),
+        }) || 0;
+      setEntries((prevEntries) =>
+        prevEntries.map((entry) =>
+          entry._id === updatedEntry._id ? { ...updatedEntry } : entry
+        )
+      );
+      setSelectedEntry((prevSelected) =>
+        prevSelected && prevSelected._id === updatedEntry._id
+          ? { ...updatedEntry }
+          : prevSelected
+      );
+      setEntryToEdit((prevEntryToEdit) =>
+        prevEntryToEdit && prevEntryToEdit._id === updatedEntry._id
+          ? { ...updatedEntry }
+          : prevEntryToEdit
+      );
+      setEditModalOpen(false);
+      setListKey(Date.now());
+      setScrollPosition(currentScrollPosition);
+    },
+    [filteredData]
+  );
+  useEffect(() => {
+    if (listRef.current && scrollPosition > 0) {
+      listRef.current.scrollToPosition(scrollPosition);
       listRef.current.recomputeRowHeights();
       listRef.current.forceUpdateGrid();
     }
-  }, []);
+  }, [listKey, scrollPosition]);
 
   const handleDoubleClick = (id) => {
     if (!doubleClickInitiated && (isAdmin || isSuperadmin)) {
@@ -1485,8 +1463,27 @@ function DashBoard() {
             </strong>
           </p>
         </div>
+
         <DisableCopy isAdmin={isAdmin} />
         <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+          <div
+            style={{
+              fontWeight: "600",
+              fontSize: "1rem",
+              color: "#fff",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              padding: "5px 15px",
+              borderRadius: "20px",
+              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+              display: "inline-block",
+              textAlign: "center",
+              width: "auto",
+              textTransform: "capitalize",
+            }}
+          >
+            Total Leads: {callStats.total}
+          </div>
+
           <div
             style={{
               fontWeight: "600",
@@ -1572,10 +1569,6 @@ function DashBoard() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                width: "150px",
               }}
             >
               Contact Person
@@ -1665,6 +1658,7 @@ function DashBoard() {
                   rowRenderer={rowRenderer}
                   overscanRowCount={10}
                   style={{ outline: "none" }}
+                  onScroll={({ scrollTop }) => setScrollPosition(scrollTop)}
                 />
               )}
             </AutoSizer>
