@@ -812,22 +812,27 @@ function DashBoard() {
         const worksheet = workbook.Sheets[sheetName];
         const parsedData = XLSX.utils.sheet_to_json(worksheet);
 
-        const newEntries = parsedData.map((item) => ({
-          "Customer Name": item["Customer Name"] || "",
-          "Contact Person": item["Contact Person"] || "",
-          Email: item["Email"] || "",
-          "Contact Number": item["Contact Number"] || "",
-          "Alternate Number": item["Alternate Number"] || "",
-          Product: item["Product"] || "",
-          Address: item["Address"] || "",
-          Organization: item["Organization"] || "",
-          Category: item["Category"] || "",
-          District: item["District"] || "",
-          State: item["State"] || "",
-          Status: item["Status"] || "Not Found",
-          Remarks: item["Remarks"] || "",
-        }));
-
+        const newEntries = parsedData
+          .map((item) => ({
+            "Customer Name": item["Customer Name"] || "",
+            "Contact Person": item["Contact Person"] || "",
+            Email: item["Email"] || "",
+            "Contact Number": item["Contact Number"] || "",
+            "Alternate Number": item["Alternate Number"] || "",
+            Product: item["Product"] || "",
+            Address: item["Address"] || "",
+            Organization: item["Organization"] || "",
+            Category: item["Category"] || "",
+            District: item["District"] || "",
+            State: item["State"] || "",
+            Status: item["Status"] || "Not Found",
+            Remarks: item["Remarks"] || "",
+          }))
+          .filter((entry) =>
+            Object.values(entry).some(
+              (val) => val && val.toString().trim() !== ""
+            )
+          );
         if (newEntries.length === 0) {
           toast.error("No valid entries found in the Excel file!");
           return;
