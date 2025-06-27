@@ -47,8 +47,9 @@ import { normalizeId } from "./Anylitics/sharedUtilities";
 import { motion } from "framer-motion";
 
 // Separate Call Tracking Dashboard Component
+// Separate Call Tracking Dashboard Component
 const CallTrackingDashboard = ({
-  entries,
+  filteredEntries,
   onFilterClick,
   selectedCategory,
 }) => {
@@ -61,10 +62,10 @@ const CallTrackingDashboard = ({
       closedLost: 0,
       Not: 0,
       Service: 0,
-      total: entries.length,
+      total: filteredEntries.length,
     };
 
-    entries.forEach((entry) => {
+    filteredEntries.forEach((entry) => {
       switch (entry.status) {
         case "Not Interested":
           stats.cold += 1;
@@ -107,7 +108,7 @@ const CallTrackingDashboard = ({
         stats.closedLost);
 
     return stats;
-  }, [entries]);
+  }, [filteredEntries]);
 
   return (
     <motion.div
@@ -121,8 +122,8 @@ const CallTrackingDashboard = ({
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            flexWrap: "wrap", // allows wrap on small screens
-            gap: 2, // spacing between cards
+            flexWrap: "wrap",
+            gap: 2,
           }}
         >
           {[
@@ -160,13 +161,12 @@ const CallTrackingDashboard = ({
               title: "Not Connected",
               value: callStats.Not,
               label: "Not Connected",
-              color: "#d32f2f", // A strong red for the text
-              bg: "#ffebee", // Very light red background
-              border: "#c62828", // Deep red border when selected
+              color: "#d32f2f",
+              bg: "#ffebee",
+              border: "#c62828",
               category: "Not",
-              chipBg: "#ef5350", // Medium red for the chip
+              chipBg: "#ef5350",
             },
-
             {
               title: "Service Calls",
               value: callStats.Service,
@@ -1231,7 +1231,7 @@ function DashBoard() {
         style={{ width: "90%", margin: "auto", padding: "20px" }}
       >
         <CallTrackingDashboard
-          entries={entries}
+          filteredEntries={filteredData}
           onFilterClick={handleDashboardFilterClick}
           selectedCategory={dashboardFilter}
         />
