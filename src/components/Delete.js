@@ -32,7 +32,7 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
         await Promise.all(
           itemIds.map((id) =>
             axios.delete(
-              `https://dms-server-sfuy.onrender.com/api/entry/${id}`,
+              `https://dms-server-vryx.onrender.com/api/entry/${id}`,
               config
             )
           )
@@ -42,7 +42,7 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
       } else if (itemId) {
         // Handle single delete
         const response = await axios.delete(
-          `https://dms-server-sfuy.onrender.com/api/entry/${itemId}`,
+          `https://dms-server-vryx.onrender.com/api/entry/${itemId}`,
           config
         );
         if (response.status === 200) {
