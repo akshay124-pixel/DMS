@@ -210,7 +210,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       console.log("Sending payload (edit):", payload);
 
       const response = await axios.put(
-        `https://dms-server-sfuy.onrender.com/api/editentry/${entryToEdit._id}`,
+        `https://dms-server-vryx.onrender.com/api/editentry/${entryToEdit._id}`,
         payload,
         {
           headers: {
@@ -281,7 +281,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       console.log("Sending payload:", payload); // Log payload
 
       const response = await axios.put(
-        `https://dms-server-sfuy.onrender.com/api/editentry/${entryToEdit._id}`,
+        `https://dms-server-vryx.onrender.com/api/editentry/${entryToEdit._id}`,
         payload,
         {
           headers: {
