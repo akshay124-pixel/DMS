@@ -288,6 +288,9 @@ function DashBoard() {
       cold: 0,
       warm: 0,
       hot: 0,
+      Not: 0,
+      Service: 0,
+
       closedWon: 0,
       closedLost: 0,
       total: entries.length,
@@ -304,6 +307,16 @@ function DashBoard() {
         case "Interested":
           stats.hot += 1;
           break;
+        case "Not":
+          stats.Not += 1;
+          break;
+        case "Service":
+          stats.Service += 1;
+          break;
+        case "Closed":
+          stats.closedWon += 1;
+          break;
+
         default:
           break;
       }
@@ -324,6 +337,8 @@ function DashBoard() {
       (stats.cold +
         stats.warm +
         stats.hot +
+        stats.Not +
+        stats.Service +
         stats.closedWon +
         stats.closedLost);
 
@@ -418,11 +433,14 @@ function DashBoard() {
     ];
 
     return entries.filter((entry) => {
+      const createdAt = new Date(entry.createdAt);
       const updatedAt = new Date(entry.updatedAt);
       return (
-        updatedAt.getMonth() === currentMonth &&
-        updatedAt.getFullYear() === currentYear &&
-        validStatuses.includes(entry.status)
+        validStatuses.includes(entry.status) &&
+        ((createdAt.getMonth() === currentMonth &&
+          createdAt.getFullYear() === currentYear) ||
+          (updatedAt.getMonth() === currentMonth &&
+            updatedAt.getFullYear() === currentYear))
       );
     }).length;
   }, [entries]);
@@ -684,9 +702,9 @@ function DashBoard() {
       listRef.current.forceUpdateGrid();
     }
   }, []);
-
   const handleEntryUpdated = useCallback(
     (updatedEntry) => {
+      console.log("Updated entry:", updatedEntry); // Debug
       const currentScrollPosition =
         listRef.current?.getOffsetForRow({
           alignment: "start",
@@ -712,8 +730,10 @@ function DashBoard() {
       setEditModalOpen(false);
       setListKey(Date.now());
       setScrollPosition(currentScrollPosition);
+      fetchEntries(); // Refresh entries from backend
+      console.log("Entries after update:", entries); // Debug
     },
-    [filteredData]
+    [filteredData, fetchEntries]
   );
   useEffect(() => {
     if (listRef.current && scrollPosition > 0) {
