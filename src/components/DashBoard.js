@@ -47,9 +47,8 @@ import { normalizeId } from "./Anylitics/sharedUtilities";
 import { motion } from "framer-motion";
 
 // Separate Call Tracking Dashboard Component
-// Separate Call Tracking Dashboard Component
 const CallTrackingDashboard = ({
-  filteredEntries,
+  filteredEntriesWithoutTracker, // Updated prop name
   onFilterClick,
   selectedCategory,
 }) => {
@@ -62,10 +61,10 @@ const CallTrackingDashboard = ({
       closedLost: 0,
       Not: 0,
       Service: 0,
-      total: filteredEntries.length,
+      total: filteredEntriesWithoutTracker.length,
     };
 
-    filteredEntries.forEach((entry) => {
+    filteredEntriesWithoutTracker.forEach((entry) => {
       switch (entry.status) {
         case "Not Interested":
           stats.cold += 1;
@@ -97,6 +96,7 @@ const CallTrackingDashboard = ({
       }
     });
 
+    // Fix total calculation: only subtract categorized entries
     stats.total =
       stats.total -
       (stats.cold +
@@ -108,8 +108,7 @@ const CallTrackingDashboard = ({
         stats.closedLost);
 
     return stats;
-  }, [filteredEntries]);
-
+  }, [filteredEntriesWithoutTracker]);
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -353,70 +352,73 @@ function DashBoard() {
     []
   );
 
-  const filteredData = useMemo(() => {
-    return entries
-      .filter((row) => {
-        const createdAt = new Date(row.createdAt);
-        const updatedAt = new Date(row.updatedAt);
-        const matchesSearch =
-          !searchTerm ||
-          row.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          row.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          row.mobileNumber.includes(searchTerm);
+  const filteredDataWithoutTracker = useMemo(() => {
+    return entries.filter((row) => {
+      const createdAt = new Date(row.createdAt);
+      const updatedAt = new Date(row.updatedAt);
+      const matchesSearch =
+        !searchTerm ||
+        row.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.mobileNumber.includes(searchTerm);
 
-        const matchesOrganization =
-          !selectedOrganization || row.organization === selectedOrganization;
+      const matchesOrganization =
+        !selectedOrganization || row.organization === selectedOrganization;
 
-        const matchesState = !selectedStateA || row.state === selectedStateA;
-        const matchesCity = !selectedCityA || row.city === selectedCityA;
+      const matchesState = !selectedStateA || row.state === selectedStateA;
+      const matchesCity = !selectedCityA || row.city === selectedCityA;
 
-        const matchesDate =
-          (!dateRange[0]?.startDate && !dateRange[0]?.endDate) ||
-          (dateRange[0]?.startDate &&
-            dateRange[0]?.endDate &&
-            (() => {
-              const start = new Date(dateRange[0].startDate);
-              const end = new Date(dateRange[0].endDate);
-              end.setHours(23, 59, 59, 999); // 👈 Important line
+      const matchesDate =
+        (!dateRange[0]?.startDate && !dateRange[0]?.endDate) ||
+        (dateRange[0]?.startDate &&
+          dateRange[0]?.endDate &&
+          (() => {
+            const start = new Date(dateRange[0].startDate);
+            const end = new Date(dateRange[0].endDate);
+            end.setHours(23, 59, 59, 999);
+            return (
+              (createdAt >= start && createdAt <= end) ||
+              (updatedAt >= start && updatedAt <= end)
+            );
+          })());
 
-              return (
-                (createdAt >= start && createdAt <= end) ||
-                (updatedAt >= start && updatedAt <= end)
-              );
-            })());
+      const matchesCreatedBy =
+        !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
 
-        const matchesCreatedBy =
-          !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
-
-        const matchesDashboardFilter =
-          dashboardFilter === "total" ||
-          (dashboardFilter === "Closed Won" &&
-            row.closetype === "Closed Won") ||
-          (dashboardFilter === "Closed Lost" &&
-            row.closetype === "Closed Lost") ||
-          row.status === dashboardFilter;
-
-        return (
-          matchesSearch &&
-          matchesOrganization &&
-          matchesState &&
-          matchesCity &&
-          matchesDate &&
-          matchesCreatedBy &&
-          matchesDashboardFilter
-        );
-      })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return (
+        matchesSearch &&
+        matchesOrganization &&
+        matchesState &&
+        matchesCity &&
+        matchesDate &&
+        matchesCreatedBy
+      );
+    });
   }, [
     entries,
     searchTerm,
     selectedOrganization,
     selectedStateA,
     selectedCityA,
-    dashboardFilter,
     dateRange,
     selectedCreatedBy,
   ]);
+
+  // Update filteredData to use filteredDataWithoutTracker
+  const filteredData = useMemo(() => {
+    return filteredDataWithoutTracker
+      .filter((row) => {
+        return (
+          dashboardFilter === "total" ||
+          (dashboardFilter === "Closed Won" &&
+            row.closetype === "Closed Won") ||
+          (dashboardFilter === "Closed Lost" &&
+            row.closetype === "Closed Lost") ||
+          row.status === dashboardFilter
+        );
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [filteredDataWithoutTracker, dashboardFilter]);
 
   const monthlyCalls = useMemo(() => {
     const now = new Date();
@@ -432,7 +434,7 @@ function DashBoard() {
       "Service",
     ];
 
-    return entries.filter((entry) => {
+    return filteredDataWithoutTracker.filter((entry) => {
       const createdAt = new Date(entry.createdAt);
       const updatedAt = new Date(entry.updatedAt);
       return (
@@ -443,8 +445,7 @@ function DashBoard() {
             updatedAt.getFullYear() === currentYear))
       );
     }).length;
-  }, [entries]);
-
+  }, [filteredDataWithoutTracker]);
   const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
 
   const handleCreatedByChange = (e) => {
@@ -529,7 +530,7 @@ function DashBoard() {
       console.log("Fetching entries with userId:", userId, "role:", role);
 
       const response = await axios.get(
-        "https://dms-server-vryx.onrender.com/api/fetch-entry",
+        "https://dms-server-vryx.onrender.com//api/fetch-entry",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -588,7 +589,7 @@ function DashBoard() {
       const userId = decoded.id;
 
       const response = await axios.get(
-        "https://dms-server-vryx.onrender.com/api/user-role",
+        "https://dms-server-vryx.onrender.com//api/user-role",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -859,7 +860,7 @@ function DashBoard() {
           const chunk = chunks[i];
           try {
             const response = await axios.post(
-              "https://dms-server-vryx.onrender.com/api/entries",
+              "https://dms-server-vryx.onrender.com//api/entries",
               chunk,
               {
                 headers: {
@@ -1260,7 +1261,7 @@ function DashBoard() {
         style={{ width: "90%", margin: "auto", padding: "20px" }}
       >
         <CallTrackingDashboard
-          filteredEntries={filteredData}
+          filteredEntriesWithoutTracker={filteredDataWithoutTracker}
           onFilterClick={handleDashboardFilterClick}
           selectedCategory={dashboardFilter}
         />
@@ -1510,9 +1511,9 @@ function DashBoard() {
               textTransform: "capitalize",
             }}
           >
-            Total Leads: {callStats.total}
+            Total Leads: {filteredDataWithoutTracker.length}{" "}
+            {/* Updated to use filteredDataWithoutTracker */}
           </div>
-
           <div
             style={{
               fontWeight: "600",
