@@ -502,7 +502,7 @@ function DashBoard() {
       console.log("Fetching entries with userId:", userId, "role:", role);
 
       const response = await axios.get(
-        "https://dms-server-sfuy.onrender.com/api/fetch-entry",
+        "https://dms-server-vryx.onrender.com/api/fetch-entry",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -561,7 +561,7 @@ function DashBoard() {
       const userId = decoded.id;
 
       const response = await axios.get(
-        "https://dms-server-sfuy.onrender.com/api/user-role",
+        "https://dms-server-vryx.onrender.com/api/user-role",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -830,7 +830,7 @@ function DashBoard() {
           const chunk = chunks[i];
           try {
             const response = await axios.post(
-              "https://dms-server-sfuy.onrender.com/api/entries",
+              "https://dms-server-vryx.onrender.com/api/entries",
               chunk,
               {
                 headers: {
