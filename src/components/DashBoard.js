@@ -407,7 +407,16 @@ function DashBoard() {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const validStatuses = ["Interested", "Not Interested", "Maybe"];
+
+    const validStatuses = [
+      "Interested",
+      "Not Interested",
+      "Maybe",
+      "Closed",
+      "Not",
+      "Service",
+    ];
+
     return entries.filter((entry) => {
       const updatedAt = new Date(entry.updatedAt);
       return (
