@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Modal, Button, Badge } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
 
 function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
   const [copied, setCopied] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
 
   const handleCopy = useCallback(() => {
     if (!isAdmin) {
@@ -12,7 +13,10 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       return;
     }
 
-    if (!entry) return;
+    if (!entry) {
+      toast.error("No entry data available to copy.");
+      return;
+    }
 
     const productsText = Array.isArray(entry.products)
       ? entry.products
@@ -64,7 +68,20 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
       });
   }, [entry, isAdmin]);
 
-  if (!entry) return null;
+  const toggleHistory = useCallback(() => {
+    setHistoryVisible((prev) => !prev);
+  }, []);
+
+  const sortedHistory = useMemo(() => {
+    if (!entry || !Array.isArray(entry.history)) return [];
+    return [...entry.history].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+  }, [entry]);
+
+  if (!isOpen || !entry) {
+    return null;
+  }
 
   return (
     <Modal
@@ -233,10 +250,16 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
               }
             />
             {entry.closetype && (
-              <DataItem label="close-Type" value={entry.closetype} />
+              <DataItem label="Close Type" value={entry.closetype} />
             )}
             {entry.closeamount && (
-              <DataItem label="closure-Amount" value={entry.closeamount} />
+              <DataItem
+                label="Closure Amount"
+                value={new Intl.NumberFormat("en-IN", {
+                  style: "currency",
+                  currency: "INR",
+                }).format(entry.closeamount)}
+              />
             )}
             <DataItem label="Remarks" value={entry.remarks} />
             <DataItem
@@ -258,6 +281,127 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
             <DataItem label="Created By" value={entry.createdBy?.username} />
           </Grid>
         </Section>
+
+        {/* History Section */}
+        {sortedHistory.length > 0 && (
+          <Section title="History Log">
+            <div
+              style={{
+                marginBottom: "1rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+              onClick={toggleHistory}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") toggleHistory();
+              }}
+              role="button"
+              tabIndex={0}
+              aria-expanded={historyVisible}
+              aria-controls="history-log"
+              aria-label={
+                historyVisible ? "Hide history log" : "Show history log"
+              }
+            >
+              <span
+                style={{
+                  fontSize: "1rem",
+                  transform: historyVisible ? "rotate(90deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                }}
+              >
+                ▶
+              </span>
+              <span style={{ fontWeight: 600, color: "#1f2937" }}>
+                {historyVisible ? "Hide History" : "Show History"}
+              </span>
+            </div>
+            {historyVisible && (
+              <div
+                id="history-log"
+                style={{
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  padding: "1rem",
+                  background: "#f1f5f9",
+                  borderRadius: "8px",
+                  boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.05)",
+                }}
+                role="log"
+                aria-live="polite"
+              >
+                {sortedHistory.map((historyItem, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: "0.75rem",
+                      background: "#ffffff",
+                      borderRadius: "6px",
+                      marginBottom: "0.5rem",
+                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      borderLeft: "3px solid #2575fc",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.9rem",
+                        color: "#1f2937",
+                      }}
+                    >
+                      <strong>Timestamp:</strong>{" "}
+                      {new Date(historyItem.timestamp).toLocaleString("en-GB", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.9rem",
+                        color: "#4b5563",
+                      }}
+                    >
+                      <strong>Status:</strong>{" "}
+                      {historyItem.status ? (
+                        <Badge
+                          style={{
+                            background:
+                              historyItem.status === "Interested"
+                                ? "linear-gradient(135deg, #10b981, #059669)"
+                                : historyItem.status === "Not Interested"
+                                ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                                : historyItem.status === "Maybe"
+                                ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                                : "linear-gradient(135deg, #6b7280, #4b5563)",
+                            color: "#fff",
+                            padding: "0.3rem 0.6rem",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {historyItem.status}
+                        </Badge>
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.9rem",
+                        color: "#4b5563",
+                      }}
+                    >
+                      <strong>Remarks:</strong> {historyItem.remarks || "N/A"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+        )}
 
         <Button
           variant="primary"
@@ -433,11 +577,11 @@ const styles = `
   }
   ::-webkit-scrollbar-track {
     background: #e6f0fa;
-    border-radius: 10px;
+    borderRadius: 10px;
   }
   ::-webkit-scrollbar-thumb {
     background: #2575fc;
-    border-radius: 10px;
+    borderRadius: 10px;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #6a11cb;
