@@ -180,7 +180,7 @@ function Signup() {
             >
               {/* <option value="Superadmin">SuperAdmin</option>
               <option value="Admin">Admin</option> */}
-              <option value="Others">Others</option>
+              <option value="Others">User</option>
             </select>
           </div>
           <button

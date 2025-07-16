@@ -233,19 +233,27 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                   style={{
                     background:
                       entry.status === "Interested"
-                        ? "linear-gradient(135deg, #10b981, #059669)"
+                        ? "linear-gradient(135deg, #10b981, #059669)" // green
                         : entry.status === "Not Interested"
-                        ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                        ? "linear-gradient(135deg, #ef4444, #dc2626)" // red
                         : entry.status === "Maybe"
-                        ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                        : "linear-gradient(135deg, #6b7280, #4b5563)",
+                        ? "linear-gradient(135deg, #f59e0b, #d97706)" // yellow
+                        : entry.status === "Closed"
+                        ? "linear-gradient(135deg, #6366f1, #4f46e5)" // violet-blue
+                        : entry.status === "Service"
+                        ? "linear-gradient(135deg, #0ea5e9, #0284c7)" // blue
+                        : entry.status === "Not Found"
+                        ? "linear-gradient(135deg, #f43f5e, #be123c)" // pink-red
+                        : "linear-gradient(135deg, #6b7280, #4b5563)", // gray (default and "Not")
                     color: "#fff",
                     padding: "0.4rem 0.8rem",
                     borderRadius: "6px",
                     fontWeight: 500,
                   }}
                 >
-                  {entry.status || "Not Interested"}
+                  {entry.status && entry.status !== "Not"
+                    ? entry.status
+                    : "Not Connected"}
                 </Badge>
               }
             />
@@ -353,10 +361,15 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                     >
                       <strong>Timestamp:</strong>{" "}
                       {new Date(historyItem.timestamp).toLocaleString("en-GB", {
-                        dateStyle: "short",
-                        timeStyle: "short",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
                       })}
                     </p>
+
                     <p
                       style={{
                         margin: 0,
@@ -365,17 +378,23 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                       }}
                     >
                       <strong>Status:</strong>{" "}
-                      {historyItem.status ? (
+                      {historyItem.status && historyItem.status !== "Not" ? (
                         <Badge
                           style={{
                             background:
                               historyItem.status === "Interested"
-                                ? "linear-gradient(135deg, #10b981, #059669)"
+                                ? "linear-gradient(135deg, #10b981, #059669)" // green
                                 : historyItem.status === "Not Interested"
-                                ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                                ? "linear-gradient(135deg, #ef4444, #dc2626)" // red
                                 : historyItem.status === "Maybe"
-                                ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                                : "linear-gradient(135deg, #6b7280, #4b5563)",
+                                ? "linear-gradient(135deg, #f59e0b, #d97706)" // yellow
+                                : historyItem.status === "Closed"
+                                ? "linear-gradient(135deg, #6366f1, #4f46e5)" // violet-blue
+                                : historyItem.status === "Service"
+                                ? "linear-gradient(135deg, #0ea5e9, #0284c7)" // blue
+                                : historyItem.status === "Not Found"
+                                ? "linear-gradient(135deg, #f43f5e, #be123c)" // pink-red
+                                : "linear-gradient(135deg, #9ca3af, #6b7280)", // fallback gray
                             color: "#fff",
                             padding: "0.3rem 0.6rem",
                             borderRadius: "4px",
@@ -384,9 +403,20 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
                           {historyItem.status}
                         </Badge>
                       ) : (
-                        "N/A"
+                        <Badge
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #6b7280, #4b5563)", // gray
+                            color: "#fff",
+                            padding: "0.3rem 0.6rem",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          Not Connected
+                        </Badge>
                       )}
                     </p>
+
                     <p
                       style={{
                         margin: 0,

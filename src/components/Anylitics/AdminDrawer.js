@@ -122,18 +122,32 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
               closedWon: 0,
               closedLost: 0,
               notFound: 0,
+              service: 0,
+              not: 0,
             };
           }
 
+          // Count all-time entries
           statsMap[creatorId].allTimeEntries += 1;
-          const entryDate = new Date(entry.createdAt);
-          if (
-            entryDate.getMonth() === currentMonth &&
-            entryDate.getFullYear() === currentYear
-          ) {
+
+          // Calculate monthEntries: 1 for creation + history length if created or updated this month
+          const createdAt = new Date(entry.createdAt);
+          const updatedAt = new Date(entry.updatedAt);
+          const isCreatedThisMonth =
+            createdAt.getMonth() === currentMonth &&
+            createdAt.getFullYear() === currentYear;
+          const isUpdatedThisMonth =
+            updatedAt.getMonth() === currentMonth &&
+            updatedAt.getFullYear() === currentYear;
+
+          if (isCreatedThisMonth) {
             statsMap[creatorId].monthEntries += 1;
           }
+          if ((isCreatedThisMonth || isUpdatedThisMonth) && entry.history) {
+            statsMap[creatorId].monthEntries += entry.history.length;
+          }
 
+          // Count statuses
           switch (entry.status) {
             case "Not Interested":
               statsMap[creatorId].cold += 1;
@@ -152,6 +166,12 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
               break;
             case "Not Found":
               statsMap[creatorId].notFound += 1;
+              break;
+            case "Service":
+              statsMap[creatorId].service += 1;
+              break;
+            case "Not":
+              statsMap[creatorId].not += 1;
               break;
             default:
               console.warn("Unknown status in entry:", entry._id, entry.status);
@@ -183,7 +203,6 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
       setLoading(false);
     }
   }, [entries, role, userId, dateRange, normalizedRole, cachedUsers]);
-
   const overallStats = useMemo(
     () =>
       userStats.reduce(
@@ -196,6 +215,8 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
           closedWon: acc.closedWon + user.closedWon,
           closedLost: acc.closedLost + user.closedLost,
           notFound: acc.notFound + user.notFound,
+          service: acc.service + user.service,
+          not: acc.not + user.not,
         }),
         {
           total: 0,
@@ -206,6 +227,8 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
           closedWon: 0,
           closedLost: 0,
           notFound: 0,
+          service: 0,
+          not: 0,
         }
       ),
     [userStats]
@@ -228,29 +251,32 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
         Username: "",
         "Total Entries": overallStats.total,
         "This Month": overallStats.monthTotal,
+        "Total Pendings": overallStats.notFound,
         Cold: overallStats.cold,
         Warm: overallStats.warm,
         Hot: overallStats.hot,
-        "Not Found": overallStats.notFound,
+        Service: overallStats.service,
         Won: overallStats.closedWon,
         Lost: overallStats.closedLost,
+        "Not Connected": overallStats.not,
       },
       ...userStats.map((user) => ({
         Section: "User Statistics",
         Username: user.username,
         "Total Entries": user.allTimeEntries,
         "This Month": user.monthEntries,
+        "Total Pendings": user.notFound,
         Cold: user.cold,
         Warm: user.warm,
         Hot: user.hot,
-        "Not Found": user.notFound,
+        Service: user.service,
         Won: user.closedWon,
         Lost: user.closedLost,
+        "Not Connected": user.not,
       })),
     ];
     exportAnalytics(exportData, "Team Analytics", "team_analytics", dateRange);
   };
-
   return (
     <Drawer
       anchor="left"
@@ -422,6 +448,12 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                     },
                     { label: "Hot", value: overallStats.hot, color: "yellow" },
                     {
+                      label: "Service",
+                      value: overallStats.service,
+                      color: "cyan",
+                    },
+                    { label: "Not", value: overallStats.not, color: "purple" },
+                    {
                       label: "Won",
                       value: overallStats.closedWon,
                       color: "lightgrey",
@@ -492,14 +524,15 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                     sx={{ display: "flex", flexDirection: "column", gap: 1 }}
                   >
                     {[
-                      { label: "Cold", value: user.cold, color: "orange" },
-                      { label: "Warm", value: user.warm, color: "lightgreen" },
-                      { label: "Hot", value: user.hot, color: "yellow" },
                       {
                         label: "Total Pending",
                         value: user.notFound,
                         color: "lightblue",
                       },
+                      { label: "Cold", value: user.cold, color: "orange" },
+                      { label: "Warm", value: user.warm, color: "lightgreen" },
+                      { label: "Hot", value: user.hot, color: "yellow" },
+
                       {
                         label: "Won",
                         value: user.closedWon,
@@ -509,6 +542,12 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                         label: "Lost",
                         value: user.closedLost,
                         color: "#e91e63",
+                      },
+                      { label: "Service", value: user.service, color: "cyan" },
+                      {
+                        label: "Not Connected",
+                        value: user.not,
+                        color: "purple",
                       },
                     ].map((stat) => (
                       <Box

@@ -281,7 +281,7 @@ function DashBoard() {
   ]);
 
   const [listKey, setListKey] = useState(Date.now());
-  const listRef = useRef(null); // Ref for List component
+  const listRef = useRef(null);
   const callStats = useMemo(() => {
     const stats = {
       cold: 0,
@@ -425,26 +425,28 @@ function DashBoard() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    const validStatuses = [
-      "Interested",
-      "Not Interested",
-      "Maybe",
-      "Closed",
-      "Not",
-      "Service",
-    ];
-
-    return filteredDataWithoutTracker.filter((entry) => {
+    return filteredDataWithoutTracker.reduce((count, entry) => {
       const createdAt = new Date(entry.createdAt);
       const updatedAt = new Date(entry.updatedAt);
-      return (
-        validStatuses.includes(entry.status) &&
-        ((createdAt.getMonth() === currentMonth &&
-          createdAt.getFullYear() === currentYear) ||
-          (updatedAt.getMonth() === currentMonth &&
-            updatedAt.getFullYear() === currentYear))
-      );
-    }).length;
+
+      // Check if entry was created or updated in the current month
+      const isCreatedThisMonth =
+        createdAt.getMonth() === currentMonth &&
+        createdAt.getFullYear() === currentYear;
+      const isUpdatedThisMonth =
+        updatedAt.getMonth() === currentMonth &&
+        updatedAt.getFullYear() === currentYear;
+
+      // Count 1 for creation if created this month
+      let entryCount = isCreatedThisMonth ? 1 : 0;
+
+      // Add history length if entry was created or updated this month
+      if ((isCreatedThisMonth || isUpdatedThisMonth) && entry.history) {
+        entryCount += entry.history.length;
+      }
+
+      return count + entryCount;
+    }, 0);
   }, [filteredDataWithoutTracker]);
   const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
 
