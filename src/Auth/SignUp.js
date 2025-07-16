@@ -10,7 +10,7 @@ function Signup() {
     username: "",
     email: "",
     password: "",
-    role: "Admin",
+    role: "Others",
   });
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
