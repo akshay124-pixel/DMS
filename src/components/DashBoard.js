@@ -1513,8 +1513,12 @@ function DashBoard() {
               textTransform: "capitalize",
             }}
           >
-            Total Leads: {filteredDataWithoutTracker.length}{" "}
-            {/* Updated to use filteredDataWithoutTracker */}
+            Total Leads:{" "}
+            {
+              filteredDataWithoutTracker.filter(
+                (row) => row.status === "Not Found"
+              ).length
+            }
           </div>
           <div
             style={{
