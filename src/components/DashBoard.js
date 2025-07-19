@@ -61,6 +61,7 @@ const CallTrackingDashboard = ({
       closedLost: 0,
       Not: 0,
       Service: 0,
+      notFound: 0,
       total: filteredEntriesWithoutTracker.length,
     };
 
@@ -80,6 +81,9 @@ const CallTrackingDashboard = ({
           break;
         case "Interested":
           stats.hot += 1;
+          break;
+        case "Not Found":
+          stats.notFound += 1;
           break;
         default:
           break;
@@ -282,6 +286,13 @@ function DashBoard() {
 
   const [listKey, setListKey] = useState(Date.now());
   const listRef = useRef(null);
+
+  const notFoundCount = useMemo(() => {
+    return filteredDataWithoutTracker.filter(
+      (entry) => entry.status === "Not Found"
+    ).length;
+  }, [filteredDataWithoutTracker]);
+
   const callStats = useMemo(() => {
     const stats = {
       cold: 0,
@@ -1513,7 +1524,7 @@ function DashBoard() {
               textTransform: "capitalize",
             }}
           >
-            Total Leads: {filteredDataWithoutTracker.length}{" "}
+            Total Pending Leads: {notFoundCount}
             {/* Updated to use filteredDataWithoutTracker */}
           </div>
           <div
