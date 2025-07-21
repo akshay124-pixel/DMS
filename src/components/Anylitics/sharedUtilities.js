@@ -31,7 +31,7 @@ const fetchUsers = async (entries, userId, role) => {
 
     console.log("fetchUsers: userId:", userId, "role:", role);
     const response = await axios.get(
-      "https://dms-server-vryx.onrender.com/api/users",
+      "https://dms-server-l4l6.onrender.com/api/users",
       {
         headers: { Authorization: `Bearer ${token}` },
       }
