@@ -104,10 +104,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       { key: "customerName", label: "Customer Name" },
       { key: "email", label: "Email" },
       { key: "mobileNumber", label: "Mobile Number" },
-
       { key: "product", label: "Product" },
       { key: "address", label: "Address" },
-
       { key: "organization", label: "Organization" },
       ...(isCustomOrganization
         ? [{ key: "customOrganization", label: "Custom Organization" }]
@@ -174,6 +172,13 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
           ? formData.customOrganization
           : formData.organization,
         category: formData.category,
+        status: "Not Found", // Default status for new entries
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: {
+          _id: localStorage.getItem("userId"),
+          username: localStorage.getItem("username") || "Unknown",
+        },
       };
 
       const response = await axios.post(
@@ -188,7 +193,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       );
 
       toast.success("Entry added successfully!");
-      onEntryAdded(response.data.data);
+      onEntryAdded(response.data.data); // Pass the new entry to the parent
       setFormData(initialFormData);
       setSelectedState("");
       setSelectedDistrict("");
@@ -270,7 +275,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               </Form.Text>
             )}
           </Form.Group>
-
           <Form.Group controlId="formCustomerEmail" className="mb-3">
             <Form.Label>📧 Email</Form.Label>
             <Form.Control
@@ -327,7 +331,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 </Form.Text>
               )}
           </Form.Group>
-
           <Form.Group controlId="formProduct" className="mb-3">
             <Form.Label>📦 Product</Form.Label>
             <Form.Control

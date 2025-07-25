@@ -100,7 +100,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   // State Management
   const [formData, setFormData] = useState(initialFormData);
   const [updateData, setUpdateData] = useState(initialUpdateData);
-
   const [view, setView] = useState("options");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -207,8 +206,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = null;
       }
 
-      console.log("Sending payload (edit):", payload);
-
       const response = await axios.put(
         `https://dms-server-l4l6.onrender.com/api/editentry/${entryToEdit._id}`,
         payload,
@@ -221,32 +218,11 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       );
       const updatedEntry = response.data.data;
       toast.success("Entry updated successfully!");
-      onEntryUpdated(updatedEntry);
-      setFormData({
-        customerName: updatedEntry.customerName || "",
-        contactName: updatedEntry.contactName || "",
-        email: updatedEntry.email || "",
-        mobileNumber: updatedEntry.mobileNumber || "",
-        AlterNumber: updatedEntry.AlterNumber || "",
-        address: updatedEntry.address || "",
-        product: updatedEntry.product || "",
-        state: updatedEntry.state || "",
-        city: updatedEntry.city || "",
-        organization: updatedEntry.organization || "",
-        category: updatedEntry.category || "",
-        status: updatedEntry.status || "",
-        remarks: updatedEntry.remarks || "",
-      });
-      setUpdateData({
-        status: updatedEntry.status || "",
-        closeamount: updatedEntry.closeamount || "",
-        closetype: updatedEntry.closetype || "",
-        remarks: updatedEntry.remarks || "",
-      });
+      onEntryUpdated(updatedEntry); // Pass the updated entry to the parent
       setView("options");
       onClose();
     } catch (err) {
-      console.error("Edit error:", err.response?.data); // Log full error
+      console.error("Edit error:", err.response?.data);
       setError(err.response?.data?.message || "Failed to update entry.");
       toast.error(
         err.response?.data?.errors?.join(", ") || "Failed to update entry!"
@@ -278,8 +254,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = updateData.closeamount;
       }
 
-      console.log("Sending payload:", payload); // Log payload
-
       const response = await axios.put(
         `https://dms-server-l4l6.onrender.com/api/editentry/${entryToEdit._id}`,
         payload,
@@ -292,17 +266,11 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       );
       const updatedEntry = response.data.data;
       toast.success("Follow-up updated successfully!");
-      onEntryUpdated(updatedEntry);
-      setUpdateData({
-        status: updatedEntry.status || "",
-        closeamount: updatedEntry.closeamount || "",
-        closetype: updatedEntry.closetype || "",
-        remarks: updatedEntry.remarks || "",
-      });
+      onEntryUpdated(updatedEntry); // Pass the updated entry to the parent
       setView("options");
       onClose();
     } catch (err) {
-      console.error("Update error:", err.response?.data); // Log full error
+      console.error("Update error:", err.response?.data);
       setError(err.response?.data?.message || "Failed to update follow-up.");
       toast.error(
         err.response?.data?.errors?.join(", ") || "Failed to update follow-up!"
@@ -312,6 +280,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       setShowConfirm(false);
     }
   };
+
   // Mock Data (States and Districts)
   const states = [
     "Andhra Pradesh",
@@ -1469,12 +1438,12 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             <option value="">-- Select Status --</option>
             <option value="Maybe">Maybe</option>
             <option value="Interested">Interested</option>
-            <option value="Not Interested">Not Interested</option>{" "}
-            <option value="Not">Not Connected</option>{" "}
+            <option value="Not Interested">Not Interested</option>
+            <option value="Not">Not Connected</option>
             <option value="Service">Service Call</option>
             <option value="Closed">Closed</option>
           </Form.Control>
-        </Form.Group>{" "}
+        </Form.Group>
         <Form.Group controlId="remarks">
           <Form.Label>✏️ Remarks</Form.Label>
           <Form.Control
@@ -1509,7 +1478,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             <option value="">-- Select Status --</option>
             <option value="Maybe">Maybe</option>
             <option value="Interested">Interested</option>
-            <option value="Not Interested">Not Interested</option>{" "}
+            <option value="Not Interested">Not Interested</option>
             <option value="Not">Not Connected</option>
             <option value="Service">Service Call</option>
             <option value="Closed">Closed</option>

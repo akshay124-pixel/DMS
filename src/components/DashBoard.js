@@ -1,7 +1,7 @@
 import React, {
   useState,
-  useEffect,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
 } from "react";
@@ -264,7 +264,6 @@ function DashBoard() {
   const [isValueAnalyticsOpen, setIsValueAnalyticsOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
-
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState([]);
@@ -279,7 +278,6 @@ function DashBoard() {
       key: "selection",
     },
   ]);
-
   const [listKey, setListKey] = useState(Date.now());
   const listRef = useRef(null);
   const callStats = useMemo(() => {
@@ -518,18 +516,8 @@ function DashBoard() {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
 
-      // Log decoded token for debugging
-      try {
-        const decoded = jwtDecode(token);
-        console.log("Decoded token:", decoded);
-      } catch (decodeError) {
-        console.error("Token decode error:", decodeError.message);
-        toast.error("Invalid token. Please log in again.");
-        navigate("/login");
-        return;
-      }
-
-      console.log("Fetching entries with userId:", userId, "role:", role);
+      const decoded = jwtDecode(token);
+      console.log("Decoded token:", decoded);
 
       const response = await axios.get(
         "https://dms-server-l4l6.onrender.com/api/fetch-entry",
@@ -553,7 +541,6 @@ function DashBoard() {
         );
       }
 
-      console.log("Fetched and filtered entries:", fetchedEntries.length);
       setEntries(fetchedEntries);
     } catch (error) {
       console.error("Error fetching data:", {
@@ -687,56 +674,66 @@ function DashBoard() {
       organization: newEntry.organization || "",
       category: newEntry.category || "",
       createdAt: newEntry.createdAt || new Date().toISOString(),
+      updatedAt: newEntry.updatedAt || new Date().toISOString(),
       status: newEntry.status || "Not Found",
       expectedClosingDate: newEntry.expectedClosingDate || "",
       followUpDate: newEntry.followUpDate || "",
       remarks: newEntry.remarks || "",
       email: newEntry.email || "",
+      AlterNumber: newEntry.AlterNumber || "",
       createdBy: {
         _id: localStorage.getItem("userId"),
-        username: newEntry.createdBy?.username || "",
+        username:
+          newEntry.createdBy?.username ||
+          localStorage.getItem("username") ||
+          "Unknown",
       },
-      updatedAt: newEntry.updatedAt || new Date().toISOString(),
     };
     setEntries((prev) => [completeEntry, ...prev]);
     setListKey(Date.now());
     if (listRef.current) {
+      listRef.current.scrollToPosition(0); // Scroll to top to show new entry
       listRef.current.recomputeRowHeights();
       listRef.current.forceUpdateGrid();
     }
   }, []);
+
   const handleEntryUpdated = useCallback(
     (updatedEntry) => {
-      console.log("Updated entry:", updatedEntry); // Debug
-      const currentScrollPosition =
-        listRef.current?.getOffsetForRow({
-          alignment: "start",
-          index: filteredData.findIndex(
+      const index = entries.findIndex(
+        (entry) => entry._id === updatedEntry._id
+      );
+      if (index !== -1) {
+        setEntries((prev) =>
+          prev.map((entry) =>
+            entry._id === updatedEntry._id ? { ...updatedEntry } : entry
+          )
+        );
+        setSelectedEntry((prev) =>
+          prev && prev._id === updatedEntry._id ? { ...updatedEntry } : prev
+        );
+        setEntryToEdit((prev) =>
+          prev && prev._id === updatedEntry._id ? { ...updatedEntry } : prev
+        );
+        setEditModalOpen(false);
+        setListKey(Date.now());
+        if (listRef.current) {
+          const scrollIndex = filteredData.findIndex(
             (entry) => entry._id === updatedEntry._id
-          ),
-        }) || 0;
-      setEntries((prevEntries) =>
-        prevEntries.map((entry) =>
-          entry._id === updatedEntry._id ? { ...updatedEntry } : entry
-        )
-      );
-      setSelectedEntry((prevSelected) =>
-        prevSelected && prevSelected._id === updatedEntry._id
-          ? { ...updatedEntry }
-          : prevSelected
-      );
-      setEntryToEdit((prevEntryToEdit) =>
-        prevEntryToEdit && prevEntryToEdit._id === updatedEntry._id
-          ? { ...updatedEntry }
-          : prevEntryToEdit
-      );
-      setEditModalOpen(false);
-      setListKey(Date.now());
-      setScrollPosition(currentScrollPosition);
-      fetchEntries(); // Refresh entries from backend
-      console.log("Entries after update:", entries); // Debug
+          );
+          if (scrollIndex !== -1) {
+            const scrollPosition = listRef.current.getOffsetForRow({
+              alignment: "start",
+              index: scrollIndex,
+            });
+            listRef.current.scrollToPosition(scrollPosition);
+          }
+          listRef.current.recomputeRowHeights();
+          listRef.current.forceUpdateGrid();
+        }
+      }
     },
-    [filteredData, fetchEntries]
+    [entries, filteredData]
   );
   useEffect(() => {
     if (listRef.current && scrollPosition > 0) {
