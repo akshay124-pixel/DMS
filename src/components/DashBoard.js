@@ -1602,6 +1602,7 @@ function DashBoard() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                overflow: "hidden",
               }}
             >
               Contact Person
