@@ -30,12 +30,9 @@ const fetchUsers = async (entries, userId, role) => {
     }
 
     console.log("fetchUsers: userId:", userId, "role:", role);
-    const response = await axios.get(
-      "https://dms-server-l4l6.onrender.com/api/users",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const response = await axios.get(`${process.env.REACT_APP_URL}/api/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     let users = Array.isArray(response.data.data) ? response.data.data : [];
     console.log(

@@ -207,7 +207,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       }
 
       const response = await axios.put(
-        `https://dms-server-l4l6.onrender.com/api/editentry/${entryToEdit._id}`,
+        `${process.env.REACT_APP_URL}/api/editentry/${entryToEdit._id}`,
         payload,
         {
           headers: {
@@ -255,7 +255,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       }
 
       const response = await axios.put(
-        `https://dms-server-l4l6.onrender.com/api/editentry/${entryToEdit._id}`,
+        `${process.env.REACT_APP_URL}/api/editentry/${entryToEdit._id}`,
         payload,
         {
           headers: {

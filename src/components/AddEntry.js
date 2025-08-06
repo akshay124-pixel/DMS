@@ -182,7 +182,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
       };
 
       const response = await axios.post(
-        "https://dms-server-l4l6.onrender.com/api/entry",
+        `${process.env.REACT_APP_URL}/api/entry`,
         submitData,
         {
           headers: {

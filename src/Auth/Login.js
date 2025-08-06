@@ -35,7 +35,7 @@ function Login() {
 
     try {
       const response = await axios.post(
-        "https://dms-server-l4l6.onrender.com/auth/login",
+        `${process.env.REACT_APP_URL}/auth/login`,
         formData
       );
 

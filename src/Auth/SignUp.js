@@ -37,7 +37,7 @@ function Signup() {
 
     try {
       const response = await axios.post(
-        "https://dms-server-l4l6.onrender.com/user/signup",
+        `${process.env.REACT_APP_URL}/user/signup`,
         form
       );
 

@@ -520,7 +520,7 @@ function DashBoard() {
       console.log("Decoded token:", decoded);
 
       const response = await axios.get(
-        "https://dms-server-l4l6.onrender.com/api/fetch-entry",
+        `${process.env.REACT_APP_URL}/api/fetch-entry`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -578,7 +578,7 @@ function DashBoard() {
       const userId = decoded.id;
 
       const response = await axios.get(
-        "https://dms-server-l4l6.onrender.com/api/user-role",
+        `${process.env.REACT_APP_URL}/api/user-role`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -859,7 +859,7 @@ function DashBoard() {
           const chunk = chunks[i];
           try {
             const response = await axios.post(
-              "https://dms-server-l4l6.onrender.com/api/entries",
+              `${process.env.REACT_APP_URL}/api/entries`,
               chunk,
               {
                 headers: {
