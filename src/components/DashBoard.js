@@ -547,7 +547,10 @@ function DashBoard() {
         message: error.message,
         response: error.response?.data,
       });
-      toast.error("Failed to fetch entries!");
+      const friendlyMessage =
+        error.response?.data?.message ||
+        "Sorry, we couldn't load the entries right now. Please check your internet connection or try again later.";
+      toast.error(friendlyMessage);
       setEntries([]);
     } finally {
       setLoading(false);
@@ -598,7 +601,9 @@ function DashBoard() {
       setIsSuperadmin(false);
       setRole("Others");
       setUserId("");
-      toast.error("Session expired. Please log in again.");
+      toast.error(
+        "Your session has expired or there was a problem. Please log in again to continue."
+      );
       navigate("/login");
     } finally {
       setAuthLoading(false);

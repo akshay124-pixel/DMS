@@ -223,9 +223,20 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       onClose();
     } catch (err) {
       console.error("Edit error:", err.response?.data);
-      setError(err.response?.data?.message || "Failed to update entry.");
+
+      // Friendly error message for user
+      const errorMessage =
+        err.response?.data?.message ||
+        "Sorry, we couldn't update your entry. Please check your details and try again.";
+
+      // Detailed errors, if any, joined for display
+      const detailedErrors = err.response?.data?.errors
+        ? err.response.data.errors.join(", ")
+        : null;
+
+      setError(errorMessage);
       toast.error(
-        err.response?.data?.errors?.join(", ") || "Failed to update entry!"
+        detailedErrors ? `${errorMessage} (${detailedErrors})` : errorMessage
       );
     } finally {
       setLoading(false);
@@ -271,9 +282,18 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       onClose();
     } catch (err) {
       console.error("Update error:", err.response?.data);
-      setError(err.response?.data?.message || "Failed to update follow-up.");
+
+      const errorMessage =
+        err.response?.data?.message ||
+        "Sorry, we couldn't update your follow-up. Please try again.";
+
+      const detailedErrors = err.response?.data?.errors
+        ? err.response.data.errors.join(", ")
+        : null;
+
+      setError(errorMessage);
       toast.error(
-        err.response?.data?.errors?.join(", ") || "Failed to update follow-up!"
+        detailedErrors ? `${errorMessage} (${detailedErrors})` : errorMessage
       );
     } finally {
       setLoading(false);

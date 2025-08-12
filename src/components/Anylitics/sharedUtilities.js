@@ -82,13 +82,19 @@ const fetchUsers = async (entries, userId, role) => {
     return userCache;
   } catch (err) {
     console.error("fetchUsers Error:", err.message);
-    toast.error(err.message || "Failed to fetch users.");
+    toast.error(
+      err.message ||
+        "Oops! Couldn't load user information. Please try again or contact support."
+    );
     return [
-      { _id: userId, username: "Current User", role: normalizeRole(role) },
+      {
+        _id: userId,
+        username: "You (Current User)",
+        role: normalizeRole(role),
+      },
     ];
   }
 };
-
 const filterEntriesByDateRange = (entries, dateRange) => {
   if (!dateRange?.[0]?.startDate || !dateRange?.[0]?.endDate) return entries;
   const filtered = entries.filter((entry) => {

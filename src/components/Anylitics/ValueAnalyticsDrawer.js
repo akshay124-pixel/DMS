@@ -152,8 +152,11 @@ const ValueAnalyticsDrawer = ({
       }
     } catch (err) {
       console.error("calculateValueStats Error:", err.message);
-      setError(err.message || "Failed to load value analytics.");
-      toast.error(err.message || "Failed to load value analytics.");
+      const friendlyMessage =
+        err.message ||
+        "Sorry, we couldn't load the analytics. Please try again later.";
+      setError(friendlyMessage);
+      toast.error(friendlyMessage);
     } finally {
       setLoading(false);
     }

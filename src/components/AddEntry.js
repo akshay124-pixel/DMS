@@ -204,9 +204,10 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         "Error adding entry:",
         error.response?.data || error.message
       );
-      toast.error(error.response?.data?.message || "Something went wrong!");
-    } finally {
-      setLoading(false);
+      const friendlyMessage =
+        error.response?.data?.message ||
+        "Sorry, we couldn't add your entry right now. Please try again later.";
+      toast.error(friendlyMessage);
     }
   };
 
