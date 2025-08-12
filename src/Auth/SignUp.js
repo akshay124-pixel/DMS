@@ -22,14 +22,11 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ✅ Simple check for empty fields
     if (!form.username || !form.email || !form.password || !form.role) {
-      toast.error("All fields are required", {
+      toast.error("Please fill out all the fields before signing up.", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         theme: "colored",
       });
       return;
@@ -44,62 +41,73 @@ function Signup() {
       if (response.status === 201) {
         const { token, user } = response.data;
 
-        // Store the full user object and token in localStorage
+        // Store data in localStorage
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
 
-        toast.success("Signup successful! Redirecting to dashboard...", {
+        toast.success("Your account has been created! Redirecting...", {
           position: "top-right",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           theme: "colored",
         });
-        navigate("/dashboard"); // Navigate to dashboard instead of login
+        navigate("/dashboard");
       } else {
-        toast.error("Unexpected response. Please try again.", {
+        toast.error("Something unexpected happened. Please try again.", {
           position: "top-right",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           theme: "colored",
         });
       }
     } catch (error) {
       console.error("Error during signup", error);
+
       if (
         error.response &&
         error.response.data &&
         error.response.data.message
       ) {
-        setError(error.response.data.message);
-        toast.error(error.response.data.message, {
+        // ✅ Convert technical message to friendly text
+        let userFriendlyMessage = error.response.data.message;
+
+        if (
+          userFriendlyMessage.includes("duplicate") ||
+          userFriendlyMessage.includes("already exists")
+        ) {
+          userFriendlyMessage = "An account with this email already exists.";
+        } else if (
+          userFriendlyMessage.toLowerCase().includes("invalid email")
+        ) {
+          userFriendlyMessage = "Please enter a valid email address.";
+        } else if (userFriendlyMessage.toLowerCase().includes("password")) {
+          userFriendlyMessage =
+            "Your password must meet the security requirements.";
+        } else {
+          userFriendlyMessage =
+            "We couldn't create your account. Please try again.";
+        }
+
+        setError(userFriendlyMessage);
+        toast.error(userFriendlyMessage, {
           position: "top-right",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           theme: "colored",
         });
       } else {
-        setError("Something went wrong. Please try again.");
-        toast.error("Something went wrong. Please try again.", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: "colored",
-        });
+        setError(
+          "We couldn’t connect to the server. Please check your internet and try again."
+        );
+        toast.error(
+          "We couldn’t connect to the server. Please check your internet and try again.",
+          {
+            position: "top-right",
+            autoClose: 3000,
+            theme: "colored",
+          }
+        );
       }
     }
   };
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };

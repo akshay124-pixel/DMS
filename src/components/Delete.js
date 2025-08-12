@@ -8,7 +8,7 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
 
   const handleDelete = async () => {
     if (confirmationText !== "DELETE") {
-      toast.error("Please type 'DELETE' to confirm!");
+      toast.error("Please type DELETE to confirm.");
       return;
     }
 
@@ -16,7 +16,7 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("You must be logged in to delete entries.");
+        toast.error("You need to log in before deleting entries.");
         return;
       }
 
@@ -28,37 +28,53 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
       };
 
       if (itemIds && itemIds.length > 0) {
-        // Handle multiple deletes
+        // Multiple delete
         await Promise.all(
           itemIds.map((id) =>
             axios.delete(`${process.env.REACT_APP_URL}/api/entry/${id}`, config)
           )
         );
-        onDelete(itemIds); // Pass array of deleted IDs to parent
-        toast.success(`Successfully deleted ${itemIds.length} entries!`);
+        onDelete(itemIds);
+        toast.success(`${itemIds.length} entries deleted successfully.`);
       } else if (itemId) {
-        // Handle single delete
+        // Single delete
         const response = await axios.delete(
           `${process.env.REACT_APP_URL}/api/entry/${itemId}`,
           config
         );
         if (response.status === 200) {
-          onDelete([itemId]); // Pass single ID as array for consistency
-          toast.success("Entry deleted successfully!");
+          onDelete([itemId]);
+          toast.success("Entry deleted successfully.");
         }
       }
-      onClose(); // Close the modal
+      onClose();
     } catch (error) {
       console.error("Error deleting entry/entries:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        `Request failed with status code ${
-          error.response?.status || "unknown"
-        }`;
-      toast.error(`Error deleting entry/entries: ${errorMessage}`);
+
+      let userFriendlyMessage =
+        "Something went wrong while deleting. Please try again.";
+      if (error.response) {
+        if (error.response.status === 404) {
+          userFriendlyMessage =
+            "The entry you are trying to delete was not found.";
+        } else if (error.response.status === 403) {
+          userFriendlyMessage =
+            "You do not have permission to delete this entry.";
+        } else if (error.response.status === 500) {
+          userFriendlyMessage =
+            "Server error occurred. Please try again later.";
+        } else if (error.response.data?.message) {
+          userFriendlyMessage = error.response.data.message;
+        }
+      } else if (error.request) {
+        userFriendlyMessage =
+          "No response from the server. Please check your internet connection.";
+      }
+
+      toast.error(userFriendlyMessage);
     } finally {
       setIsLoading(false);
-      setConfirmationText(""); // Reset input after action
+      setConfirmationText("");
     }
   };
 

@@ -54,7 +54,7 @@ function Login() {
 
         navigate("/dashboard");
       } else {
-        toast.error("Unexpected response. Please try again.", {
+        toast.error("Something went wrong. Please try again later.", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",
@@ -62,14 +62,27 @@ function Login() {
       }
     } catch (error) {
       console.error("Error while logging in:", error);
-      toast.error(
-        error.response?.data?.message || "Login failed. Please try again.",
-        {
+
+      // Friendly error messages for non-tech users
+      if (error.response?.status === 401) {
+        toast.error("Invalid email or password. Please check and try again.", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",
-        }
-      );
+        });
+      } else if (error.code === "ERR_NETWORK") {
+        toast.error("Unable to connect. Please check your internet.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+      } else {
+        toast.error("Login failed. Please try again later.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+      }
     } finally {
       setLoading(false);
     }
