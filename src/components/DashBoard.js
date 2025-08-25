@@ -1607,12 +1607,9 @@ function DashBoard() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                overflow: "hidden",
-                height: "100%",
-                width: "100%",
               }}
             >
-              <span>Contact Person</span>
+              Person
             </div>
 
             <div
