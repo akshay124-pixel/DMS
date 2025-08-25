@@ -1608,10 +1608,13 @@ function DashBoard() {
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
+                height: "100%",
+                width: "100%",
               }}
             >
-              Contact Person
+              <span>Contact Person</span>
             </div>
+
             <div
               style={{
                 display: "flex",
