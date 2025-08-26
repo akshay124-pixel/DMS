@@ -411,13 +411,16 @@ function DashBoard() {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
+
+        // Handle different filter types
         if (dashboardFilter === "total") {
-          return true;
+          return true; // Show all filtered data
         } else if (dashboardFilter === "leads") {
-          return row.status === "Not Found";
-        } else if (dashboardFilter == "results") {
-          return true;
-        } else if (dashboardFilter == "monthly") {
+          return row.status === "Not Found"; // Total Leads
+        } else if (dashboardFilter === "results") {
+          return true; // Total Results (same as total, but for clarity)
+        } else if (dashboardFilter === "monthly") {
+          // Filter for current month's created or updated entries
           return (
             (createdAt.getMonth() === currentMonth &&
               createdAt.getFullYear() === currentYear) ||
@@ -425,8 +428,8 @@ function DashBoard() {
               updatedAt.getFullYear() === currentYear)
           );
         } else {
+          // Existing category filters (e.g., "Interested", "Closed Won", etc.)
           return (
-            dashboardFilter === "total" ||
             (dashboardFilter === "Closed Won" &&
               row.closetype === "Closed Won") ||
             (dashboardFilter === "Closed Lost" &&
@@ -435,19 +438,18 @@ function DashBoard() {
           );
         }
       })
-
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [filteredDataWithoutTracker, dashboardFilter]);
-
-  const handleCounterClick = (filter) => {
-    setDashboardFilter(filterType);
-    setListKey(Date.now());
-    if (listRef.current) {
-      listRef.current.scrollToPosition(0);
-      listRef.current.recomputeRowHeights();
-      listRef.current.forceUpdateGrid();
-    }
-  };
+ 
+ const handleCounterClick = (filterType) => {
+   setDashboardFilter(filterType);
+   setListKey(Date.now()); 
+   if (listRef.current) {
+     listRef.current.scrollToPosition(0); 
+     listRef.current.recomputeRowHeights();
+     listRef.current.forceUpdateGrid();
+   }
+ };
 
   const monthlyCalls = useMemo(() => {
     const now = new Date();
