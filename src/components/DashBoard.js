@@ -406,17 +406,48 @@ function DashBoard() {
   const filteredData = useMemo(() => {
     return filteredDataWithoutTracker
       .filter((row) => {
-        return (
-          dashboardFilter === "total" ||
-          (dashboardFilter === "Closed Won" &&
-            row.closetype === "Closed Won") ||
-          (dashboardFilter === "Closed Lost" &&
-            row.closetype === "Closed Lost") ||
-          row.status === dashboardFilter
-        );
+        const createdAt = new Date(row.createdAt);
+        const updatedAt = new Date(row.updatedAt);
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        if (dashboardFilter === "total") {
+          return true;
+        } else if (dashboardFilter === "leads") {
+          return row.status === "Not Found";
+        } else if (dashboardFilter == "results") {
+          return true;
+        } else if (dashboardFilter == "monthly") {
+          return (
+            (createdAt.getMonth() === currentMonth &&
+              createdAt.getFullYear() === currentYear) ||
+            (updatedAt.getMonth() === currentMonth &&
+              updatedAt.getFullYear() === currentYear)
+          );
+        } else {
+          return (
+            dashboardFilter === "total" ||
+            (dashboardFilter === "Closed Won" &&
+              row.closetype === "Closed Won") ||
+            (dashboardFilter === "Closed Lost" &&
+              row.closetype === "Closed Lost") ||
+            row.status === dashboardFilter
+          );
+        }
       })
+
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [filteredDataWithoutTracker, dashboardFilter]);
+
+  const handleCounterClick = (filter) => {
+    setDashboardFilter(filterType);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.scrollToPosition(0);
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+    }
+  };
 
   const monthlyCalls = useMemo(() => {
     const now = new Date();
@@ -1505,7 +1536,10 @@ function DashBoard() {
               fontWeight: "600",
               fontSize: "1rem",
               color: "#fff",
-              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              background:
+                dashboardFilter === "leads"
+                  ? "linear-gradient(90deg, #ff4444, #cc0000)"
+                  : "linear-gradient(90deg, #6a11cb, #2575fc)",
               padding: "5px 15px",
               borderRadius: "20px",
               boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
@@ -1513,7 +1547,10 @@ function DashBoard() {
               textAlign: "center",
               width: "auto",
               textTransform: "capitalize",
+              cursor: "pointer",
+              border: dashboardFilter === "leads" ? "2px solid #fff" : "none",
             }}
+            onClick={() => handleCounterClick("leads")}
           >
             Total Leads:{" "}
             {
@@ -1527,7 +1564,10 @@ function DashBoard() {
               fontWeight: "600",
               fontSize: "1rem",
               color: "#fff",
-              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              background:
+                dashboardFilter === "results"
+                  ? "linear-gradient(90deg, #ff4444, #cc0000)"
+                  : "linear-gradient(90deg, #6a11cb, #2575fc)",
               padding: "5px 15px",
               borderRadius: "20px",
               boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
@@ -1535,7 +1575,10 @@ function DashBoard() {
               textAlign: "center",
               width: "auto",
               textTransform: "capitalize",
+              cursor: "pointer",
+              border: dashboardFilter === "results" ? "2px solid #fff" : "none",
             }}
+            onClick={() => handleCounterClick("results")}
           >
             Total Results: {filteredData.length}
           </div>
@@ -1544,7 +1587,10 @@ function DashBoard() {
               fontWeight: "600",
               fontSize: "1rem",
               color: "#fff",
-              background: "linear-gradient(90deg, #ff4444, #cc0000)",
+              background:
+                dashboardFilter === "monthly"
+                  ? "linear-gradient(90deg, #ff4444, #cc0000)"
+                  : "linear-gradient(90deg, #6a11cb, #2575fc)",
               padding: "5px 15px",
               borderRadius: "20px",
               boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
@@ -1552,7 +1598,10 @@ function DashBoard() {
               textAlign: "center",
               width: "auto",
               textTransform: "capitalize",
+              cursor: "pointer",
+              border: dashboardFilter === "monthly" ? "2px solid #fff" : "none",
             }}
+            onClick={() => handleCounterClick("monthly")}
           >
             Monthly Calls: {monthlyCalls}
           </div>
