@@ -1004,7 +1004,8 @@ function DashBoard() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
 
-    XLSX.writeFile(workbook, `entries_of_ ${state}.xlsx`);
+    const fileState = filteredData[0]?.state || "All";
+    XLSX.writeFile(workbook, `Data_of_${fileState}.xlsx`);
     toast.success("Entries exported successfully!");
   };
 
