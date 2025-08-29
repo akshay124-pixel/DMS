@@ -440,16 +440,16 @@ function DashBoard() {
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [filteredDataWithoutTracker, dashboardFilter]);
- 
- const handleCounterClick = (filterType) => {
-   setDashboardFilter(filterType);
-   setListKey(Date.now()); 
-   if (listRef.current) {
-     listRef.current.scrollToPosition(0); 
-     listRef.current.recomputeRowHeights();
-     listRef.current.forceUpdateGrid();
-   }
- };
+
+  const handleCounterClick = (filterType) => {
+    setDashboardFilter(filterType);
+    setListKey(Date.now());
+    if (listRef.current) {
+      listRef.current.scrollToPosition(0);
+      listRef.current.recomputeRowHeights();
+      listRef.current.forceUpdateGrid();
+    }
+  };
 
   const monthlyCalls = useMemo(() => {
     const now = new Date();
@@ -1004,7 +1004,7 @@ function DashBoard() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
 
-    XLSX.writeFile(workbook, "entries.xlsx");
+    XLSX.writeFile(workbook, `entries_of_ ${state}.xlsx`);
     toast.success("Entries exported successfully!");
   };
 
