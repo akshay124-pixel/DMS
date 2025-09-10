@@ -450,33 +450,39 @@ function DashBoard() {
       listRef.current.forceUpdateGrid();
     }
   };
-
   const monthlyCalls = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
     return filteredDataWithoutTracker.reduce((count, entry) => {
-      const createdAt = new Date(entry.createdAt);
       const updatedAt = new Date(entry.updatedAt);
 
-      // Check if entry was created or updated in the current month
-      const isCreatedThisMonth =
-        createdAt.getMonth() === currentMonth &&
-        createdAt.getFullYear() === currentYear;
+      // Check if the entry was updated in the current month
       const isUpdatedThisMonth =
         updatedAt.getMonth() === currentMonth &&
         updatedAt.getFullYear() === currentYear;
 
-      // Count 1 for creation if created this month
-      let entryCount = isCreatedThisMonth ? 1 : 0;
+      // Check if the status is valid and changed
+      const validStatuses = [
+        "Interested",
+        "Not Interested",
+        "Maybe",
+        "Closed",
+        "Not",
+        "Service",
+      ];
+      const hasValidStatusChange =
+        entry.history &&
+        entry.history.some(
+          (historyItem) =>
+            validStatuses.includes(historyItem.status) &&
+            new Date(historyItem.timestamp).getMonth() === currentMonth &&
+            new Date(historyItem.timestamp).getFullYear() === currentYear
+        );
 
-      // Add history length if entry was created or updated this month
-      if ((isCreatedThisMonth || isUpdatedThisMonth) && entry.history) {
-        entryCount += entry.history.length;
-      }
-
-      return count + entryCount;
+      // Increment count only if the status changed to a valid value this month
+      return isUpdatedThisMonth && hasValidStatusChange ? count + 1 : count;
     }, 0);
   }, [filteredDataWithoutTracker]);
   const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
