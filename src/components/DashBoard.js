@@ -48,7 +48,7 @@ import { motion } from "framer-motion";
 
 // Separate Call Tracking Dashboard Component
 const CallTrackingDashboard = ({
-  filteredEntriesWithoutTracker, // Updated prop name
+  filteredEntriesWithoutTracker, 
   onFilterClick,
   selectedCategory,
 }) => {
