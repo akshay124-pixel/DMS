@@ -19,29 +19,61 @@ function ChangePassword({ setIsAuthenticated }) {
   const [passwordStrengthColor, setPasswordStrengthColor] = useState("");
   const navigate = useNavigate();
 
-  // Check authentication on mount
+  // Check authentication and verify token on mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const verifyAuth = async () => {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-    console.log("ChangePassword: Component mounted", {
-      hasToken: !!token,
-      hasUserEmail: !!user.email,
-      userEmail: user.email,
-    });
-
-    if (!token || !user.email) {
-      console.log(
-        "ChangePassword: No authentication data found, redirecting to login"
-      );
-      toast.error("You are not authenticated. Please log in.", {
-        position: "top-right",
-        autoClose: 3000,
-        theme: "colored",
+      console.log("ChangePassword: Checking authentication", {
+        hasToken: !!token,
+        hasUserEmail: !!user.email,
+        userEmail: user.email,
       });
-      navigate("/login");
-    }
-  }, [navigate]);
+
+      if (!token || !user.email) {
+        console.log(
+          "ChangePassword: Missing authentication data, redirecting to login"
+        );
+        toast.error("You are not authenticated. Please log in.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+        setIsAuthenticated(false);
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_URL}/auth/verify-token`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log(
+          "ChangePassword: Token verification successful",
+          response.data
+        );
+      } catch (error) {
+        console.error("ChangePassword: Token verification failed", error);
+        toast.error("Session expired or invalid. Please log in again.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setIsAuthenticated(false);
+        navigate("/login");
+      }
+    };
+
+    verifyAuth();
+  }, [navigate, setIsAuthenticated]);
 
   const handleInput = (e) => {
     const { name, value } = e.target;
@@ -175,7 +207,7 @@ function ChangePassword({ setIsAuthenticated }) {
       console.error("Error while changing password:", error);
 
       if (error.response?.status === 401) {
-        toast.error("Current password is incorrect or token is invalid.", {
+        toast.error("Current password is incorrect or session expired.", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",

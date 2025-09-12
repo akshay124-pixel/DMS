@@ -42,9 +42,21 @@ function Login({ setIsAuthenticated }) {
       if (response.status === 200) {
         const { token, user } = response.data;
 
+        // Ensure user object includes email
+        const userData = {
+          id: user.id,
+          username: user.username,
+          email: formData.email, // Use the email from formData to ensure consistency
+          role: user.role,
+          isAdmin: user.isAdmin,
+          isSuperadmin: user.isSuperadmin,
+        };
+
+        console.log("Login: Storing user data", userData);
+
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-        setIsAuthenticated(true); // Update authentication state
+        localStorage.setItem("user", JSON.stringify(userData));
+        setIsAuthenticated(true);
 
         toast.success("Login successful! Redirecting...", {
           position: "top-right",

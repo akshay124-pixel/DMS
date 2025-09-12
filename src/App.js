@@ -18,15 +18,19 @@ const PrivateRoute = ({ element, isAuthenticated }) => {
 };
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token")
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return !!token && !!user.email; // Only authenticated if both token and user.email exist
+  });
 
   useEffect(() => {
     const handleStorageChange = () => {
       const token = localStorage.getItem("token");
-      setIsAuthenticated(!!token);
-      console.log("App: Storage changed, isAuthenticated:", !!token);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const authenticated = !!token && !!user.email;
+      setIsAuthenticated(authenticated);
+      console.log("App: Storage changed, isAuthenticated:", authenticated);
     };
 
     window.addEventListener("storage", handleStorageChange);
