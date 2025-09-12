@@ -42,6 +42,13 @@ function Login() {
       if (response.status === 200) {
         const { token, user } = response.data;
 
+        // Validate response data
+        if (!token || !user || !user.email || !user.role) {
+          throw new Error(
+            "Invalid response from server: Missing token or user data"
+          );
+        }
+
         // Store the full user object and token in localStorage
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user)); // Store user object
@@ -64,7 +71,13 @@ function Login() {
       console.error("Error while logging in:", error);
 
       // Friendly error messages for non-tech users
-      if (error.response?.status === 401) {
+      if (error.message.includes("Missing token or user data")) {
+        toast.error("Invalid server response. Please contact support.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+      } else if (error.response?.status === 401) {
         toast.error("Invalid email or password. Please check and try again.", {
           position: "top-right",
           autoClose: 3000,
@@ -87,9 +100,11 @@ function Login() {
       setLoading(false);
     }
   };
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   return (
     <div
       className="login-container"
@@ -143,6 +158,7 @@ function Login() {
                   cursor: "pointer",
                 }}
                 onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
