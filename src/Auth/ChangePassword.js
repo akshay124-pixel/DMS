@@ -22,19 +22,7 @@ function ChangePassword() {
   // Check if user is authenticated on component mount
   useEffect(() => {
     const token = localStorage.getItem("token");
-    let user;
-    try {
-      user = JSON.parse(localStorage.getItem("user") || "{}");
-    } catch (error) {
-      console.error("Error parsing user from localStorage:", error);
-      toast.error("Invalid user data. Please log in again.", {
-        position: "top-right",
-        autoClose: 3000,
-        theme: "colored",
-      });
-      navigate("/login");
-      return;
-    }
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     console.log("ChangePassword: Component mounted", {
       hasToken: !!token,
@@ -42,19 +30,12 @@ function ChangePassword() {
       userEmail: user.email,
     });
 
-    if (!token || !user.email) {
+    if (token && user.email) {
+      console.log("ChangePassword: User authenticated", { email: user.email });
+    } else {
       console.log("ChangePassword: No authentication data found");
-      toast.error("Please log in to change your password.", {
-        position: "top-right",
-        autoClose: 3000,
-        theme: "colored",
-      });
-      navigate("/login");
-      return;
     }
-
-    console.log("ChangePassword: User authenticated", { email: user.email });
-  }, [navigate]);
+  }, []);
 
   const handleInput = (e) => {
     const { name, value } = e.target;
@@ -146,20 +127,7 @@ function ChangePassword() {
 
     try {
       const token = localStorage.getItem("token");
-      let user;
-      try {
-        user = JSON.parse(localStorage.getItem("user") || "{}");
-      } catch (error) {
-        console.error("Error parsing user from localStorage:", error);
-        toast.error("Invalid user data. Please log in again.", {
-          position: "top-right",
-          autoClose: 3000,
-          theme: "colored",
-        });
-        navigate("/login");
-        return;
-      }
-
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       const userEmail = user.email;
 
       if (!token) {
