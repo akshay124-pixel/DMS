@@ -1,10 +1,4 @@
-import  {
-  useState,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -975,34 +969,34 @@ function DashBoard() {
     };
     reader.readAsArrayBuffer(file);
   };
-// Mail Start
+  // Mail Start
   const handleSendEmail = async (entryId) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Please log in to send emails.");
-      navigate("/login");
-      return;
-    }
-
-    const response = await axios.post(
-      `${process.env.REACT_APP_URL}/api/send-email`,
-      { entryId },
-      {
-        headers: { Authorization: `Bearer ${token}` },
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to send emails.");
+        navigate("/login");
+        return;
       }
-    );
 
-    toast.success(response.data.message);
-  } catch (error) {
-    console.error("Error sending email:", error.message);
-    const errorMessage =
-      error.response?.data?.message ||
-      "Failed to send email. Please try again later.";
-    toast.error(errorMessage);
-  }
-};
-//Mail End
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/api/send-email`,
+        { entryId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success(response.data.message);
+    } catch (error) {
+      console.error("Error sending email:", error.message);
+      const errorMessage =
+        error.response?.data?.message ||
+        "Failed to send email. Please try again later.";
+      toast.error(errorMessage);
+    }
+  };
+  //Mail End
 
   const handleExport = () => {
     if (filteredData.length === 0) {
@@ -1076,124 +1070,123 @@ function DashBoard() {
       document.body.style.overflow = "auto";
     };
   }, [isAnalyticsOpen, isValueAnalyticsOpen]);
- const rowRenderer = ({ index, key, style }) => {
-  const row = filteredData[index];
-  const isSelected = selectedEntries.includes(row._id);
-  return (
-    <div
-      key={key}
-      style={{ ...style, cursor: "pointer" }}
-      className={`virtual-row ${isSelected ? "selected" : ""}`}
-      onDoubleClick={() => handleDoubleClick(row._id)}
-      onClick={() => handleSingleClick(row._id)}
-    >
-      <div className="virtual-cell">{index + 1}</div>
-      <div className="virtual-cell">
-        <div className="virtual-cell">{formatDate(row.createdAt)}</div>
-      </div>
-      <div className="virtual-cell">{row.customerName}</div>
-      <div className="virtual-cell">{row.contactName}</div>
-      <div className="virtual-cell">{row.mobileNumber}</div>
-      <div className="virtual-cell">{row.address}</div>
-      <div className="virtual-cell">{row.city}</div>
-      <div className="virtual-cell">{row.state}</div>
-      <div className="virtual-cell">{row.createdBy?.username}</div>
+  const rowRenderer = ({ index, key, style }) => {
+    const row = filteredData[index];
+    const isSelected = selectedEntries.includes(row._id);
+    return (
       <div
-        className="virtual-cell actions-cell"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          width: "200px", // Increased width to accommodate new button
-          padding: "0 5px",
-        }}
+        key={key}
+        style={{ ...style, cursor: "pointer" }}
+        className={`virtual-row ${isSelected ? "selected" : ""}`}
+        onDoubleClick={() => handleDoubleClick(row._id)}
+        onClick={() => handleSingleClick(row._id)}
       >
-        <Button
-          variant="primary"
-          onClick={() => handleShowDetails(row)}
+        <div className="virtual-cell">{index + 1}</div>
+        <div className="virtual-cell">
+          <div className="virtual-cell">{formatDate(row.createdAt)}</div>
+        </div>
+        <div className="virtual-cell">{row.customerName}</div>
+        <div className="virtual-cell">{row.contactName}</div>
+        <div className="virtual-cell">{row.mobileNumber}</div>
+        <div className="virtual-cell">{row.address}</div>
+        <div className="virtual-cell">{row.city}</div>
+        <div className="virtual-cell">{row.state}</div>
+        <div className="virtual-cell">{row.createdBy?.username}</div>
+        <div
+          className="virtual-cell actions-cell"
           style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "22px",
-            padding: "0",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "200px", // Increased width to accommodate new button
+            padding: "0 5px",
           }}
         >
-          <FaEye style={{ marginBottom: "3px" }} />
-        </Button>
-        <button
-          onClick={() => handleEdit(row)}
-          className="editBtn"
-          style={{ width: "40px", height: "40px", padding: "0" }}
-        >
-          <svg height="1em" viewBox="0 0 512 512">
-            <path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path>
-          </svg>
-        </button>
-        <button
-          className="bin-button"
-          onClick={() => handleDeleteClick(row._id)}
-          style={{ width: "40px", height: "40px", padding: "0" }}
-        >
-          <svg
-            className="bin-top"
-            viewBox="0 0 39 7"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+          <Button
+            variant="primary"
+            onClick={() => handleShowDetails(row)}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "22px",
+              padding: "0",
+            }}
           >
-            <line y1="5" x2="39" y2="5" stroke="white" strokeWidth="4"></line>
-            <line
-              x1="12"
-              y1="1.5"
-              x2="26.0357"
-              y2="1.5"
-              stroke="white"
-              strokeWidth="3"
-            ></line>
-          </svg>
-          <svg
-            className="bin-bottom"
-            viewBox="0 0 33 39"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+            <FaEye style={{ marginBottom: "3px" }} />
+          </Button>
+          <button
+            onClick={() => handleEdit(row)}
+            className="editBtn"
+            style={{ width: "40px", height: "40px", padding: "0" }}
           >
-            <mask id="path-1-inside-1_8_19" fill="white">
-              <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z"></path>
-            </mask>
-            <path
-              d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z"
+            <svg height="1em" viewBox="0 0 512 512">
+              <path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path>
+            </svg>
+          </button>
+          <button
+            className="bin-button"
+            onClick={() => handleDeleteClick(row._id)}
+            style={{ width: "40px", height: "40px", padding: "0" }}
+          >
+            <svg
+              className="bin-top"
+              viewBox="0 0 39 7"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <line y1="5" x2="39" y2="5" stroke="white" strokeWidth="4"></line>
+              <line
+                x1="12"
+                y1="1.5"
+                x2="26.0357"
+                y2="1.5"
+                stroke="white"
+                strokeWidth="3"
+              ></line>
+            </svg>
+            <svg
+              className="bin-bottom"
+              viewBox="0 0 33 39"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <mask id="path-1-inside-1_8_19" fill="white">
+                <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z"></path>
+              </mask>
+              <path
+                d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z"
+                fill="white"
+                mask="url(#path-1-inside-1_8_19)"
+              ></path>
+              <path d="M12 6L12 29" stroke="white" strokeWidth="4"></path>
+              <path d="M21 6V29" stroke="white" strokeWidth="4"></path>
+            </svg>
+          </button>
+          <Button
+            variant="success"
+            onClick={() => handleSendEmail(row._id)}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "22px",
+              padding: "0",
+              backgroundColor: "#28a745",
+            }}
+            title="Send Email"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
               fill="white"
-              mask="url(#path-1-inside-1_8_19)"
-            ></path>
-            <path d="M12 6L12 29" stroke="white" strokeWidth="4"></path>
-            <path d="M21 6V29" stroke="white" strokeWidth="4"></path>
-          </svg>
-        </button>
-        <Button
-          variant="success"
-          onClick={() => handleSendEmail(row._id)}
-          style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "22px",
-            padding: "0",
-            backgroundColor: "#28a745",
-          }}
-          title="Send Email"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 512 512"
-            fill="white"
-            style={{ width: "20px", height: "20px" }}
-          >
-            <path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z" />
-          </svg>
-        </Button>
+              style={{ width: "20px", height: "20px" }}
+            >
+              <path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z" />
+            </svg>
+          </Button>
+        </div>
       </div>
-    </div>
-  );
-};
-
+    );
+  };
   if (loading) {
     return (
       <div
@@ -1213,7 +1206,6 @@ function DashBoard() {
       </div>
     );
   }
-
   return (
     <>
       <div className="enhanced-search-bar-container">
@@ -1682,7 +1674,7 @@ function DashBoard() {
               top: 0,
               zIndex: 2,
               display: "grid",
-            gridTemplateColumns: "115px repeat(8, 1fr) 200px",
+              gridTemplateColumns: "115px repeat(8, 1fr) 200px",
               fontWeight: "bold",
               borderBottom: "2px solid #ddd",
               alignItems: "center",

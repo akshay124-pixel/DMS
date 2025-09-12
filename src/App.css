@@ -535,6 +535,8 @@
 /* Search Sticker Ends */
 
 /* Spinner */
+
+
 .loading-wave {
     width: 300px;
     height: 100px;
@@ -588,6 +590,7 @@
         transform: rotate(360deg);
     }
 }
+
 /* Spinner Ends */
 
 /* Virtualized Table Styles */
