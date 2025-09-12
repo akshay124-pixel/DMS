@@ -568,18 +568,22 @@
     0% {
         height: 10px;
     }
+
     50% {
         height: 50px;
     }
+
     100% {
         height: 10px;
     }
 }
 
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
