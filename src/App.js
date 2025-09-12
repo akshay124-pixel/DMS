@@ -24,7 +24,9 @@ function App() {
 
   useEffect(() => {
     const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem("token"));
+      const token = localStorage.getItem("token");
+      setIsAuthenticated(!!token);
+      console.log("App: Storage changed, isAuthenticated:", !!token);
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -76,7 +78,6 @@ const ConditionalNavbar = ({ isAuthenticated }) => {
     location.pathname === "/signup" ||
     location.pathname === "/change-password";
 
-  // Only show Navbar for authenticated users on non-auth routes
   return isAuthenticated && !isAuthPage ? <Navbar /> : null;
 };
 

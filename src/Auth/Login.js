@@ -5,7 +5,7 @@ import axios from "axios";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 
-function Login() {
+function Login({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -42,9 +42,9 @@ function Login() {
       if (response.status === 200) {
         const { token, user } = response.data;
 
-        // Store the full user object and token in localStorage
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user)); // Store user object
+        localStorage.setItem("user", JSON.stringify(user));
+        setIsAuthenticated(true); // Update authentication state
 
         toast.success("Login successful! Redirecting...", {
           position: "top-right",
@@ -63,7 +63,6 @@ function Login() {
     } catch (error) {
       console.error("Error while logging in:", error);
 
-      // Friendly error messages for non-tech users
       if (error.response?.status === 401) {
         toast.error("Invalid email or password. Please check and try again.", {
           position: "top-right",
@@ -87,9 +86,11 @@ function Login() {
       setLoading(false);
     }
   };
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   return (
     <div
       className="login-container"

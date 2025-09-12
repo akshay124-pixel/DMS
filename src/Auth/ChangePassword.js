@@ -5,7 +5,7 @@ import axios from "axios";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 
-function ChangePassword() {
+function ChangePassword({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -19,7 +19,7 @@ function ChangePassword() {
   const [passwordStrengthColor, setPasswordStrengthColor] = useState("");
   const navigate = useNavigate();
 
-  // Check if user is authenticated on component mount
+  // Check authentication on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -30,18 +30,23 @@ function ChangePassword() {
       userEmail: user.email,
     });
 
-    if (token && user.email) {
-      console.log("ChangePassword: User authenticated", { email: user.email });
-    } else {
-      console.log("ChangePassword: No authentication data found");
+    if (!token || !user.email) {
+      console.log(
+        "ChangePassword: No authentication data found, redirecting to login"
+      );
+      toast.error("You are not authenticated. Please log in.", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "colored",
+      });
+      navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData((prevForm) => ({ ...prevForm, [name]: value }));
 
-    // Check password strength for new password
     if (name === "newPassword") {
       const strength = checkPasswordStrength(value);
       setPasswordStrength(strength.text);
@@ -74,7 +79,6 @@ function ChangePassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form fields
     if (
       !formData.currentPassword ||
       !formData.newPassword ||
@@ -88,7 +92,6 @@ function ChangePassword() {
       return;
     }
 
-    // Password complexity validation
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(formData.newPassword)) {
@@ -103,7 +106,6 @@ function ChangePassword() {
       return;
     }
 
-    // Confirm password match
     if (formData.newPassword !== formData.confirmNewPassword) {
       toast.error("New password and confirmation do not match.", {
         position: "top-right",
@@ -113,7 +115,6 @@ function ChangePassword() {
       return;
     }
 
-    // Check if new password is same as current
     if (formData.currentPassword === formData.newPassword) {
       toast.error("New password must be different from current password.", {
         position: "top-right",
@@ -130,22 +131,13 @@ function ChangePassword() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const userEmail = user.email;
 
-      if (!token) {
-        toast.error("Authentication token not found. Please log in again.", {
+      if (!token || !userEmail) {
+        toast.error("Authentication data missing. Please log in again.", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",
         });
-        navigate("/login");
-        return;
-      }
-
-      if (!userEmail) {
-        toast.error("User email not found. Please log in again.", {
-          position: "top-right",
-          autoClose: 3000,
-          theme: "colored",
-        });
+        setIsAuthenticated(false);
         navigate("/login");
         return;
       }
@@ -175,6 +167,7 @@ function ChangePassword() {
         setTimeout(() => {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          setIsAuthenticated(false);
           navigate("/login");
         }, 3000);
       }
@@ -182,11 +175,13 @@ function ChangePassword() {
       console.error("Error while changing password:", error);
 
       if (error.response?.status === 401) {
-        toast.error("Current password is incorrect.", {
+        toast.error("Current password is incorrect or token is invalid.", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",
         });
+        setIsAuthenticated(false);
+        navigate("/login");
       } else if (error.response?.status === 403) {
         toast.error("Email does not match authenticated user.", {
           position: "top-right",
@@ -205,6 +200,7 @@ function ChangePassword() {
           autoClose: 3000,
           theme: "colored",
         });
+        setIsAuthenticated(false);
         navigate("/login");
       } else {
         toast.error("Failed to change password. Please try again.", {
