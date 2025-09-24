@@ -167,6 +167,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     []
   );
 
+  const handleCopyPaste = useCallback((e) => {
+    e.stopPropagation(); // Prevent interference with copy/paste
+  }, []);
   const handleUpdateInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setUpdateData((prev) => ({
@@ -1214,10 +1217,17 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="customerName">
           <Form.Label>👤 Customer Name</Form.Label>
           <Form.Control
-            {...register("customerName")}
+            {...register("customerName", {
+              maxLength: {
+                value: 100,
+                message: "Customer name cannot exceed 100 characters",
+              },
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("customerName", e.target.value)
             }
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             isInvalid={!!errors.customerName}
             style={formControlStyle}
             aria-label="Customer Name"
@@ -1229,10 +1239,17 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="contactName">
           <Form.Label>🧑‍💼 Contact Person Name</Form.Label>
           <Form.Control
-            {...register("contactName")}
+            {...register("contactName", {
+              maxLength: {
+                value: 100,
+                message: "Contact name cannot exceed 100 characters",
+              },
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("contactName", e.target.value)
             }
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             isInvalid={!!errors.contactName}
             style={formControlStyle}
             aria-label="Contact Name"
@@ -1258,6 +1275,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             onChange={(e) =>
               debouncedHandleInputChange("email", e.target.value)
             }
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             isInvalid={!!errors.email}
             style={formControlStyle}
             aria-label="Email"
@@ -1269,10 +1288,21 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="mobileNumber">
           <Form.Label>📱 Mobile Number</Form.Label>
           <Form.Control
-            {...register("mobileNumber")}
+            {...register("mobileNumber", {
+              maxLength: {
+                value: 10,
+                message: "Mobile number must be exactly 10 digits",
+              },
+              pattern: {
+                value: /^\d{10}$/,
+                message: "Mobile number must be exactly 10 digits",
+              },
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("mobileNumber", e.target.value)
             }
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             isInvalid={!!errors.mobileNumber}
             style={formControlStyle}
             aria-label="Mobile Number"
@@ -1284,23 +1314,36 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="alterNumber">
           <Form.Label>📞 Alternate Number</Form.Label>
           <Form.Control
-            {...register("AlterNumber")}
+            {...register("AlterNumber", {
+              maxLength: {
+                value: 10,
+                message: "Alternate number must be exactly 10 digits",
+              },
+              pattern: {
+                value: /^\d{10}$/,
+                message: "Alternate number must be exactly 10 digits",
+              },
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("AlterNumber", e.target.value)
             }
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             isInvalid={!!errors.AlterNumber}
             style={formControlStyle}
             aria-label="Alternate Number"
           />
           <Form.Control.Feedback type="invalid">
-            {errors.alterNumber?.message}
+            {errors.AlterNumber?.message}
           </Form.Control.Feedback>
         </Form.Group>
         <Form.Group controlId="product" className="mb-3">
           <Form.Label>📦 Product</Form.Label>
           <Form.Control
             as="select"
-            {...register("product")}
+            {...register("product", {
+              required: "Product is required",
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("product", e.target.value)
             }
@@ -1323,10 +1366,22 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>🏠 Address</Form.Label>
           <Form.Control
             as="textarea"
-            {...register("address")}
+            {...register("address", {
+              required: "Address is required",
+              minLength: {
+                value: 5,
+                message: "Address must be at least 5 characters",
+              },
+              maxLength: {
+                value: 200,
+                message: "Address cannot exceed 200 characters",
+              },
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("address", e.target.value)
             }
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             isInvalid={!!errors.address}
             rows={2}
             style={formControlStyle}
@@ -1402,7 +1457,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>🏢 Organization</Form.Label>
           <Form.Control
             as="select"
-            {...register("organization")}
+            {...register("organization", {
+              required: "Organization is required",
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("organization", e.target.value)
             }
@@ -1429,7 +1486,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>📁 Category</Form.Label>
           <Form.Control
             as="select"
-            {...register("category")}
+            {...register("category", {
+              required: "Category is required",
+            })}
             onChange={(e) =>
               debouncedHandleInputChange("category", e.target.value)
             }
@@ -1470,6 +1529,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             as="textarea"
             value={updateData.remarks}
             onChange={handleUpdateInputChange}
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             name="remarks"
             rows={3}
             maxLength={500}
@@ -1528,6 +1589,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
                 name="closeamount"
                 value={updateData.closeamount || ""}
                 onChange={handleUpdateInputChange}
+                onCopy={handleCopyPaste}
+                onPaste={handleCopyPaste}
                 min="0"
                 step="0.01"
                 style={formControlStyle}
@@ -1542,6 +1605,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             as="textarea"
             value={updateData.remarks}
             onChange={handleUpdateInputChange}
+            onCopy={handleCopyPaste}
+            onPaste={handleCopyPaste}
             name="remarks"
             rows={3}
             maxLength={500}
