@@ -58,7 +58,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "mobileNumber"
+        name === "mobileNumber" || name === "AlterNumber"
           ? value.replace(/\D/g, "").slice(0, 10)
           : name === "email"
           ? value.toLowerCase()
@@ -71,6 +71,11 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         setFormData((prev) => ({ ...prev, customOrganization: "" }));
       }
     }
+  }, []);
+
+  // Handle copy and paste to ensure they work
+  const handleCopyPaste = useCallback((e) => {
+    e.stopPropagation(); // Prevent any parent handlers from interfering
   }, []);
 
   // Handle state selection
@@ -208,6 +213,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         error.response?.data?.message ||
         "Sorry, we couldn't add your entry right now. Please try again later.";
       toast.error(friendlyMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -244,6 +251,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="customerName"
               value={formData.customerName}
               onChange={handleInput}
+              onCopy={handleCopyPaste}
+              onPaste={handleCopyPaste}
               required
               placeholder="Enter customer name"
               disabled={loading}
@@ -264,6 +273,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="contactName"
               value={formData.contactName}
               onChange={handleInput}
+              onCopy={handleCopyPaste}
+              onPaste={handleCopyPaste}
               placeholder="Enter contact name"
               disabled={loading}
               style={formControlStyle}
@@ -283,6 +294,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="email"
               value={formData.email}
               onChange={handleInput}
+              onCopy={handleCopyPaste}
+              onPaste={handleCopyPaste}
               required
               placeholder="Enter customer email"
               disabled={loading}
@@ -298,6 +311,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="mobileNumber"
               value={formData.mobileNumber}
               onChange={handleInput}
+              onCopy={handleCopyPaste}
+              onPaste={handleCopyPaste}
               required
               placeholder="Enter mobile number"
               maxLength={10}
@@ -319,6 +334,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="AlterNumber"
               value={formData.AlterNumber}
               onChange={handleInput}
+              onCopy={handleCopyPaste}
+              onPaste={handleCopyPaste}
               placeholder="Enter alternate number"
               maxLength={10}
               disabled={loading}
@@ -361,6 +378,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="address"
               value={formData.address}
               onChange={handleInput}
+              onCopy={handleCopyPaste}
+              onPaste={handleCopyPaste}
               required
               placeholder="Enter address"
               disabled={loading}
@@ -454,6 +473,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 name="customOrganization"
                 value={formData.customOrganization}
                 onChange={handleInput}
+                onCopy={handleCopyPaste}
+                onPaste={handleCopyPaste}
                 required
                 placeholder="Enter custom organization"
                 disabled={loading}
