@@ -1212,7 +1212,7 @@ function DashBoard() {
         <input
           style={{ width: "25%" }}
           type="text"
-          className="enhanced-search-bar"
+          className="enhanced-search-bar allow-copy-paste"
           placeholder="🔍 Search..."
           onChange={handleSearchChange}
         />
