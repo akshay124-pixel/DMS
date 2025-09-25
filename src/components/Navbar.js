@@ -146,7 +146,7 @@ const Navbar = () => {
                   style={{
                     position: "absolute",
                     top: "100%",
-                    right: 0,
+                    left:"1px",
                     backgroundColor: "white",
                     border: "none",
                     borderRadius: "12px",
@@ -161,6 +161,7 @@ const Navbar = () => {
                   <div
                     style={{
                       padding: "16px 20px",
+
                       cursor: "pointer",
                       color: "#2d3748",
                       fontSize: "14px",
@@ -290,6 +291,42 @@ const Navbar = () => {
           </>
         )}
       </div>
+      <style>
+        {`
+          .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 180px;
+      position: relative;
+      right: 48px;
+      left: -30px;
+      margin-top: 7px;
+      margin-bottom: 0;
+    }
+      .Btn {
+              position: relative;
+              left: 37px;
+              top: 5px;
+              padding: 5px 10px;
+              font-size: 0.9rem;
+            }
+              .logo-image{
+              width: 110px;
+  height: auto;
+  margin-left: 50px;
+  margin-right: 50px;
+  margin-bottom: 8px;
+}}
+        `}
+      </style>
     </nav>
   );
 };

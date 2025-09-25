@@ -167,7 +167,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     []
   );
 
-  const handleCopyPaste = useCallback((e) => {
+   const handleCopyPaste = useCallback((e) => {
     e.stopPropagation(); // Prevent interference with copy/paste
   }, []);
   const handleUpdateInputChange = useCallback((e) => {
@@ -1194,22 +1194,40 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   );
 
   // Render Views
-  const renderOptions = () => (
+const renderOptions = () => (
     <div
       style={{
         display: "flex",
-        justifyContent: "space-around",
+        flexDirection: "column",
+        alignItems: "center",
         padding: "1rem",
+        gap: "1rem",
+        "@media (min-width: 576px)": {
+          flexDirection: "row",
+          justifyContent: "space-around",
+        },
       }}
     >
-      <StyledButton variant="primary" onClick={() => setView("edit")}>
+      <StyledButton
+        variant="primary"
+        onClick={() => setView("edit")}
+        
+        style={{ width: "100%", maxWidth: "250px" }}
+      >
         Edit Full Details
       </StyledButton>
-      <StyledButton variant="info" onClick={() => setView("update")}>
+      <StyledButton
+        variant="info"
+        onClick={() => setView("update")}
+     
+        style={{ width: "100%", maxWidth: "250px" }}
+      >
         Update Follow-up
       </StyledButton>
     </div>
   );
+
+
 
   const renderEditForm = () => (
     <Form onSubmit={handleSubmit(onEditSubmit)}>
