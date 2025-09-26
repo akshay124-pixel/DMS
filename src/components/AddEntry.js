@@ -104,57 +104,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required fields
-    const requiredFields = [
-      { key: "customerName", label: "Customer Name" },
-      { key: "email", label: "Email" },
-      { key: "mobileNumber", label: "Mobile Number" },
-      { key: "product", label: "Product" },
-      { key: "address", label: "Address" },
-      { key: "organization", label: "Organization" },
-      ...(isCustomOrganization
-        ? [{ key: "customOrganization", label: "Custom Organization" }]
-        : []),
-      { key: "category", label: "Category" },
-    ];
-
-    for (const { key, label } of requiredFields) {
-      if (!formData[key] || formData[key].trim() === "") {
-        toast.error(`${label} is required!`);
-        return;
-      }
-    }
-
-    // Validate mobile number
-    if (formData.mobileNumber.length !== 10) {
-      toast.error("Mobile number must be exactly 10 digits!");
-      return;
-    }
-
-    // Validate product
-    if (!validProducts.includes(formData.product)) {
-      toast.error("Please select a valid product!");
-      return;
-    }
-
-    // Validate field lengths
-    if (formData.customerName.length > 100) {
-      toast.error("Customer name cannot exceed 100 characters!");
-      return;
-    }
-    if (formData.address.length < 5) {
-      toast.error("Address must be at least 5 characters!");
-      return;
-    }
-    if (formData.address.length > 200) {
-      toast.error("Address cannot exceed 200 characters!");
-      return;
-    }
-    if (isCustomOrganization && formData.customOrganization.length > 100) {
-      toast.error("Custom organization cannot exceed 100 characters!");
-      return;
-    }
-
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -253,7 +202,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
-              required
               placeholder="Enter customer name"
               disabled={loading}
               style={formControlStyle}
@@ -296,7 +244,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
-              required
               placeholder="Enter customer email"
               disabled={loading}
               style={formControlStyle}
@@ -313,7 +260,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
-              required
               placeholder="Enter mobile number"
               maxLength={10}
               disabled={loading}
@@ -356,7 +302,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="product"
               value={formData.product}
               onChange={handleInput}
-              required
               disabled={loading}
               style={formControlStyle}
               aria-label="Select product"
@@ -380,18 +325,13 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
-              required
               placeholder="Enter address"
               disabled={loading}
               style={formControlStyle}
               maxLength={200}
               aria-label="Enter address"
             />
-            {formData.address.length > 0 && formData.address.length < 5 && (
-              <Form.Text style={{ color: "red" }}>
-                Address must be at least 5 characters
-              </Form.Text>
-            )}
+
             {formData.address.length > 200 && (
               <Form.Text style={{ color: "red" }}>
                 Address cannot exceed 200 characters
@@ -448,7 +388,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="organization"
               value={formData.organization}
               onChange={handleInput}
-              required
               disabled={loading}
               style={formControlStyle}
               aria-label="Select organization"
@@ -475,7 +414,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 onChange={handleInput}
                 onCopy={handleCopyPaste}
                 onPaste={handleCopyPaste}
-                required
                 placeholder="Enter custom organization"
                 disabled={loading}
                 style={formControlStyle}
@@ -496,7 +434,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="category"
               value={formData.category}
               onChange={handleInput}
-              required
               disabled={loading}
               style={formControlStyle}
               aria-label="Select category"

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Modal, Form, Spinner, Alert } from "react-bootstrap";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -81,7 +81,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       city: "",
       organization: "",
       category: "",
-      status: "",
+
       remarks: "",
     }),
     []
@@ -135,7 +135,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         city: entryToEdit.city || "",
         organization: entryToEdit.organization || "",
         category: entryToEdit.category || "",
-        status: entryToEdit.status || "",
+
         remarks: entryToEdit.remarks || "",
       };
       const newUpdateData = {
@@ -167,7 +167,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     []
   );
 
-   const handleCopyPaste = useCallback((e) => {
+  const handleCopyPaste = useCallback((e) => {
     e.stopPropagation(); // Prevent interference with copy/paste
   }, []);
   const handleUpdateInputChange = useCallback((e) => {
@@ -1194,7 +1194,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   );
 
   // Render Views
-const renderOptions = () => (
+  const renderOptions = () => (
     <div
       style={{
         display: "flex",
@@ -1211,7 +1211,6 @@ const renderOptions = () => (
       <StyledButton
         variant="primary"
         onClick={() => setView("edit")}
-        
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Edit Full Details
@@ -1219,15 +1218,12 @@ const renderOptions = () => (
       <StyledButton
         variant="info"
         onClick={() => setView("update")}
-     
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Update Follow-up
       </StyledButton>
     </div>
   );
-
-
 
   const renderEditForm = () => (
     <Form onSubmit={handleSubmit(onEditSubmit)}>
@@ -1280,7 +1276,6 @@ const renderOptions = () => (
           <Form.Label>📧 Email</Form.Label>
           <Form.Control
             {...register("email", {
-              required: "Email is required",
               pattern: {
                 value: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
                 message: "Please enter a valid email address",
@@ -1359,9 +1354,7 @@ const renderOptions = () => (
           <Form.Label>📦 Product</Form.Label>
           <Form.Control
             as="select"
-            {...register("product", {
-              required: "Product is required",
-            })}
+            {...register("product")}
             onChange={(e) =>
               debouncedHandleInputChange("product", e.target.value)
             }
@@ -1384,17 +1377,7 @@ const renderOptions = () => (
           <Form.Label>🏠 Address</Form.Label>
           <Form.Control
             as="textarea"
-            {...register("address", {
-              required: "Address is required",
-              minLength: {
-                value: 5,
-                message: "Address must be at least 5 characters",
-              },
-              maxLength: {
-                value: 200,
-                message: "Address cannot exceed 200 characters",
-              },
-            })}
+            {...register("address")}
             onChange={(e) =>
               debouncedHandleInputChange("address", e.target.value)
             }
@@ -1475,9 +1458,7 @@ const renderOptions = () => (
           <Form.Label>🏢 Organization</Form.Label>
           <Form.Control
             as="select"
-            {...register("organization", {
-              required: "Organization is required",
-            })}
+            {...register("organization")}
             onChange={(e) =>
               debouncedHandleInputChange("organization", e.target.value)
             }
@@ -1504,9 +1485,7 @@ const renderOptions = () => (
           <Form.Label>📁 Category</Form.Label>
           <Form.Control
             as="select"
-            {...register("category", {
-              required: "Category is required",
-            })}
+            {...register("category")}
             onChange={(e) =>
               debouncedHandleInputChange("category", e.target.value)
             }
@@ -1521,41 +1500,6 @@ const renderOptions = () => (
           <Form.Control.Feedback type="invalid">
             {errors.category?.message}
           </Form.Control.Feedback>
-        </Form.Group>
-        <Form.Group controlId="status">
-          <Form.Label>📊 Status</Form.Label>
-          <Form.Control
-            as="select"
-            value={updateData.status}
-            onChange={handleUpdateInputChange}
-            name="status"
-            style={formControlStyle}
-            aria-label="Status"
-          >
-            <option value="">-- Select Status --</option>
-            <option value="Maybe">Maybe</option>
-            <option value="Interested">Interested</option>
-            <option value="Not Interested">Not Interested</option>
-            <option value="Not">Not Connected</option>
-            <option value="Service">Service Call</option>
-            <option value="Closed">Closed</option>
-          </Form.Control>
-        </Form.Group>
-        <Form.Group controlId="remarks">
-          <Form.Label>✏️ Remarks</Form.Label>
-          <Form.Control
-            as="textarea"
-            value={updateData.remarks}
-            onChange={handleUpdateInputChange}
-            onCopy={handleCopyPaste}
-            onPaste={handleCopyPaste}
-            name="remarks"
-            rows={3}
-            maxLength={500}
-            style={formControlStyle}
-            aria-label="Remarks"
-          />
-          <Form.Text>{updateData.remarks.length}/500</Form.Text>
         </Form.Group>
       </FormSection>
     </Form>
