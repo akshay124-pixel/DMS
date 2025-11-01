@@ -631,7 +631,7 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
             cursor: "pointer",
           }}
         >
-          Close
+          Close Dashboard
         </motion.button>
       </Box>
     </Drawer>
