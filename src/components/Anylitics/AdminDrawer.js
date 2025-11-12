@@ -372,7 +372,6 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                 >
                   📊 Overall Statistics
                 </Typography>
-
                 <Box
                   sx={{
                     display: "flex",
@@ -398,74 +397,41 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                       color: "lightblue",
                     },
                     {
-                      label: "Cold",
-                      value: overallStats.cold,
-                      color: "orange",
-                    },
-                    {
-                      label: "Warm",
-                      value: overallStats.warm,
-                      color: "green",
-                    },
-                    {
-                      label: "Hot",
-                      value: overallStats.hot,
-                      color: "gold",
-                    },
-                    {
-                      label: "Not", // 👈 originally "Not"
+                      label: "Not Connected",
                       value: overallStats.not,
                       color: "crimson",
                     },
-                    {
-                      label: "Won",
-                      value: overallStats.won,
-                      color: "skyblue",
-                    },
-                    {
-                      label: "Lost",
-                      value: overallStats.lost,
-                      color: "red",
-                    },
-                  ]
-                    // 👇 Replace label dynamically if it’s "Not"
-                    .map((stat) =>
-                      stat.label === "Not"
-                        ? { ...stat, label: "Not Connected" }
-                        : stat
-                    )
-                    .map((stat, index) => (
-                      <motion.div
-                        key={stat.label}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      sx={{
+                        flex: "1 1 120px",
+                        background: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        p: 1.5,
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography
+                        sx={{ fontSize: "0.9rem", fontWeight: "600" }}
+                      >
+                        {stat.label}
+                      </Typography>
+                      <Typography
                         sx={{
-                          flex: "1 1 120px",
-                          background: "rgba(255, 255, 255, 0.1)",
-                          borderRadius: "8px",
-                          p: 1.5,
-                          textAlign: "center",
+                          fontSize: "1.2rem",
+                          fontWeight: "bold",
+                          color: stat.color,
                         }}
                       >
-                        <Typography
-                          sx={{ fontSize: "0.9rem", fontWeight: "600" }}
-                        >
-                          {stat.label}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: "1.2rem",
-                            fontWeight: "bold",
-                            color: stat.color,
-                          }}
-                        >
-                          {stat.value}
-                        </Typography>
-                      </motion.div>
-                    ))}
+                        {stat.value}
+                      </Typography>
+                    </motion.div>
+                  ))}
                 </Box>
-
                 <Box
                   sx={{
                     display: "grid",
