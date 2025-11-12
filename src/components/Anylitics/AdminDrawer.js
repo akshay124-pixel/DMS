@@ -395,12 +395,7 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                       label: "Total Pending",
                       value: overallStats.notFound,
                       color: "lightblue",
-                    },
-                    {
-                      label: "Not Connected",
-                      value: overallStats.not,
-                      color: "crimson",
-                    },
+                    }
                   ].map((stat, index) => (
                     <motion.div
                       key={stat.label}
