@@ -411,9 +411,16 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                       }}
                     >
                       <Typography
-                        sx={{ fontSize: "0.9rem", fontWeight: "600" }}
+                        sx={{
+                          fontSize: "0.9rem",
+                          fontWeight: "600",
+                        }}
                       >
-                        {stat.label}
+                        {stat.value !== null &&
+                        stat.value !== undefined &&
+                        stat.value !== 0
+                          ? stat.label
+                          : "Not Connected"}
                       </Typography>
                       <Typography
                         sx={{
