@@ -452,7 +452,11 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                       value: overallStats.service,
                       color: "cyan",
                     },
-                    { label: "Not", value: overallStats.not, color: "purple" },
+                    {
+                      label: "Not Connected",
+                      value: overallStats.not,
+                      color: "purple",
+                    },
                     {
                       label: "Won",
                       value: overallStats.closedWon,
