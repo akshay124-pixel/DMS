@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import { Modal, Button, Badge } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
@@ -503,7 +503,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
 }
 
 // Helper Components
-const Section = React.memo(({ title, children }) => (
+const Section = memo(({ title, children }) => (
   <section
     style={{
       background: "#ffffff",
@@ -545,7 +545,7 @@ const Section = React.memo(({ title, children }) => (
   </section>
 ));
 
-const DataItem = React.memo(({ label, value }) => (
+const DataItem = memo(({ label, value }) => (
   <div
     style={{
       display: "flex",
@@ -579,7 +579,7 @@ const DataItem = React.memo(({ label, value }) => (
   </div>
 ));
 
-const Grid = React.memo(({ children }) => (
+const Grid = memo(({ children }) => (
   <div
     style={{
       display: "grid",

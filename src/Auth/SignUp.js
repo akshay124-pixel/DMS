@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "react-toastify";
+import api, { setAuthData } from "../api/api";
 
 function Signup() {
   const navigate = useNavigate();
@@ -33,17 +33,15 @@ function Signup() {
     }
 
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL}/user/signup`,
-        form
-      );
+      // ✅ api instance use karo
+      const response = await api.post("/user/signup", form);
 
       if (response.status === 201) {
-        const { token, user } = response.data;
+        // ✅ accessToken aur refreshToken dono milenge
+        const { accessToken, refreshToken, user } = response.data;
 
-        // Store data in localStorage
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        // ✅ setAuthData use karo tokens save karne ke liye
+        setAuthData(accessToken, refreshToken, user);
 
         toast.success("Your account has been created! Redirecting...", {
           position: "top-right",

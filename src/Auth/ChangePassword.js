@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
+import api, { logout } from "../api/api";
 
 function ChangePassword({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({
@@ -46,18 +46,9 @@ function ChangePassword({ setIsAuthenticated }) {
       }
 
       try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_URL}/auth/verify-token`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        console.log(
-          "ChangePassword: Token verification successful",
-          response.data
-        );
+        // ✅ api instance use karo - interceptor automatically token add karega
+        const response = await api.get("/auth/verify-token");
+        console.log("ChangePassword: Token verification successful", response.data);
       } catch (error) {
         console.error("ChangePassword: Token verification failed", error);
         toast.error("Session expired or invalid. Please log in again.", {
@@ -65,10 +56,9 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        // ✅ logout function use karo - proper cleanup hoga
+        await logout();
         setIsAuthenticated(false);
-        navigate("/login");
       }
     };
 
@@ -174,16 +164,11 @@ function ChangePassword({ setIsAuthenticated }) {
         return;
       }
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL}/auth/change-password`,
-        { ...formData, email: userEmail },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // ✅ api instance use karo
+      const response = await api.post("/auth/change-password", {
+        ...formData,
+        email: userEmail,
+      });
 
       if (response.status === 200) {
         toast.success("Password changed successfully! Please log in again.", {
@@ -196,11 +181,10 @@ function ChangePassword({ setIsAuthenticated }) {
           newPassword: "",
           confirmNewPassword: "",
         });
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+        // ✅ Password change ke baad logout karo (tokens invalidate ho gaye)
+        setTimeout(async () => {
+          await logout();
           setIsAuthenticated(false);
-          navigate("/login");
         }, 3000);
       }
     } catch (error) {

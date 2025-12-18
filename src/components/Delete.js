@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { toast } from "react-toastify";
+import api from "../api/api";
 
 function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,28 +20,18 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
         return;
       }
 
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      // api instance automatically token add karega interceptor se
 
       if (itemIds && itemIds.length > 0) {
-        // Multiple delete
+        // Multiple delete - api instance use karo
         await Promise.all(
-          itemIds.map((id) =>
-            axios.delete(`${process.env.REACT_APP_URL}/api/entry/${id}`, config)
-          )
+          itemIds.map((id) => api.delete(`/api/entry/${id}`))
         );
         onDelete(itemIds);
         toast.success(`${itemIds.length} entries deleted successfully.`);
       } else if (itemId) {
-        // Single delete
-        const response = await axios.delete(
-          `${process.env.REACT_APP_URL}/api/entry/${itemId}`,
-          config
-        );
+        // Single delete - api instance use karo
+        const response = await api.delete(`/api/entry/${itemId}`);
         if (response.status === 200) {
           onDelete([itemId]);
           toast.success("Entry deleted successfully.");

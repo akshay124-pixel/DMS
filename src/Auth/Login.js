@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
-
+import api, { setAuthData } from "../api/api";
 function Login({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({
     email: "",
@@ -34,13 +33,14 @@ function Login({ setIsAuthenticated }) {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL}/auth/login`,
+    
+      const response = await api.post(
+        "/auth/login",
         formData
       );
 
       if (response.status === 200) {
-        const { token, user } = response.data;
+        const { accessToken, refreshToken, user } = response.data;
 
         // Ensure user object includes email
         const userData = {
@@ -54,8 +54,7 @@ function Login({ setIsAuthenticated }) {
 
         console.log("Login: Storing user data", userData);
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(userData));
+        setAuthData(accessToken, refreshToken, userData)
         setIsAuthenticated(true);
 
         toast.success("Login successful! Redirecting...", {

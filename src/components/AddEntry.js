@@ -1,8 +1,8 @@
 import { Button, Modal, Form } from "react-bootstrap";
-import React, { useState, useCallback, useEffect } from "react";
-import axios from "axios";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "react-toastify";
 import { statesAndDistricts } from "./statesAndDistricts";
+import api from "../api/api";
 
 // Common styles for form controls
 const formControlStyle = {
@@ -135,16 +135,8 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         },
       };
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL}/api/entry`,
-        submitData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // ✅ api instance use karo - token automatically add hoga interceptor se
+      const response = await api.post("/api/entry", submitData);
 
       toast.success("Entry added successfully!");
       onEntryAdded(response.data.data); // Pass the new entry to the parent

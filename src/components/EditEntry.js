@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Modal, Form, Spinner, Alert } from "react-bootstrap";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { useForm, Controller } from "react-hook-form";
 import styled from "styled-components";
 import debounce from "lodash/debounce";
 import { FaEdit, FaSyncAlt, FaCog } from "react-icons/fa";
+import api from "../api/api";
 
 // Styled Components
 const StyledModal = styled(Modal)`
@@ -209,16 +209,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = null;
       }
 
-      const response = await axios.put(
-        `${process.env.REACT_APP_URL}/api/editentry/${entryToEdit._id}`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // ✅ api instance use karo
+      const response = await api.put(`/api/editentry/${entryToEdit._id}`, payload);
       const updatedEntry = response.data.data;
       toast.success("Entry updated successfully!");
       onEntryUpdated(updatedEntry); // Pass the updated entry to the parent
@@ -268,16 +260,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = updateData.closeamount;
       }
 
-      const response = await axios.put(
-        `${process.env.REACT_APP_URL}/api/editentry/${entryToEdit._id}`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // ✅ api instance use karo
+      const response = await api.put(`/api/editentry/${entryToEdit._id}`, payload);
       const updatedEntry = response.data.data;
       toast.success("Follow-up updated successfully!");
       onEntryUpdated(updatedEntry); // Pass the updated entry to the parent

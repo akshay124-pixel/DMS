@@ -15,8 +15,8 @@ import { DateRangePicker } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Popover } from "@mui/material";
-import axios from "axios";
 import * as XLSX from "xlsx";
+import api from "../api/api";
 import { toast } from "react-toastify";
 import DisableCopy from "./DisableCopy";
 import AddEntry from "./AddEntry";
@@ -587,12 +587,8 @@ function DashBoard() {
       const decoded = jwtDecode(token);
       console.log("Decoded token:", decoded);
 
-      const response = await axios.get(
-        `${process.env.REACT_APP_URL}/api/fetch-entry`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // ✅ api instance use karo - token automatically add hoga
+      const response = await api.get("/api/fetch-entry");
 
       if (!Array.isArray(response.data.data)) {
         console.error("Invalid entries data:", response.data);
@@ -648,12 +644,8 @@ function DashBoard() {
       const userRole = decoded.role || "Others";
       const userId = decoded.id;
 
-      const response = await axios.get(
-        `${process.env.REACT_APP_URL}/api/user-role`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // ✅ api instance use karo
+      const response = await api.get("/api/user-role");
 
       setIsAdmin(response.data.isAdmin || false);
       setIsSuperadmin(response.data.isSuperadmin || false);
@@ -931,18 +923,10 @@ function DashBoard() {
         for (let i = 0; i < chunks.length; i++) {
           const chunk = chunks[i];
           try {
-            const response = await axios.post(
-              `${process.env.REACT_APP_URL}/api/entries`,
-              chunk,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                withCredentials: true,
-                timeout: 60000,
-              }
-            );
+            // ✅ api instance use karo
+            const response = await api.post("/api/entries", chunk, {
+              timeout: 60000,
+            });
 
             if (response.status === 201 || response.status === 200) {
               uploadedCount += chunk.length;
@@ -1024,13 +1008,8 @@ function DashBoard() {
         return;
       }
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL}/api/send-email`,
-        { entryId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // ✅ api instance use karo
+      const response = await api.post("/api/send-email", { entryId });
 
       toast.success(response.data.message);
     } catch (error) {

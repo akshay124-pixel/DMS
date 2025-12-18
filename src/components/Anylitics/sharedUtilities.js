@@ -1,7 +1,7 @@
-import axios from "axios";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import api from "../../api/api";
 
 const normalizeRole = (role) => {
   if (!role) return "Others";
@@ -30,9 +30,8 @@ const fetchUsers = async (entries, userId, role) => {
     }
 
     console.log("fetchUsers: userId:", userId, "role:", role);
-    const response = await axios.get(`${process.env.REACT_APP_URL}/api/users`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // ✅ api instance use karo - automatic token refresh hoga
+    const response = await api.get("/api/users");
 
     let users = Array.isArray(response.data.data) ? response.data.data : [];
     console.log(

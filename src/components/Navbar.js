@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
 import { Button } from "react-bootstrap";
-
+import { logout } from "../api/api";
 const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState("");
@@ -19,18 +19,13 @@ const Navbar = () => {
     setUserRole(user?.role || "");
   }, []);
 
-  const handleLogout = () => {
-    // Remove user-related data from localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    // Reset authentication state and user details
-    setIsAuthenticated(false);
-    setUserName("User");
-    setUserRole("");
-
-    // Navigate to the login page
-    navigate("/login");
+  const handleLogout = async() => {
+    try {
+      await logout()
+    } catch (error) {
+      
+    console.error("Logout error:", error);
+    }
   };
 
   // Close dropdown if clicked outside
