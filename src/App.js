@@ -19,7 +19,7 @@ const PrivateRoute = ({ element, isAuthenticated, isLoading }) => {
   if (isLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <p>Loading...</p>
+       
       </div>
     );
   }
