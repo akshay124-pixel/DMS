@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { statesAndDistricts } from "./statesAndDistricts";
 import api from "../api/api";
 
-// Common styles for form controls
+// Common styles for form controls //Check Staging
 const formControlStyle = {
   borderRadius: "8px",
   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
