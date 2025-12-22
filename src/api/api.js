@@ -154,6 +154,9 @@ const handleLogout = ()=>{
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
   localStorage.removeItem("token"); // Purana token bhi clear karo (backward compatibility)
+  localStorage.removeItem("userId"); // Clear userId
+  localStorage.removeItem("role"); // Clear role
+  localStorage.removeItem("username"); // Clear username
   
   // Login page par redirect karo
   // Note: React Router use nahi kar sakte yahan, toh window.location use karo

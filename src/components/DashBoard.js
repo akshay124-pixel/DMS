@@ -294,8 +294,8 @@ function DashBoard() {
   const [selectedStateA, setSelectedStateA] = useState("");
   const [selectedCityA, setSelectedCityA] = useState("");
   const [selectedCreatedBy, setSelectedCreatedBy] = useState("");
-  const [role, setRole] = useState(localStorage.getItem("role") || "");
-  const [userId, setUserId] = useState(localStorage.getItem("userId") || "");
+  const [role, setRole] = useState("");
+  const [userId, setUserId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isValueAnalyticsOpen, setIsValueAnalyticsOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
@@ -578,14 +578,11 @@ function DashBoard() {
   const open = Boolean(anchorEl);
 
   // Inside fetchEntries
-  const fetchEntries = useCallback(async () => {
+  const fetchEntries = useCallback(async (currentRole, currentUserId) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
-
-      const decoded = jwtDecode(token);
-      console.log("Decoded token:", decoded);
 
       // ✅ api instance use karo - token automatically add hoga
       const response = await api.get("/api/fetch-entry");
@@ -599,13 +596,18 @@ function DashBoard() {
 
       let fetchedEntries = response.data.data;
 
-      if (role !== "Superadmin" && role !== "Admin") {
+      // Use passed role/userId instead of state (which might be stale)
+      const effectiveRole = currentRole || role;
+      const effectiveUserId = currentUserId || userId;
+
+      if (effectiveRole !== "Superadmin" && effectiveRole !== "Admin") {
         fetchedEntries = fetchedEntries.filter(
-          (entry) => normalizeId(entry.createdBy?._id) === userId
+          (entry) => normalizeId(entry.createdBy?._id) === effectiveUserId
         );
       }
 
       setEntries(fetchedEntries);
+      console.log(`Fetched ${fetchedEntries.length} entries for role: ${effectiveRole}`);
     } catch (error) {
       console.error("Error fetching data:", {
         message: error.message,
@@ -624,7 +626,7 @@ function DashBoard() {
         listRef.current.forceUpdateGrid();
       }
     }
-  }, [userId, role, navigate]);
+  }, [role, userId]);
 
   const fetchAdmin = useCallback(async () => {
     setAuthLoading(true);
@@ -637,12 +639,12 @@ function DashBoard() {
         setUserId("");
         toast.error("Please log in to continue.");
         navigate("/login");
-        return;
+        return null;
       }
 
       const decoded = jwtDecode(token);
       const userRole = decoded.role || "Others";
-      const userId = decoded.id;
+      const currentUserId = decoded.id;
 
       // ✅ api instance use karo
       const response = await api.get("/api/user-role");
@@ -650,11 +652,14 @@ function DashBoard() {
       setIsAdmin(response.data.isAdmin || false);
       setIsSuperadmin(response.data.isSuperadmin || false);
       setRole(userRole);
-      setUserId(userId);
+      setUserId(currentUserId);
 
-      console.log("Fetched user info:", { userId, role: userRole });
-      localStorage.setItem("userId", userId);
+      console.log("Fetched user info:", { userId: currentUserId, role: userRole });
+      localStorage.setItem("userId", currentUserId);
       localStorage.setItem("role", userRole);
+      
+      // Return the values so fetchEntries can use them immediately
+      return { role: userRole, userId: currentUserId };
     } catch (error) {
       console.error("Error fetching admin status:", error.message);
       setIsAdmin(false);
@@ -665,6 +670,7 @@ function DashBoard() {
         "Your session has expired or there was a problem. Please log in again to continue."
       );
       navigate("/login");
+      return null;
     } finally {
       setAuthLoading(false);
     }
@@ -673,9 +679,10 @@ function DashBoard() {
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
-      await fetchAdmin();
-      if (isMounted) {
-        await fetchEntries();
+      const authData = await fetchAdmin();
+      if (isMounted && authData) {
+        // Pass the fresh role and userId to fetchEntries
+        await fetchEntries(authData.role, authData.userId);
       }
     };
     fetchData();
@@ -956,7 +963,7 @@ function DashBoard() {
         // Always fetch fresh data from server after upload
         if (uploadedCount > 0) {
           toast.success(`Upload complete! ${uploadedCount} entries added.`);
-          await fetchEntries(); // Fetch fresh data from server
+          await fetchEntries(role, userId); // Fetch fresh data from server
         } else {
           toast.error(`Failed to upload entries. ${errors.join("; ")}`);
         }
