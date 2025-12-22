@@ -1,6 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
-import api from "../api/api";
+import api, { getAuthData } from "../api/api";
 
 function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,23 +14,21 @@ function DeleteModal({ isOpen, onClose, onDelete, itemId, itemIds }) {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const { accessToken } = getAuthData();
+      if (!accessToken) {
         toast.error("You need to log in before deleting entries.");
         return;
       }
 
-      // api instance automatically token add karega interceptor se
-
       if (itemIds && itemIds.length > 0) {
-        // Multiple delete - api instance use karo
+        // Multiple delete
         await Promise.all(
           itemIds.map((id) => api.delete(`/api/entry/${id}`))
         );
         onDelete(itemIds);
         toast.success(`${itemIds.length} entries deleted successfully.`);
       } else if (itemId) {
-        // Single delete - api instance use karo
+        // Single delete
         const response = await api.delete(`/api/entry/${itemId}`);
         if (response.status === 200) {
           onDelete([itemId]);

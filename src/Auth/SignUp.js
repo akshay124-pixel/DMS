@@ -1,8 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { toast } from "react-toastify";
-import api, { setAuthData } from "../api/api";
+import { setAuthData } from "../api/api";
 
 function Signup() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function Signup() {
   });
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+
   const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData((prevForm) => ({ ...prevForm, [name]: value }));
@@ -22,7 +24,6 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Simple check for empty fields
     if (!form.username || !form.email || !form.password || !form.role) {
       toast.error("Please fill out all the fields before signing up.", {
         position: "top-right",
@@ -33,15 +34,25 @@ function Signup() {
     }
 
     try {
-      // ✅ api instance use karo
-      const response = await api.post("/user/signup", form);
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/user/signup`,
+        form
+      );
 
       if (response.status === 201) {
-        // ✅ accessToken aur refreshToken dono milenge
         const { accessToken, refreshToken, user } = response.data;
 
-        // ✅ setAuthData use karo tokens save karne ke liye
-        setAuthData(accessToken, refreshToken, user);
+        // Store all tokens and user data using setAuthData
+        setAuthData({
+          accessToken,
+          refreshToken,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+          },
+        });
 
         toast.success("Your account has been created! Redirecting...", {
           position: "top-right",
@@ -59,29 +70,17 @@ function Signup() {
     } catch (error) {
       console.error("Error during signup", error);
 
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        // ✅ Convert technical message to friendly text
+      if (error.response?.data?.message) {
         let userFriendlyMessage = error.response.data.message;
 
-        if (
-          userFriendlyMessage.includes("duplicate") ||
-          userFriendlyMessage.includes("already exists")
-        ) {
+        if (userFriendlyMessage.includes("duplicate") || userFriendlyMessage.includes("already exists")) {
           userFriendlyMessage = "An account with this email already exists.";
-        } else if (
-          userFriendlyMessage.toLowerCase().includes("invalid email")
-        ) {
+        } else if (userFriendlyMessage.toLowerCase().includes("invalid email")) {
           userFriendlyMessage = "Please enter a valid email address.";
         } else if (userFriendlyMessage.toLowerCase().includes("password")) {
-          userFriendlyMessage =
-            "Your password must meet the security requirements.";
+          userFriendlyMessage = "Your password must meet the security requirements.";
         } else {
-          userFriendlyMessage =
-            "We couldn't create your account. Please try again.";
+          userFriendlyMessage = "We couldn't create your account. Please try again.";
         }
 
         setError(userFriendlyMessage);
@@ -91,17 +90,12 @@ function Signup() {
           theme: "colored",
         });
       } else {
-        setError(
-          "We couldn’t connect to the server. Please check your internet and try again."
-        );
-        toast.error(
-          "We couldn’t connect to the server. Please check your internet and try again.",
-          {
-            position: "top-right",
-            autoClose: 3000,
-            theme: "colored",
-          }
-        );
+        setError("We couldn't connect to the server. Please check your internet and try again.");
+        toast.error("We couldn't connect to the server. Please check your internet and try again.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
       }
     }
   };
@@ -123,9 +117,7 @@ function Signup() {
       <div className="form-box">
         <form className="form" onSubmit={handleSubmit}>
           <span className="title">Sign Up</span>
-          <span className="subtitle">
-            Create a free account with your email.
-          </span>
+          <span className="subtitle">Create a free account with your email.</span>
           {error && <p style={{ color: "red" }}>{error}</p>}
           <div className="form-box">
             <input
@@ -147,7 +139,7 @@ function Signup() {
               value={form.email}
               onChange={handleInput}
               required
-            />{" "}
+            />
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
@@ -158,7 +150,7 @@ function Signup() {
                 value={form.password}
                 onChange={handleInput}
                 required
-              />{" "}
+              />
               <button
                 type="button"
                 style={{
@@ -184,8 +176,6 @@ function Signup() {
               className="input"
               required
             >
-              {/* <option value="Superadmin">SuperAdmin</option>
-              <option value="Admin">Admin</option> */}
               <option value="Others">User</option>
             </select>
           </div>

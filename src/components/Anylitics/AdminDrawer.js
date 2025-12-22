@@ -395,7 +395,7 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                       label: "Total Pending",
                       value: overallStats.notFound,
                       color: "lightblue",
-                    }
+                    },
                   ].map((stat, index) => (
                     <motion.div
                       key={stat.label}
@@ -452,11 +452,7 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
                       value: overallStats.service,
                       color: "cyan",
                     },
-                    {
-                      label: "Not Connected",
-                      value: overallStats.not,
-                      color: "purple",
-                    },
+                    { label: "Not", value: overallStats.not, color: "purple" },
                     {
                       label: "Won",
                       value: overallStats.closedWon,
@@ -635,7 +631,7 @@ const AdminDrawer = ({ entries, isOpen, onClose, role, userId, dateRange }) => {
             cursor: "pointer",
           }}
         >
-          Close Dashboard
+          Close
         </motion.button>
       </Box>
     </Drawer>

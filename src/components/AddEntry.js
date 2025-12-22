@@ -1,8 +1,8 @@
 import { Button, Modal, Form } from "react-bootstrap";
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { toast } from "react-toastify";
 import { statesAndDistricts } from "./statesAndDistricts";
-import api from "../api/api";
+import api, { getAuthData } from "../api/api";
 
 // Common styles for form controls
 const formControlStyle = {
@@ -103,11 +103,11 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
   // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const { accessToken } = getAuthData();
+      if (!accessToken) {
         toast.error("You must be logged in to add an entry.");
         return;
       }
@@ -135,7 +135,6 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
         },
       };
 
-      // ✅ api instance use karo - token automatically add hoga interceptor se
       const response = await api.post("/api/entry", submitData);
 
       toast.success("Entry added successfully!");
@@ -194,6 +193,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
+              
               placeholder="Enter customer name"
               disabled={loading}
               style={formControlStyle}
@@ -236,6 +236,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
+              
               placeholder="Enter customer email"
               disabled={loading}
               style={formControlStyle}
@@ -252,6 +253,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
+            
               placeholder="Enter mobile number"
               maxLength={10}
               disabled={loading}
@@ -294,6 +296,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="product"
               value={formData.product}
               onChange={handleInput}
+             
               disabled={loading}
               style={formControlStyle}
               aria-label="Select product"
@@ -317,13 +320,14 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               onChange={handleInput}
               onCopy={handleCopyPaste}
               onPaste={handleCopyPaste}
+           
               placeholder="Enter address"
               disabled={loading}
               style={formControlStyle}
               maxLength={200}
               aria-label="Enter address"
             />
-
+           
             {formData.address.length > 200 && (
               <Form.Text style={{ color: "red" }}>
                 Address cannot exceed 200 characters
@@ -380,6 +384,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="organization"
               value={formData.organization}
               onChange={handleInput}
+         
               disabled={loading}
               style={formControlStyle}
               aria-label="Select organization"
@@ -406,6 +411,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
                 onChange={handleInput}
                 onCopy={handleCopyPaste}
                 onPaste={handleCopyPaste}
+            
                 placeholder="Enter custom organization"
                 disabled={loading}
                 style={formControlStyle}
@@ -426,6 +432,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               name="category"
               value={formData.category}
               onChange={handleInput}
+             
               disabled={loading}
               style={formControlStyle}
               aria-label="Select category"

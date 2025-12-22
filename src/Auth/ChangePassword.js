@@ -3,7 +3,7 @@ import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
-import api, { logout } from "../api/api";
+import api, { getAuthData, logout } from "../api/api";
 
 function ChangePassword({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({
@@ -19,22 +19,18 @@ function ChangePassword({ setIsAuthenticated }) {
   const [passwordStrengthColor, setPasswordStrengthColor] = useState("");
   const navigate = useNavigate();
 
-  // Check authentication and verify token on mount
+  // Check authentication on mount
   useEffect(() => {
     const verifyAuth = async () => {
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const { accessToken, user } = getAuthData();
 
       console.log("ChangePassword: Checking authentication", {
-        hasToken: !!token,
-        hasUserEmail: !!user.email,
-        userEmail: user.email,
+        hasToken: !!accessToken,
+        hasUserEmail: !!user?.email,
       });
 
-      if (!token || !user.email) {
-        console.log(
-          "ChangePassword: Missing authentication data, redirecting to login"
-        );
+      if (!accessToken || !user?.email) {
+        console.log("ChangePassword: Missing authentication data, redirecting to login");
         toast.error("You are not authenticated. Please log in.", {
           position: "top-right",
           autoClose: 3000,
@@ -46,7 +42,6 @@ function ChangePassword({ setIsAuthenticated }) {
       }
 
       try {
-        // ✅ api instance use karo - interceptor automatically token add karega
         const response = await api.get("/auth/verify-token");
         console.log("ChangePassword: Token verification successful", response.data);
       } catch (error) {
@@ -56,9 +51,7 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        // ✅ logout function use karo - proper cleanup hoga
-        await logout();
-        setIsAuthenticated(false);
+        logout();
       }
     };
 
@@ -85,13 +78,7 @@ function ChangePassword({ setIsAuthenticated }) {
     const hasSpecial = /[@$!%*?&]/.test(password);
     const isLongEnough = password.length >= 8;
 
-    const score = [
-      hasLower,
-      hasUpper,
-      hasNumber,
-      hasSpecial,
-      isLongEnough,
-    ].filter(Boolean).length;
+    const score = [hasLower, hasUpper, hasNumber, hasSpecial, isLongEnough].filter(Boolean).length;
 
     if (score < 3) return { text: "Weak", color: "#ff4444" };
     if (score < 5) return { text: "Medium", color: "#ffaa00" };
@@ -101,11 +88,7 @@ function ChangePassword({ setIsAuthenticated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.currentPassword ||
-      !formData.newPassword ||
-      !formData.confirmNewPassword
-    ) {
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmNewPassword) {
       toast.error("Please fill in all fields.", {
         position: "top-right",
         autoClose: 3000,
@@ -114,8 +97,7 @@ function ChangePassword({ setIsAuthenticated }) {
       return;
     }
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(formData.newPassword)) {
       toast.error(
         "New password must be at least 8 characters long and include uppercase, lowercase, number, and special character.",
@@ -149,22 +131,19 @@ function ChangePassword({ setIsAuthenticated }) {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const userEmail = user.email;
+      const { user } = getAuthData();
+      const userEmail = user?.email;
 
-      if (!token || !userEmail) {
+      if (!userEmail) {
         toast.error("Authentication data missing. Please log in again.", {
           position: "top-right",
           autoClose: 3000,
           theme: "colored",
         });
-        setIsAuthenticated(false);
-        navigate("/login");
+        logout();
         return;
       }
 
-      // ✅ api instance use karo
       const response = await api.post("/auth/change-password", {
         ...formData,
         email: userEmail,
@@ -176,15 +155,16 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
+        
         setFormData({
           currentPassword: "",
           newPassword: "",
           confirmNewPassword: "",
         });
-        // ✅ Password change ke baad logout karo (tokens invalidate ho gaye)
-        setTimeout(async () => {
-          await logout();
-          setIsAuthenticated(false);
+
+        // Logout after 3 seconds (as per spec)
+        setTimeout(() => {
+          logout();
         }, 3000);
       }
     } catch (error) {
@@ -196,8 +176,6 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        setIsAuthenticated(false);
-        navigate("/login");
       } else if (error.response?.status === 403) {
         toast.error("Email does not match authenticated user.", {
           position: "top-right",
@@ -216,8 +194,7 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        setIsAuthenticated(false);
-        navigate("/login");
+        logout();
       } else {
         toast.error("Failed to change password. Please try again.", {
           position: "top-right",
@@ -274,11 +251,7 @@ function ChangePassword({ setIsAuthenticated }) {
                   padding: "0",
                   zIndex: 1,
                 }}
-                aria-label={
-                  showCurrentPassword
-                    ? "Hide current password"
-                    : "Show current password"
-                }
+                aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
               >
                 {showCurrentPassword ? "Hide" : "Show"}
               </button>
@@ -311,9 +284,7 @@ function ChangePassword({ setIsAuthenticated }) {
                   padding: "0",
                   zIndex: 1,
                 }}
-                aria-label={
-                  showNewPassword ? "Hide new password" : "Show new password"
-                }
+                aria-label={showNewPassword ? "Hide new password" : "Show new password"}
               >
                 {showNewPassword ? "Hide" : "Show"}
               </button>
@@ -342,51 +313,20 @@ function ChangePassword({ setIsAuthenticated }) {
                   border: "1px solid #dee2e6",
                 }}
               >
-                <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
-                  Password Requirements:
-                </div>
-                <div
-                  style={{
-                    color: /[a-z]/.test(formData.newPassword)
-                      ? "#28a745"
-                      : "#dc3545",
-                  }}
-                >
+                <div style={{ fontWeight: "bold", marginBottom: "4px" }}>Password Requirements:</div>
+                <div style={{ color: /[a-z]/.test(formData.newPassword) ? "#28a745" : "#dc3545" }}>
                   ✓ Lowercase letter
                 </div>
-                <div
-                  style={{
-                    color: /[A-Z]/.test(formData.newPassword)
-                      ? "#28a745"
-                      : "#dc3545",
-                  }}
-                >
+                <div style={{ color: /[A-Z]/.test(formData.newPassword) ? "#28a745" : "#dc3545" }}>
                   ✓ Uppercase letter
                 </div>
-                <div
-                  style={{
-                    color: /\d/.test(formData.newPassword)
-                      ? "#28a745"
-                      : "#dc3545",
-                  }}
-                >
+                <div style={{ color: /\d/.test(formData.newPassword) ? "#28a745" : "#dc3545" }}>
                   ✓ Number
                 </div>
-                <div
-                  style={{
-                    color: /[@$!%*?&]/.test(formData.newPassword)
-                      ? "#28a745"
-                      : "#dc3545",
-                  }}
-                >
+                <div style={{ color: /[@$!%*?&]/.test(formData.newPassword) ? "#28a745" : "#dc3545" }}>
                   ✓ Special character (@$!%*?&)
                 </div>
-                <div
-                  style={{
-                    color:
-                      formData.newPassword.length >= 8 ? "#28a745" : "#dc3545",
-                  }}
-                >
+                <div style={{ color: formData.newPassword.length >= 8 ? "#28a745" : "#dc3545" }}>
                   ✓ At least 8 characters
                 </div>
               </div>
@@ -419,11 +359,7 @@ function ChangePassword({ setIsAuthenticated }) {
                   padding: "0",
                   zIndex: 1,
                 }}
-                aria-label={
-                  showConfirmPassword
-                    ? "Hide confirm password"
-                    : "Show confirm password"
-                }
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               >
                 {showConfirmPassword ? "Hide" : "Show"}
               </button>
@@ -436,11 +372,7 @@ function ChangePassword({ setIsAuthenticated }) {
             disabled={loading}
             aria-label="Change Password"
           >
-            {loading ? (
-              <Spinner animation="border" size="sm" />
-            ) : (
-              "Change Password"
-            )}
+            {loading ? <Spinner animation="border" size="sm" /> : "Change Password"}
           </button>
         </form>
 

@@ -1,11 +1,59 @@
-import { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Modal, Button, Badge } from "react-bootstrap";
+import { Box } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
+import axios from "axios";
+import ClickToCallButton from "./Dialer/ClickToCallButton";
+import CallLogModal from "./Dialer/CallLogModal";
+import ScheduleCallModal from "./Dialer/ScheduleCallModal";
 
-function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
+function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
   const [copied, setCopied] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
+  const [callLogOpen, setCallLogOpen] = useState(false);
+  const [scheduleCallOpen, setScheduleCallOpen] = useState(false);
+  const [nextScheduledCall, setNextScheduledCall] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Fetch next scheduled call when modal opens, entry changes, or refresh triggered
+  useEffect(() => {
+    if (isOpen && entry?._id) {
+      fetchNextScheduledCall();
+    }
+  }, [isOpen, entry?._id, refreshTrigger]);
+
+  const fetchNextScheduledCall = async () => {
+    if (!entry?._id) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/scheduled-calls/${entry._id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success && response.data.data.length > 0) {
+        // Get the next pending scheduled call (sorted by time)
+        const pendingCalls = response.data.data
+          .filter((call) => call.status === "pending")
+          .sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+
+        if (pendingCalls.length > 0) {
+          setNextScheduledCall(pendingCalls[0]);
+        } else {
+          setNextScheduledCall(null);
+        }
+      } else {
+        setNextScheduledCall(null);
+      }
+    } catch (error) {
+      console.error("Fetch scheduled call error:", error);
+      setNextScheduledCall(null);
+    }
+  };
 
   const handleCopy = useCallback(() => {
     if (!isAdmin) {
@@ -223,6 +271,203 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           </Section>
         )}
 
+        {/* Smartflo Call Actions */}
+        <Section title="Call Actions">
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <ClickToCallButton
+              leadId={entry._id}
+              phoneNumber={entry.mobileNumber}
+              onCallInitiated={() => {
+                toast.success("Call initiated! Your phone will ring first.");
+              }}
+            />
+            
+            <Button
+              variant="outline-primary"
+              onClick={() => setCallLogOpen(true)}
+              style={{
+                borderRadius: "8px",
+                padding: "0.6rem 1.2rem",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
+              📞 Call History
+            </Button>
+<Button
+              variant="outline-secondary"
+             onClick={() => setScheduleCallOpen(true)}
+              style={{
+                borderRadius: "8px",
+                padding: "0.6rem 1.2rem",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
+              📅 Schedule Callback
+            </Button>
+          </Box>
+           
+       
+          {/* Call Statistics */}
+{(entry.totalCallsMade > 0 || entry.lastCallDate || nextScheduledCall) && (
+  <Box
+    sx={{
+      mt: 2,
+      p: 2,
+      background: "#ffffff",
+      borderRadius: "10px",
+      border: "1px solid #e5e7eb",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+    }}
+  >
+    <Grid sx={{ gap: "0.8rem" }}>
+
+      {/* Total Calls */}
+      {entry.totalCallsMade > 0 && (
+        <DataItem
+          label="Total Calls"
+          value={
+            <Box sx={{ fontWeight: 600, color: "#111827", fontSize: "0.9rem" }}>
+              {entry.totalCallsMade}
+            </Box>
+          }
+        />
+      )}
+
+      {/* Last Call Date */}
+      {entry.lastCallDate && (
+        <DataItem
+          label="Last Call"
+          value={
+            <Box
+              sx={{
+                padding: "6px 10px",
+                background: "#f6f7f9",
+                borderLeft: "3px solid #6366f1",
+                borderRadius: "6px",
+                fontWeight: 500,
+                color: "#1f2937",
+                fontSize: "0.85rem",
+              }}
+            >
+              {new Date(entry.lastCallDate).toLocaleString("en-GB")}
+            </Box>
+          }
+        />
+      )}
+
+      {/* Last Call Status */}
+      {entry.lastCallStatus && (
+        <DataItem
+          label="Last Status"
+          value={
+            <Box
+              sx={{
+                padding: "6px 10px",
+                background: "#eef2ff",
+                borderLeft: "3px solid #4f46e5",
+                borderRadius: "6px",
+                fontWeight: 500,
+                fontSize: "0.85rem",
+                color: "#4338ca",
+              }}
+            >
+              {entry.lastCallStatus.replace("_", " ").toUpperCase()}
+            </Box>
+          }
+        />
+      )}
+
+      {/* Next Scheduled Call */}
+     {nextScheduledCall && (
+  <DataItem
+    label="Next Scheduled Call"
+    value={
+      <Box
+        display="flex"
+        alignItems="center"
+        gap={1.2}
+        flexWrap="wrap"
+        sx={{ mt: 0.5 }}
+      >
+        
+        {/* Time */}
+        <Box
+          sx={{
+            padding: "6px 10px",
+            background: "#f6f7f9",
+            borderLeft: "3px solid #6a11cb",
+            borderRadius: "6px",
+            fontWeight: 500,
+            fontSize: "0.85rem",
+            color: "#111827",
+          }}
+        >
+          {new Date(nextScheduledCall.scheduledTime).toLocaleString("en-GB")}
+        </Box>
+
+        {/* Priority */}
+        {nextScheduledCall.priority && (
+          <Box
+            sx={{
+              padding: "6px 10px",
+              background:
+                nextScheduledCall.priority === "urgent"
+                  ? "#fee2e2"
+                  : nextScheduledCall.priority === "high"
+                  ? "#ffedd5"
+                  : nextScheduledCall.priority === "medium"
+                  ? "#fef9c3"
+                  : "#dcfce7",
+              borderLeft:
+                nextScheduledCall.priority === "urgent"
+                  ? "3px solid #b91c1c"
+                  : nextScheduledCall.priority === "high"
+                  ? "3px solid #c2410c"
+                  : nextScheduledCall.priority === "medium"
+                  ? "3px solid #b45309"
+                  : "3px solid #15803d",
+              borderRadius: "6px",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              color:
+                nextScheduledCall.priority === "urgent"
+                  ? "#991b1b"
+                  : nextScheduledCall.priority === "high"
+                  ? "#9a3412"
+                  : nextScheduledCall.priority === "medium"
+                  ? "#92400e"
+                  : "#166534",
+            }}
+          >
+            {nextScheduledCall.priority.toUpperCase()}
+          </Box>
+        )}
+
+       
+      </Box>
+    }
+  />
+)}
+
+    </Grid>
+  </Box>
+)}
+
+        </Section>
+
         {/* Follow-up Section */}
         <Section title="Follow-up Details">
           <Grid>
@@ -230,26 +475,29 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
               label="Status"
               value={
                 <Badge
-                  style={{
-                    background:
-                      entry.status === "Interested"
-                        ? "linear-gradient(135deg, #10b981, #059669)" // green
-                        : entry.status === "Not Interested"
-                        ? "linear-gradient(135deg, #ef4444, #dc2626)" // red
-                        : entry.status === "Maybe"
-                        ? "linear-gradient(135deg, #f59e0b, #d97706)" // yellow
-                        : entry.status === "Closed"
-                        ? "linear-gradient(135deg, #6366f1, #4f46e5)" // violet-blue
-                        : entry.status === "Service"
-                        ? "linear-gradient(135deg, #0ea5e9, #0284c7)" // blue
-                        : entry.status === "Not Found"
-                        ? "linear-gradient(135deg, #f43f5e, #be123c)" // pink-red
-                        : "linear-gradient(135deg, #6b7280, #4b5563)", // gray (default and "Not")
-                    color: "#fff",
-                    padding: "0.4rem 0.8rem",
-                    borderRadius: "6px",
-                    fontWeight: 500,
-                  }}
+                 style={{
+  background:
+    entry.status === "Interested"
+      ? "linear-gradient(135deg, #00897b, #00695c)" // Interested (Green Teal)
+      : entry.status === "Not Interested"
+      ? "linear-gradient(135deg, #00838f, #006064)" // Cold Calls (Teal Blue)
+      : entry.status === "Maybe"
+      ? "linear-gradient(135deg, #ef6c00, #d84315)" // Warm Calls (Orange)
+      : entry.status === "Closed Won"
+      ? "linear-gradient(135deg, #388e3c, #2e7d32)" // Closed Won (Green)
+      : entry.status === "Closed Lost"
+      ? "linear-gradient(135deg, #7b1fa2, #6a1b9a)" // Closed Lost (Purple)
+      : entry.status === "Service"
+      ? "linear-gradient(135deg, #1976d2, #0d47a1)" // Service Calls (Blue)
+      : entry.status === "Not"
+      ? "linear-gradient(135deg, #d32f2f, #b71c1c)" // Not Connected (Red)
+      : "linear-gradient(135deg, #6b7280, #4b5563)", // Default Grey
+  color: "#fff",
+  padding: "0.4rem 0.8rem",
+  borderRadius: "6px",
+  fontWeight: 500,
+}}
+
                 >
                   {entry.status && entry.status !== "Not"
                     ? entry.status
@@ -433,6 +681,33 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
           </Section>
         )}
 
+        {/* Modals */}
+        <CallLogModal
+          open={callLogOpen}
+          onClose={() => setCallLogOpen(false)}
+          leadId={entry._id}
+          leadName={entry.contactName || entry.customerName}
+        />
+
+        <ScheduleCallModal
+          open={scheduleCallOpen}
+          onClose={() => setScheduleCallOpen(false)}
+          leadId={entry._id}
+          leadName={entry.contactName || entry.customerName}
+          leadPhone={entry.mobileNumber}
+          onCallScheduled={(data) => {
+            // Trigger refresh to fetch latest scheduled call
+            setRefreshTrigger((prev) => prev + 1);
+            
+            toast.success("✅ Call scheduled successfully!");
+            setScheduleCallOpen(false);
+            
+            if (onEntryUpdated) {
+              onEntryUpdated(entry);
+            }
+          }}
+        />
+
         <Button
           variant="primary"
           onClick={handleCopy}
@@ -503,7 +778,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin }) {
 }
 
 // Helper Components
-const Section = memo(({ title, children }) => (
+const Section = React.memo(({ title, children }) => (
   <section
     style={{
       background: "#ffffff",
@@ -545,7 +820,7 @@ const Section = memo(({ title, children }) => (
   </section>
 ));
 
-const DataItem = memo(({ label, value }) => (
+const DataItem = React.memo(({ label, value }) => (
   <div
     style={{
       display: "flex",
@@ -579,7 +854,7 @@ const DataItem = memo(({ label, value }) => (
   </div>
 ));
 
-const Grid = memo(({ children }) => (
+const Grid = React.memo(({ children }) => (
   <div
     style={{
       display: "grid",
