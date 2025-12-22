@@ -875,6 +875,9 @@ function DashBoard() {
       return;
     }
 
+    // Reset file input so same file can be uploaded again
+    e.target.value = "";
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -886,19 +889,19 @@ function DashBoard() {
 
         const newEntries = parsedData
           .map((item) => ({
-            "Customer Name": item["Customer Name"] || "",
-            "Contact Person": item["Contact Person"] || "",
-            Email: item["Email"] || "",
-            "Contact Number": item["Contact Number"] || "",
-            "Alternate Number": item["Alternate Number"] || "",
-            Product: item["Product"] || "",
-            Address: item["Address"] || "",
-            Organization: item["Organization"] || "",
-            Category: item["Category"] || "",
-            District: item["District"] || "",
-            State: item["State"] || "",
+            "Customer Name": String(item["Customer Name"] || "").trim(),
+            "Contact Person": String(item["Contact Person"] || "").trim(),
+            Email: String(item["Email"] || "").trim(),
+            "Contact Number": String(item["Contact Number"] || "").trim(),
+            "Alternate Number": String(item["Alternate Number"] || "").trim(),
+            Product: String(item["Product"] || "").trim(),
+            Address: String(item["Address"] || "").trim(),
+            Organization: String(item["Organization"] || "").trim(),
+            Category: String(item["Category"] || "").trim(),
+            District: String(item["District"] || "").trim(),
+            State: String(item["State"] || "").trim(),
             Status: item["Status"] || "Not Found",
-            Remarks: item["Remarks"] || "",
+            Remarks: String(item["Remarks"] || "").trim(),
           }))
           .filter((entry) =>
             Object.values(entry).some(
@@ -910,7 +913,9 @@ function DashBoard() {
           return;
         }
 
-        const chunkSize = 1000;
+        toast.info(`Processing ${newEntries.length} entries...`);
+
+        const chunkSize = 500; // Match server batch size
         const chunks = [];
         for (let i = 0; i < newEntries.length; i += chunkSize) {
           chunks.push(newEntries.slice(i, i + chunkSize));
@@ -918,78 +923,42 @@ function DashBoard() {
 
         let uploadedCount = 0;
         const errors = [];
-        const token = localStorage.getItem("token");
 
         for (let i = 0; i < chunks.length; i++) {
           const chunk = chunks[i];
           try {
-            // ✅ api instance use karo
             const response = await api.post("/api/entries", chunk, {
-              timeout: 60000,
+              timeout: 120000, // 2 minutes timeout for large batches
             });
 
             if (response.status === 201 || response.status === 200) {
-              uploadedCount += chunk.length;
-              setEntries((prev) => [
-                ...prev,
-                ...chunk.map((entry) => ({
-                  ...entry,
-                  _id: `temp-${Date.now()}-${Math.random()}`,
-                  createdBy: {
-                    username: localStorage.getItem("username") || "Unknown",
-                  },
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                })),
-              ]);
+              uploadedCount += response.data.insertedCount || chunk.length;
               toast.success(
-                `Uploaded ${uploadedCount} of ${newEntries.length} entries`
+                `Batch ${i + 1}/${chunks.length}: Uploaded ${uploadedCount} entries`
               );
             } else if (response.status === 207) {
               const chunkUploaded = response.data.insertedCount || 0;
               uploadedCount += chunkUploaded;
               errors.push(...(response.data.errors || []));
-              // Only add to local state if some were uploaded; otherwise, skip to avoid showing failed entries
-              if (chunkUploaded > 0) {
-                setEntries((prev) => [
-                  ...prev,
-                  ...chunk.slice(0, chunkUploaded).map((entry) => ({
-                    // Approximate; can't know exactly which ones succeeded
-                    ...entry,
-                    _id: `temp-${Date.now()}-${Math.random()}`,
-                    createdBy: {
-                      username: localStorage.getItem("username") || "Unknown",
-                    },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  })),
-                ]);
-              }
               toast.warn(
-                `Partially uploaded ${uploadedCount} of ${newEntries.length} entries`
+                `Batch ${i + 1}/${chunks.length}: Partially uploaded (${chunkUploaded} entries)`
               );
             }
           } catch (error) {
             const errorMessage =
               error.response?.data?.message ||
-              `Batch ${i + 1}: Failed to upload chunk`;
+              `Batch ${i + 1}: Failed to upload`;
             errors.push(errorMessage);
             toast.error(errorMessage);
           }
         }
 
-        if (uploadedCount === newEntries.length && errors.length === 0) {
-          toast.success("All entries uploaded successfully!");
-          fetchEntries();
-        } else if (uploadedCount > 0) {
-          toast.warn(
-            `Uploaded ${uploadedCount} of ${
-              newEntries.length
-            } entries. Errors: ${errors.join("; ")}`
-          );
-          fetchEntries();
+        // Always fetch fresh data from server after upload
+        if (uploadedCount > 0) {
+          toast.success(`Upload complete! ${uploadedCount} entries added.`);
+          await fetchEntries(); // Fetch fresh data from server
         } else {
-          toast.error(`Failed to upload entries. Errors: ${errors.join("; ")}`);
+          toast.error(`Failed to upload entries. ${errors.join("; ")}`);
         }
       } catch (error) {
         console.error("Error processing Excel file:", error.message);
