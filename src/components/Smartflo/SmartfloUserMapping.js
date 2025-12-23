@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api/api";
 import {
   Box,
   Paper,
@@ -45,15 +45,8 @@ const SmartfloUserMapping = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${process.env.REACT_APP_URL}/api/smartflo/users`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      const response = await api.get("/api/smartflo/users");
 
       if (response.data.success) {
         setUsers(response.data.data);
@@ -84,21 +77,15 @@ const SmartfloUserMapping = () => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("token");
-
       const payload = {
         smartfloAgentNumber: formData.smartfloAgentNumber.trim(),
         smartfloEnabled: formData.smartfloEnabled,
       };
 
-      const response = await axios.put(
-        `${process.env.REACT_APP_URL}/api/smartflo/users/${editDialog.user._id}/map`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      // Using api instance for automatic token handling and refresh
+      const response = await api.put(
+        `/api/smartflo/users/${editDialog.user._id}/map`,
+        payload
       );
 
       if (response.data.success) {

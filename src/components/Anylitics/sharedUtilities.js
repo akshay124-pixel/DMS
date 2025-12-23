@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../../api/api";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
@@ -30,9 +30,8 @@ const fetchUsers = async (entries, userId, role) => {
     }
 
     console.log("fetchUsers: userId:", userId, "role:", role);
-    const response = await axios.get(`${process.env.REACT_APP_URL}/api/users`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // Using api instance for automatic token handling and refresh
+    const response = await api.get("/api/users");
 
     let users = Array.isArray(response.data.data) ? response.data.data : [];
     console.log(

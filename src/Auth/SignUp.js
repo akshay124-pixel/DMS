@@ -5,7 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { setAuthData } from "../api/api";
 
-function Signup() {
+function Signup({ setIsAuthenticated }) {
   const navigate = useNavigate();
   const [form, setFormData] = useState({
     username: "",
@@ -53,6 +53,11 @@ function Signup() {
             role: user.role,
           },
         });
+
+        // Update authentication state
+        if (setIsAuthenticated) {
+          setIsAuthenticated(true);
+        }
 
         toast.success("Your account has been created! Redirecting...", {
           position: "top-right",

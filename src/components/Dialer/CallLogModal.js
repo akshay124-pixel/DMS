@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api/api";
 import {
   Dialog,
   DialogTitle,
@@ -39,15 +39,8 @@ const CallLogModal = ({ open, onClose, leadId, leadName }) => {
   const fetchCallLogs = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/call-logs/${leadId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      const response = await api.get(`/api/dialer/call-logs/${leadId}`);
 
       if (response.data.success) {
         setCallLogs(response.data.data);

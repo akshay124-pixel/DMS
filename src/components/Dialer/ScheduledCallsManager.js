@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import api from "../../api/api";
 import {
   Box,
   Paper,
@@ -83,13 +83,8 @@ const ScheduledCallsManager = () => {
 
   const fetchScheduledCalls = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/scheduled-calls`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      const response = await api.get("/api/dialer/scheduled-calls");
       if (response.data.success) {
         setScheduledCalls(response.data.data);
       }
@@ -209,14 +204,8 @@ const ScheduledCallsManager = () => {
 
   const handleMarkComplete = async (callId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.patch(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/scheduled-calls/${callId}/complete`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      await api.patch(`/api/dialer/scheduled-calls/${callId}/complete`, {});
       toast.success("Call marked as completed!");
       fetchScheduledCalls();
     } catch (error) {
@@ -229,13 +218,8 @@ const ScheduledCallsManager = () => {
     if (!callToDelete) return;
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/scheduled-calls/${callToDelete}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      await api.delete(`/api/dialer/scheduled-calls/${callToDelete}`);
       toast.success("Scheduled call deleted!");
       setDeleteDialogOpen(false);
       setCallToDelete(null);
@@ -248,14 +232,8 @@ const ScheduledCallsManager = () => {
 
   const handleInitiateCall = async (call) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/click-to-call`,
-        { leadId: call.leadId._id },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      const response = await api.post("/api/dialer/click-to-call", { leadId: call.leadId._id });
 
       if (response.data.success) {
         toast.success("Call initiated! Your phone will ring first.");

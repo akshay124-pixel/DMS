@@ -3,7 +3,7 @@ import { Modal, Button, Badge } from "react-bootstrap";
 import { Box } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../api/api";
 import ClickToCallButton from "./Dialer/ClickToCallButton";
 import CallLogModal from "./Dialer/CallLogModal";
 import ScheduleCallModal from "./Dialer/ScheduleCallModal";
@@ -27,13 +27,8 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
     if (!entry?._id) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/scheduled-calls/${entry._id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      const response = await api.get(`/api/dialer/scheduled-calls/${entry._id}`);
 
       if (response.data.success && response.data.data.length > 0) {
         // Get the next pending scheduled call (sorted by time)

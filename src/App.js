@@ -15,9 +15,12 @@ import Navbar from "./components/Navbar";
 import CallAnalyticsDashboard from "./components/Analytics/CallAnalyticsDashboard";
 import SmartfloUserMapping from "./components/Smartflo/SmartfloUserMapping";
 import ScheduledCallsManager from "./components/Dialer/ScheduledCallsManager";
-import { getAuthData } from "./api/api";
+import api, { getAuthData, logout } from "./api/api";
 
-const PrivateRoute = ({ element, isAuthenticated }) => {
+const PrivateRoute = ({ element, isAuthenticated, isLoading }) => {
+  if (isLoading) {
+    return <div></div>;
+  }
   return isAuthenticated ? element : <Navigate to="/login" />;
 };
 
@@ -26,6 +29,38 @@ function App() {
     const { accessToken, user } = getAuthData();
     return !!accessToken && !!user?.email;
   });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Verify token on app load
+  useEffect(() => {
+    const verifyAuthOnLoad = async () => {
+      const { accessToken, user } = getAuthData();
+      
+      if (!accessToken || !user?.email) {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Verify token with backend - this will auto-refresh if expired
+        await api.get("/auth/verify-token");
+        setIsAuthenticated(true);
+        console.log("App: Token verified successfully on load");
+      } catch (error) {
+        console.error("App: Token verification failed on load", error);
+        // If verification fails even after refresh attempt, logout
+        if (error.response?.status === 401) {
+          logout();
+        }
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    verifyAuthOnLoad();
+  }, []);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -50,6 +85,7 @@ function App() {
             <PrivateRoute
               element={<DashBoard />}
               isAuthenticated={isAuthenticated}
+              isLoading={isLoading}
             />
           }
         />
@@ -69,6 +105,7 @@ function App() {
                 <ChangePassword setIsAuthenticated={setIsAuthenticated} />
               }
               isAuthenticated={isAuthenticated}
+              isLoading={isLoading}
             />
           }
         />
@@ -78,6 +115,7 @@ function App() {
             <PrivateRoute
               element={<CallAnalyticsDashboard />}
               isAuthenticated={isAuthenticated}
+              isLoading={isLoading}
             />
           }
         />
@@ -87,6 +125,7 @@ function App() {
             <PrivateRoute
               element={<SmartfloUserMapping />}
               isAuthenticated={isAuthenticated}
+              isLoading={isLoading}
             />
           }
         />
@@ -96,6 +135,7 @@ function App() {
             <PrivateRoute
               element={<ScheduledCallsManager />}
               isAuthenticated={isAuthenticated}
+              isLoading={isLoading}
             />
           }
         />

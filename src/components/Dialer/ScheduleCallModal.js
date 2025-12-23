@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api/api";
 import { toast } from "react-toastify";
 import "./ScheduleCallModal.css";
 
@@ -66,22 +66,14 @@ const ScheduleCallModal = ({
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${process.env.REACT_APP_URL || "http://localhost:4000"}/api/dialer/schedule-call`,
-        {
-          leadId,
-          scheduledTime,
-          priority,
-          purpose,
-          notes: notes.trim(),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Using api instance for automatic token handling and refresh
+      const response = await api.post("/api/dialer/schedule-call", {
+        leadId,
+        scheduledTime,
+        priority,
+        purpose,
+        notes: notes.trim(),
+      });
 
       if (response.data.success) {
         toast.success("Call scheduled successfully!");
