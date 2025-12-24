@@ -15,7 +15,7 @@ import {
   FaPlus,
   FaFileExport,
   FaChartBar,
-  FaPhoneAlt, FaProjectDiagram,FaCalendarAlt 
+  FaPhoneAlt, FaProjectDiagram,FaCalendarAlt,FaHistory
 } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 import { DateRangePicker } from "react-date-range";
@@ -30,6 +30,7 @@ import EditEntry from "./EditEntry";
 import DeleteModal from "./Delete";
 import ViewEntry from "./ViewEntry";
 import ClickToCallButton from "./Dialer/ClickToCallButton";
+import MailOptionsModal from "./MailOptionsModal";
 import { AutoSizer, List } from "react-virtualized";
 import debounce from "lodash/debounce";
 import ValueAnalyticsDrawer from "./Anylitics/ValueAnalyticsDrawer";
@@ -312,6 +313,8 @@ function DashBoard() {
   const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
   const [dashboardFilter, setDashboardFilter] = useState("total");
   const [selectedOrganization, setSelectedOrganization] = useState("");
+  const [isMailModalOpen, setIsMailModalOpen] = useState(false);
+  const [selectedEntryForMail, setSelectedEntryForMail] = useState(null);
   const [dateRange, setDateRange] = useState([
     {
       startDate: null,
@@ -321,6 +324,7 @@ function DashBoard() {
   ]);
   const [listKey, setListKey] = useState(Date.now());
   const listRef = useRef(null);
+  
   const callStats = useMemo(() => {
     const stats = {
       cold: 0,
@@ -974,26 +978,24 @@ function DashBoard() {
   reader.readAsArrayBuffer(file);
 };
 // Mail Start
-  const handleSendEmail = async (entryId) => {
-  try {
+  const handleSendEmail = async (entry) => {
     const { accessToken } = getAuthData();
     if (!accessToken) {
       toast.error("Please log in to send emails.");
       navigate("/login");
       return;
     }
+   // Open mail options modal
+    setSelectedEntryForMail(entry);
+    setIsMailModalOpen(true);
+  };
 
-    const response = await api.post("/api/send-email", { entryId });
+  const handleMailModalClose = () => {
+    setIsMailModalOpen(false);
+    setSelectedEntryForMail(null);
+  };
+//Mai
 
-    toast.success(response.data.message);
-  } catch (error) {
-    console.error("Error sending email:", error.message);
-    const errorMessage =
-      error.response?.data?.message ||
-      "Failed to send email. Please try again later.";
-    toast.error(errorMessage);
-  }
-};
 //Mail End
 
   const handleExport = () => {
@@ -1212,7 +1214,7 @@ const rowRenderer = ({ index, key, style }) => {
         </button>
         <Button
           variant="success"
-          onClick={() => handleSendEmail(row._id)}
+        onClick={() => handleSendEmail(row)}
           style={{
             width: "40px",
             height: "40px",
@@ -1706,7 +1708,36 @@ const rowRenderer = ({ index, key, style }) => {
             <FaCalendarAlt size={18} color="white" />
   Scheduled Calls
           </button>
-
+ <button
+            className="button"
+            onClick={() => navigate("/call-history")}
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              color: "white",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              border: "none",
+              fontSize: "1rem",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+            <FaHistory size={18} color="white" />
+            Call History
+          </button>
           {(isAdmin || isSuperadmin) && (
             <button
               className="button"
@@ -2073,6 +2104,12 @@ const rowRenderer = ({ index, key, style }) => {
           role={role}
           userId={userId}
           dateRange={dateRange}
+        />
+         <MailOptionsModal
+          isOpen={isMailModalOpen}
+          onClose={handleMailModalClose}
+          entryId={selectedEntryForMail?._id}
+          entryData={selectedEntryForMail}
         />
         <Modal
           show={isAnalyticsModalOpen}

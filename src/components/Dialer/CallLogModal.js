@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import { Close, PlayArrow, Phone, PhoneMissed } from "@mui/icons-material";
 import { format } from "date-fns";
+import RecordingPlayerModal from "../CallHistory/RecordingPlayerModal";
 
 /**
  * Call Log Modal Component
@@ -29,6 +30,8 @@ import { format } from "date-fns";
 const CallLogModal = ({ open, onClose, leadId, leadName }) => {
   const [callLogs, setCallLogs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedCall, setSelectedCall] = useState(null);
+  const [playerOpen, setPlayerOpen] = useState(false);
 
   useEffect(() => {
     if (open && leadId) {
@@ -71,6 +74,11 @@ const CallLogModal = ({ open, onClose, leadId, leadName }) => {
       return <Phone fontSize="small" />;
     }
     return <PhoneMissed fontSize="small" />;
+  };
+
+  const handlePlayRecording = (call) => {
+    setSelectedCall(call);
+    setPlayerOpen(true);
   };
 
   const formatDuration = (seconds) => {
@@ -171,17 +179,31 @@ const CallLogModal = ({ open, onClose, leadId, leadName }) => {
                       {log.recordingUrl ? (
                         <IconButton
                           size="small"
-                          color="primary"
-                          onClick={() => window.open(log.recordingUrl, "_blank")}
+                          onClick={() => handlePlayRecording(log)}
                           sx={{
-                            background: "#e3f2fd",
-                            "&:hover": { background: "#bbdefb" }
+                            background: "linear-gradient(135deg, #10b981, #059669)",
+                            color: "white",
+                            width: 32,
+                            height: 32,
+                            "&:hover": {
+                              background: "linear-gradient(135deg, #059669, #047857)",
+                              transform: "scale(1.1)",
+                            },
+                            transition: "all 0.2s ease"
                           }}
                         >
-                          <PlayArrow />
+                          <PlayArrow sx={{ fontSize: 16 }} />
                         </IconButton>
                       ) : (
-                        "-"
+                        <Chip 
+                          label="No Recording" 
+                          size="small" 
+                          sx={{ 
+                            fontSize: "0.7rem",
+                            background: "#f5f5f5",
+                            color: "#666"
+                          }} 
+                        />
                       )}
                     </TableCell>
                   </TableRow>
@@ -204,6 +226,13 @@ const CallLogModal = ({ open, onClose, leadId, leadName }) => {
           Close
         </Button>
       </DialogActions>
+
+      {/* Recording Player Modal */}
+      <RecordingPlayerModal
+        open={playerOpen}
+        onClose={() => setPlayerOpen(false)}
+        call={selectedCall}
+      />
     </Dialog>
   );
 };

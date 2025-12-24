@@ -16,6 +16,7 @@ import CallAnalyticsDashboard from "./components/Analytics/CallAnalyticsDashboar
 import SmartfloUserMapping from "./components/Smartflo/SmartfloUserMapping";
 import ScheduledCallsManager from "./components/Dialer/ScheduledCallsManager";
 import api, { getAuthData, logout } from "./api/api";
+import CallHistoryPage from "./components/CallHistory/CallHistoryPage";
 
 const PrivateRoute = ({ element, isAuthenticated, isLoading }) => {
   if (isLoading) {
@@ -136,6 +137,15 @@ function App() {
               element={<ScheduledCallsManager />}
               isAuthenticated={isAuthenticated}
               isLoading={isLoading}
+            />
+          }
+        />
+          <Route
+          path="/call-history"
+          element={
+            <PrivateRoute
+              element={<CallHistoryPage />}
+              isAuthenticated={isAuthenticated}
             />
           }
         />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api/api";
 import {
   Box,
   Paper,
@@ -65,26 +65,17 @@ const CallAnalyticsDashboard = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const baseURL = process.env.REACT_APP_URL;
-
       // Build query params for date filtering
       const queryParams = new URLSearchParams();
       if (startDate) queryParams.append("startDate", startDate);
       if (endDate) queryParams.append("endDate", endDate);
       const queryString = queryParams.toString();
 
-      // Fetch all analytics data
+      // Using api instance for automatic token handling and refresh
       const [summaryRes, agentRes, trendsRes] = await Promise.all([
-        axios.get(`${baseURL}/api/analytics/call-summary${queryString ? `?${queryString}` : ""}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseURL}/api/analytics/agent-performance${queryString ? `?${queryString}` : ""}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseURL}/api/analytics/call-trends?days=30${queryString ? `&${queryString}` : ""}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        api.get(`/api/analytics/call-summary${queryString ? `?${queryString}` : ""}`),
+        api.get(`/api/analytics/agent-performance${queryString ? `?${queryString}` : ""}`),
+        api.get(`/api/analytics/call-trends?days=30${queryString ? `&${queryString}` : ""}`),
       ]);
 
       if (summaryRes.data.success) setSummary(summaryRes.data.data);
@@ -116,20 +107,11 @@ const CallAnalyticsDashboard = () => {
     // Fetch analytics without any filters
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const baseURL = process.env.REACT_APP_URL;
-
-      // Fetch all analytics data WITHOUT any query params
+      // Using api instance for automatic token handling and refresh
       const [summaryRes, agentRes, trendsRes] = await Promise.all([
-        axios.get(`${baseURL}/api/analytics/call-summary`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseURL}/api/analytics/agent-performance`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseURL}/api/analytics/call-trends?days=30`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        api.get("/api/analytics/call-summary"),
+        api.get("/api/analytics/agent-performance"),
+        api.get("/api/analytics/call-trends?days=30"),
       ]);
 
       if (summaryRes.data.success) setSummary(summaryRes.data.data);
