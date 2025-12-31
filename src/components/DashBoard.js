@@ -1,4 +1,10 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import  {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -9,6 +15,7 @@ import {
   FaPlus,
   FaFileExport,
   FaChartBar,
+  FaPhoneAlt, FaProjectDiagram,FaCalendarAlt,FaHistory
 } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 import { DateRangePicker } from "react-date-range";
@@ -16,13 +23,14 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Popover } from "@mui/material";
 import * as XLSX from "xlsx";
-import api from "../api/api";
 import { toast } from "react-toastify";
 import DisableCopy from "./DisableCopy";
 import AddEntry from "./AddEntry";
 import EditEntry from "./EditEntry";
 import DeleteModal from "./Delete";
 import ViewEntry from "./ViewEntry";
+import ClickToCallButton from "./Dialer/ClickToCallButton";
+import MailOptionsModal from "./MailOptionsModal";
 import { AutoSizer, List } from "react-virtualized";
 import debounce from "lodash/debounce";
 import ValueAnalyticsDrawer from "./Anylitics/ValueAnalyticsDrawer";
@@ -32,13 +40,13 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Box,
   Divider,
   Chip,
 } from "@mui/material";
 import { normalizeId } from "./Anylitics/sharedUtilities";
 import { motion } from "framer-motion";
+import api, { getAuthData, logout } from "../api/api";
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -53,6 +61,8 @@ const useIsMobile = () => {
 
   return isMobile;
 };
+
+
 
 // Separate Call Tracking Dashboard Component
 const CallTrackingDashboard = ({
@@ -233,11 +243,7 @@ const CallTrackingDashboard = ({
                 }}
                 onClick={() => onFilterClick(item.category)}
               >
-                <CardContent
-                  sx={{
-                    padding: { xs: "8px !important", sm: "16px !important" },
-                  }}
-                >
+                <CardContent sx={{ padding: { xs: "8px !important", sm: "16px !important" } }}>
                   <Typography
                     variant="subtitle1"
                     color="textSecondary"
@@ -307,6 +313,8 @@ function DashBoard() {
   const [doubleClickInitiated, setDoubleClickInitiated] = useState(false);
   const [dashboardFilter, setDashboardFilter] = useState("total");
   const [selectedOrganization, setSelectedOrganization] = useState("");
+  const [isMailModalOpen, setIsMailModalOpen] = useState(false);
+  const [selectedEntryForMail, setSelectedEntryForMail] = useState(null);
   const [dateRange, setDateRange] = useState([
     {
       startDate: null,
@@ -316,6 +324,7 @@ function DashBoard() {
   ]);
   const [listKey, setListKey] = useState(Date.now());
   const listRef = useRef(null);
+  
   const callStats = useMemo(() => {
     const stats = {
       cold: 0,
@@ -449,9 +458,9 @@ function DashBoard() {
 
         // Handle different filter types
         if (dashboardFilter === "total") {
-          return true;
+          return true; 
         } else if (dashboardFilter === "leads") {
-          return row.status === "Not Found";
+          return row.status === "Not Found"; 
         } else if (dashboardFilter === "results") {
           return true;
         } else if (dashboardFilter === "monthly") {
@@ -581,13 +590,12 @@ function DashBoard() {
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
+      const { accessToken } = getAuthData();
+      if (!accessToken) throw new Error("No token found");
 
-      const decoded = jwtDecode(token);
+      const decoded = jwtDecode(accessToken);
       console.log("Decoded token:", decoded);
 
-      // ✅ api instance use karo - token automatically add hoga
       const response = await api.get("/api/fetch-entry");
 
       if (!Array.isArray(response.data.data)) {
@@ -629,8 +637,8 @@ function DashBoard() {
   const fetchAdmin = useCallback(async () => {
     setAuthLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const { accessToken } = getAuthData();
+      if (!accessToken) {
         setIsAdmin(false);
         setIsSuperadmin(false);
         setRole("Others");
@@ -640,20 +648,19 @@ function DashBoard() {
         return;
       }
 
-      const decoded = jwtDecode(token);
+      const decoded = jwtDecode(accessToken);
       const userRole = decoded.role || "Others";
-      const userId = decoded.id;
+      const decodedUserId = decoded.id;
 
-      // ✅ api instance use karo
       const response = await api.get("/api/user-role");
 
       setIsAdmin(response.data.isAdmin || false);
       setIsSuperadmin(response.data.isSuperadmin || false);
       setRole(userRole);
-      setUserId(userId);
+      setUserId(decodedUserId);
 
-      console.log("Fetched user info:", { userId, role: userRole });
-      localStorage.setItem("userId", userId);
+      console.log("Fetched user info:", { userId: decodedUserId, role: userRole });
+      localStorage.setItem("userId", decodedUserId);
       localStorage.setItem("role", userRole);
     } catch (error) {
       console.error("Error fetching admin status:", error.message);
@@ -757,7 +764,7 @@ function DashBoard() {
     setEntries((prev) => [completeEntry, ...prev]);
     setListKey(Date.now());
     if (listRef.current) {
-      listRef.current.scrollToPosition(0);
+      listRef.current.scrollToPosition(0); 
       listRef.current.recomputeRowHeights();
       listRef.current.forceUpdateGrid();
     }
@@ -869,158 +876,127 @@ function DashBoard() {
   }, [selectedEntries]);
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      toast.error("No file selected!");
-      return;
-    }
+  const file = e.target.files[0];
+  if (!file) {
+    toast.error("No file selected!");
+    return;
+  }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const parsedData = XLSX.utils.sheet_to_json(worksheet);
-
-        const newEntries = parsedData
-          .map((item) => ({
-            "Customer Name": item["Customer Name"] || "",
-            "Contact Person": item["Contact Person"] || "",
-            Email: item["Email"] || "",
-            "Contact Number": item["Contact Number"] || "",
-            "Alternate Number": item["Alternate Number"] || "",
-            Product: item["Product"] || "",
-            Address: item["Address"] || "",
-            Organization: item["Organization"] || "",
-            Category: item["Category"] || "",
-            District: item["District"] || "",
-            State: item["State"] || "",
-            Status: item["Status"] || "Not Found",
-            Remarks: item["Remarks"] || "",
-          }))
-          .filter((entry) =>
-            Object.values(entry).some(
-              (val) => val && val.toString().trim() !== ""
-            )
-          );
-        if (newEntries.length === 0) {
-          toast.error("No valid entries found in the Excel file!");
-          return;
-        }
-
-        const chunkSize = 1000;
-        const chunks = [];
-        for (let i = 0; i < newEntries.length; i += chunkSize) {
-          chunks.push(newEntries.slice(i, i + chunkSize));
-        }
-
-        let uploadedCount = 0;
-        const errors = [];
-        const token = localStorage.getItem("token");
-
-        for (let i = 0; i < chunks.length; i++) {
-          const chunk = chunks[i];
-          try {
-            // ✅ api instance use karo
-            const response = await api.post("/api/entries", chunk, {
-              timeout: 60000,
-            });
-
-            if (response.status === 201 || response.status === 200) {
-              uploadedCount += chunk.length;
-              setEntries((prev) => [
-                ...prev,
-                ...chunk.map((entry) => ({
-                  ...entry,
-                  _id: `temp-${Date.now()}-${Math.random()}`,
-                  createdBy: {
-                    username: localStorage.getItem("username") || "Unknown",
-                  },
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                })),
-              ]);
-              toast.success(
-                `Uploaded ${uploadedCount} of ${newEntries.length} entries`
-              );
-            } else if (response.status === 207) {
-              const chunkUploaded = response.data.insertedCount || 0;
-              uploadedCount += chunkUploaded;
-              errors.push(...(response.data.errors || []));
-              // Only add to local state if some were uploaded; otherwise, skip to avoid showing failed entries
-              if (chunkUploaded > 0) {
-                setEntries((prev) => [
-                  ...prev,
-                  ...chunk.slice(0, chunkUploaded).map((entry) => ({
-                    // Approximate; can't know exactly which ones succeeded
-                    ...entry,
-                    _id: `temp-${Date.now()}-${Math.random()}`,
-                    createdBy: {
-                      username: localStorage.getItem("username") || "Unknown",
-                    },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  })),
-                ]);
-              }
-              toast.warn(
-                `Partially uploaded ${uploadedCount} of ${newEntries.length} entries`
-              );
-            }
-          } catch (error) {
-            const errorMessage =
-              error.response?.data?.message ||
-              `Batch ${i + 1}: Failed to upload chunk`;
-            errors.push(errorMessage);
-            toast.error(errorMessage);
-          }
-        }
-
-        if (uploadedCount === newEntries.length && errors.length === 0) {
-          toast.success("All entries uploaded successfully!");
-          fetchEntries();
-        } else if (uploadedCount > 0) {
-          toast.warn(
-            `Uploaded ${uploadedCount} of ${
-              newEntries.length
-            } entries. Errors: ${errors.join("; ")}`
-          );
-          fetchEntries();
-        } else {
-          toast.error(`Failed to upload entries. Errors: ${errors.join("; ")}`);
-        }
-      } catch (error) {
-        console.error("Error processing Excel file:", error.message);
-        toast.error(`Invalid Excel file: ${error.message}`);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
-  // Mail Start
-  const handleSendEmail = async (entryId) => {
+  const reader = new FileReader();
+  reader.onload = async (event) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Please log in to send emails.");
-        navigate("/login");
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const parsedData = XLSX.utils.sheet_to_json(worksheet);
+
+      const newEntries = parsedData
+        .map((item) => ({
+          "Customer Name": item["Customer Name"] || "",
+          "Contact Person": item["Contact Person"] || "",
+          Email: item["Email"] || "",
+          "Contact Number": item["Contact Number"] || "",
+          "Alternate Number": item["Alternate Number"] || "",
+          Product: item["Product"] || "",
+          Address: item["Address"] || "",
+          Organization: item["Organization"] || "",
+          Category: item["Category"] || "",
+          District: item["District"] || "",
+          State: item["State"] || "",
+          Status: item["Status"] || "Not Found",
+          Remarks: item["Remarks"] || "",
+        }))
+        .filter((entry) =>
+          Object.values(entry).some(
+            (val) => val && val.toString().trim() !== ""
+          )
+        );
+      if (newEntries.length === 0) {
+        toast.error("No valid entries found in the Excel file!");
         return;
       }
 
-      // ✅ api instance use karo
-      const response = await api.post("/api/send-email", { entryId });
+      // Use 500 batch size as per spec
+      const chunkSize = 500;
+      const chunks = [];
+      for (let i = 0; i < newEntries.length; i += chunkSize) {
+        chunks.push(newEntries.slice(i, i + chunkSize));
+      }
 
-      toast.success(response.data.message);
+      let uploadedCount = 0;
+      const errors = [];
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        try {
+          const response = await api.post("/api/entries", chunk, {
+            timeout: 120000, // 2 minutes timeout per batch
+          });
+
+          if (response.status === 201 || response.status === 200) {
+            uploadedCount += response.data.insertedCount || chunk.length;
+            toast.success(
+              `Batch ${i + 1}/${chunks.length}: Uploaded ${response.data.insertedCount || chunk.length} entries`
+            );
+          } else if (response.status === 207) {
+            const chunkUploaded = response.data.insertedCount || 0;
+            uploadedCount += chunkUploaded;
+            errors.push(...(response.data.errors || []));
+            toast.warn(
+              `Batch ${i + 1}/${chunks.length}: Partially uploaded (${chunkUploaded} entries)`
+            );
+          }
+        } catch (error) {
+          const errorMessage =
+            error.response?.data?.message ||
+            `Batch ${i + 1}: Failed to upload chunk`;
+          errors.push(errorMessage);
+          toast.error(errorMessage);
+        }
+      }
+
+      // Refresh data after upload
+      if (uploadedCount > 0) {
+        fetchEntries();
+      }
+
+      if (uploadedCount === newEntries.length && errors.length === 0) {
+        toast.success(`Upload complete! ${uploadedCount} entries added.`);
+      } else if (uploadedCount > 0) {
+        toast.warn(
+          `Uploaded ${uploadedCount} of ${newEntries.length} entries. ${errors.length} errors.`
+        );
+      } else {
+        toast.error(`Failed to upload entries. ${errors.join("; ")}`);
+      }
     } catch (error) {
-      console.error("Error sending email:", error.message);
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to send email. Please try again later.";
-      toast.error(errorMessage);
+      console.error("Error processing Excel file:", error.message);
+      toast.error(`Invalid Excel file: ${error.message}`);
     }
   };
-  //Mail End
+  reader.readAsArrayBuffer(file);
+};
+// Mail Start
+  const handleSendEmail = async (entry) => {
+    const { accessToken } = getAuthData();
+    if (!accessToken) {
+      toast.error("Please log in to send emails.");
+      navigate("/login");
+      return;
+    }
+   // Open mail options modal
+    setSelectedEntryForMail(entry);
+    setIsMailModalOpen(true);
+  };
+
+  const handleMailModalClose = () => {
+    setIsMailModalOpen(false);
+    setSelectedEntryForMail(null);
+  };
+//Mai
+
+//Mail End
 
   const handleExport = () => {
     if (filteredData.length === 0) {
@@ -1094,125 +1070,180 @@ function DashBoard() {
       document.body.style.overflow = "auto";
     };
   }, [isAnalyticsOpen, isValueAnalyticsOpen]);
-  const rowRenderer = ({ index, key, style }) => {
-    const row = filteredData[index];
-    const isSelected = selectedEntries.includes(row._id);
-    return (
-      <div
-        key={key}
-        style={{ ...style, cursor: "pointer" }}
-        className={`virtual-row ${isSelected ? "selected" : ""}`}
-        onDoubleClick={() => handleDoubleClick(row._id)}
-        onClick={() => handleSingleClick(row._id)}
-      >
-        <div className="virtual-cell">{index + 1}</div> {/* # */}
-        <div className="virtual-cell">{formatDate(row.createdAt)}</div>{" "}
-        {/* Date */}
-        <div className="virtual-cell">{row.customerName}</div> {/* Customer */}
-        <div className="virtual-cell">{row.contactName}</div> {/* Person */}
-        <div className="virtual-cell">{row.mobileNumber}</div> {/* Mobile */}
-        <div className="virtual-cell">{row.address}</div> {/* Address */}
-        <div className="virtual-cell">{row.city}</div> {/* District */}
-        <div className="virtual-cell">{row.state}</div> {/* State */}
-        <div className="virtual-cell">{row.createdBy?.username}</div>{" "}
-        {/* User */}
-        <div
-          className="virtual-cell actions-cell"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            width: "200px",
-            padding: "0 5px",
-          }}
-        >
-          <Button
-            variant="primary"
-            onClick={() => handleShowDetails(row)}
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "22px",
-              padding: "0",
-            }}
-          >
-            <FaEye style={{ marginBottom: "3px" }} />
-          </Button>
-          <button
-            onClick={() => handleEdit(row)}
-            className="editBtn"
-            style={{ width: "40px", height: "40px", padding: "0" }}
-          >
-            <svg height="1em" viewBox="0 0 512 512">
-              <path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path>
-            </svg>
-          </button>
-          <button
-            className="bin-button"
-            onClick={() => handleDeleteClick(row._id)}
-            style={{ width: "40px", height: "40px", padding: "0" }}
-          >
-            <svg
-              className="bin-top"
-              viewBox="0 0 39 7"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <line y1="5" x2="39" y2="5" stroke="white" strokeWidth="4"></line>
-              <line
-                x1="12"
-                y1="1.5"
-                x2="26.0357"
-                y2="1.5"
-                stroke="white"
-                strokeWidth="3"
-              ></line>
-            </svg>
-            <svg
-              className="bin-bottom"
-              viewBox="0 0 33 39"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <mask id="path-1-inside-1_8_19" fill="white">
-                <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z"></path>
-              </mask>
-              <path
-                d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z"
-                fill="white"
-                mask="url(#path-1-inside-1_8_19)"
-              ></path>
-              <path d="M12 6L12 29" stroke="white" strokeWidth="4"></path>
-              <path d="M21 6V29" stroke="white" strokeWidth="4"></path>
-            </svg>
-          </button>
-          <Button
-            variant="success"
-            onClick={() => handleSendEmail(row._id)}
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "22px",
-              padding: "0",
-              backgroundColor: "#28a745",
-            }}
-            title="Send Email"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 512 512"
-              fill="white"
-              style={{ width: "20px", height: "20px" }}
-            >
-              <path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z" />
-            </svg>
-          </Button>
-        </div>
-      </div>
-    );
-  };
+// Helper function to get row background color based on lead status
+const getRowBackgroundColor = (status) => {
+  switch (status) {
+    case "Interested":
+      return "#d9f4e5"; 
+    case "Maybe":
+      return "#fff8e1"; 
+    case "Not Interested":
+      return "#e0f7fa"; 
+    case "Not": // Not Connected
+      return "#f2f3f5"; // updated greyish tone
+    case "Service":
+      return "#e3f2fd"; 
+    case "Closed Won":
+      return "#e8f5e9";
+    case "Closed Lost":
+      return "#f3e5f5";
+    case "Not Found":
+      return "transparent";
+    default:
+      return "transparent";
+  }
+};
 
-  if (loading) {
+
+const getRowBackgroundColorcalltype = (closetype) => {
+  switch (closetype) {
+    case "Closed Won":
+      return "#e8f5e9";
+    case "Closed Lost":
+      return "#f3e5f5";
+    default:
+      return "transparent";
+  }
+};
+
+
+const rowRenderer = ({ index, key, style }) => {
+   const row = filteredData[index];
+  const isSelected = selectedEntries.includes(row._id);
+
+  const rowBgColor = getRowBackgroundColor(row.status);
+  const rowBgColor1 = getRowBackgroundColorcalltype(row.closetype);
+
+  return (
+    <div
+      key={key}
+      style={{
+        ...style,
+        cursor: "pointer",
+        backgroundColor: isSelected
+          ? "rgba(37, 117, 252, 0.15)"
+          : (rowBgColor !== "transparent" ? rowBgColor : rowBgColor1),
+        transition: "background-color 0.2s ease",
+      }}
+      className={`virtual-row ${isSelected ? "selected" : ""}`}
+      onDoubleClick={() => handleDoubleClick(row._id)}
+      onClick={() => handleSingleClick(row._id)}
+    >
+      <div className="virtual-cell">{index + 1}</div> {/* # */}
+      <div className="virtual-cell">{formatDate(row.createdAt)}</div> {/* Date */}
+      <div className="virtual-cell">{row.customerName}</div> {/* Customer */}
+      <div className="virtual-cell">{row.contactName}</div> {/* Person */}
+      <div className="virtual-cell">{row.mobileNumber}</div> {/* Mobile */}
+      <div className="virtual-cell">{row.address}</div> {/* Address */}
+      <div className="virtual-cell">{row.city}</div> {/* District */}
+      <div className="virtual-cell">{row.state}</div> {/* State */}
+      <div className="virtual-cell">{row.createdBy?.username}</div> {/* User */}
+      <div
+        className="virtual-cell actions-cell"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "250px",
+          padding: "0 5px",
+          gap: "5px",
+        }}
+      >
+        <Button
+          variant="primary"
+          onClick={() => handleShowDetails(row)}
+          style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "22px",
+            padding: "0",
+          }}
+          title="View Details"
+        >
+          <FaEye style={{ marginBottom: "3px" }} />
+        </Button>
+        <button
+          onClick={() => handleEdit(row)}
+          className="editBtn"
+          style={{ width: "40px", height: "40px", padding: "0" }}
+          title="Edit Entry"
+        >
+          <svg height="1em" viewBox="0 0 512 512">
+            <path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path>
+          </svg>
+        </button>
+        <button
+          className="bin-button"
+          onClick={() => handleDeleteClick(row._id)}
+          style={{ width: "40px", height: "40px", padding: "0" }}
+          title="Delete Entry"
+        >
+          <svg
+            className="bin-top"
+            viewBox="0 0 39 7"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line y1="5" x2="39" y2="5" stroke="white" strokeWidth="4"></line>
+            <line
+              x1="12"
+              y1="1.5"
+              x2="26.0357"
+              y2="1.5"
+              stroke="white"
+              strokeWidth="3"
+            ></line>
+          </svg>
+          <svg
+            className="bin-bottom"
+            viewBox="0 0 33 39"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <mask id="path-1-inside-1_8_19" fill="white">
+              <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z"></path>
+            </mask>
+            <path
+              d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z"
+              fill="white"
+              mask="url(#path-1-inside-1_8_19)"
+            ></path>
+            <path d="M12 6L12 29" stroke="white" strokeWidth="4"></path>
+            <path d="M21 6V29" stroke="white" strokeWidth="4"></path>
+          </svg>
+        </button>
+        <Button
+          variant="success"
+        onClick={() => handleSendEmail(row)}
+          style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "22px",
+            padding: "0",
+            backgroundColor: "#28a745",
+          }}
+          title="Send Email"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 512 512"
+            fill="white"
+            style={{ width: "20px", height: "20px" }}
+          >
+            <path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z" />
+          </svg>
+        </Button>
+        <ClickToCallButton
+          leadId={row._id}
+          phoneNumber={row.mobileNumber}
+          compact={true}
+        />
+      </div>
+    </div>
+  );
+};
+
+ if (loading) {
     return (
       <div
         style={{
@@ -1234,66 +1265,58 @@ function DashBoard() {
 
   return (
     <>
+     
       <Box
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "center", sm: "flex-start" },
-          gap: { xs: 1, sm: 2 },
-          px: { xs: 1, sm: 2 },
-          my: { xs: 1, sm: 2 },
-        }}
-        className="enhanced-search-bar-container"
-      >
-        <input
-          style={{
-            width: { xs: "100%", sm: "25%" },
-            maxWidth: { xs: "300px", sm: "none" },
-          }}
-          type="text"
-          className="enhanced-search-bar allow-copy-paste"
-          placeholder="🔍 Search..."
-          onChange={handleSearchChange}
-        />
-        <select
-          className="enhanced-filter-dropdown"
-          value={selectedOrganization}
-          onChange={handleOrganizationChange}
-          style={{
-            width: { xs: "100%", sm: "auto" },
-            maxWidth: { xs: "300px", sm: "none" },
-          }}
-        >
-          <option value="">-- Select Organization --</option>
-          <option value="School">School</option>
-          <option value="College">College</option>
-          <option value="University">University</option>
-          <option value="Office">Office</option>
-          <option value="Corporates">Corporates</option>
-          <option value="Customer">Customer</option>
-          <option value="Partner">Partner</option>
-          <option value="Others">Others</option>
-        </select>
-        {(isAdmin || isSuperadmin) && (
-          <select
-            className="enhanced-filter-dropdown"
-            value={selectedCreatedBy}
-            onChange={handleCreatedByChange}
-            style={{
-              width: { xs: "100%", sm: "auto" },
-              maxWidth: { xs: "300px", sm: "none" },
-            }}
-          >
-            <option value="">-- Select Usernames --</option>
-            {uniqueCreatedBy.map((username) => (
-              <option key={username} value={username}>
-                {username}
-              </option>
-            ))}
-          </select>
-        )}
-        <div>
+  sx={{
+    display: "flex",
+    flexWrap: "wrap",
+    flexDirection: { xs: "column", sm: "row" },
+    alignItems: { xs: "center", sm: "flex-start" },
+    gap: { xs: 1, sm: 2 },
+    px: { xs: 1, sm: 2 },
+    my: { xs: 1, sm: 2 },
+  }}
+  className="enhanced-search-bar-container"
+>
+  <input
+  style={{ width: { xs: "100%", sm: "25%" }, maxWidth: { xs: "300px", sm: "none" } }}
+  type="text"
+  className="enhanced-search-bar allow-copy-paste"
+  placeholder="🔍 Search..."
+  onChange={handleSearchChange}
+/>
+  <select
+    className="enhanced-filter-dropdown"
+    value={selectedOrganization}
+    onChange={handleOrganizationChange}
+    style={{ width: { xs: "100%", sm: "auto" }, maxWidth: { xs: "300px", sm: "none" } }}
+  >
+    <option value="">-- Select Organization --</option>
+    <option value="School">School</option>
+    <option value="College">College</option>
+    <option value="University">University</option>
+    <option value="Office">Office</option>
+    <option value="Corporates">Corporates</option>
+    <option value="Customer">Customer</option>
+    <option value="Partner">Partner</option>
+    <option value="Others">Others</option>
+  </select>
+  {(isAdmin || isSuperadmin) && (
+    <select
+      className="enhanced-filter-dropdown"
+      value={selectedCreatedBy}
+      onChange={handleCreatedByChange}
+      style={{ width: { xs: "100%", sm: "auto" }, maxWidth: { xs: "300px", sm: "none" } }}
+    >
+      <option value="">-- Select Usernames --</option>
+      {uniqueCreatedBy.map((username) => (
+        <option key={username} value={username}>
+          {username}
+        </option>
+      ))}
+    </select>
+  )}
+   <div  >
           <input
             type="text"
             style={{ borderRadius: "9999px" }}
@@ -1309,198 +1332,172 @@ function DashBoard() {
             aria-label="Select date range"
           />
           <Popover
-            open={Boolean(anchorEl)}
-            anchorEl={anchorEl}
-            onClose={() => setAnchorEl(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            transformOrigin={{ vertical: "top", horizontal: "left" }}
-            PaperProps={{
-              sx: {
-                width: isMobile ? "100vw" : "600px",
-                maxWidth: isMobile ? "100vw" : "600px",
-                maxHeight: isMobile ? "80vh" : "500px",
-                overflowY: "auto",
-                overflowX: "hidden",
-                padding: isMobile ? "5px" : "10px",
-                boxSizing: "border-box",
-                borderRadius: isMobile ? "0" : "8px",
-                marginTop: isMobile ? "0" : "8px",
-                background: "#fff",
-              },
-            }}
-          >
-            <DateRangePicker
-              ranges={dateRange}
-              onChange={(item) => setDateRange([item.selection])}
-              moveRangeOnFirstSelection={false}
-              showSelectionPreview={true}
-              rangeColors={["#2575fc"]}
-              editableDateInputs={true}
-              months={1}
-              direction="vertical"
-              className={isMobile ? "mobile-date-picker" : ""}
-              calendarFocus="forwards"
-              staticRanges={
-                isMobile
-                  ? []
-                  : [
-                      {
-                        label: "Today",
-                        range: () => ({
-                          startDate: new Date(),
-                          endDate: new Date(),
-                          key: "selection",
-                        }),
-                        isSelected: (range) => {
-                          const today = new Date();
-                          return (
-                            range.startDate.toDateString() ===
-                              today.toDateString() &&
-                            range.endDate.toDateString() ===
-                              today.toDateString()
-                          );
-                        },
-                      },
-                      {
-                        label: "Yesterday",
-                        range: () => ({
-                          startDate: new Date(
-                            new Date().setDate(new Date().getDate() - 1)
-                          ),
-                          endDate: new Date(
-                            new Date().setDate(new Date().getDate() - 1)
-                          ),
-                          key: "selection",
-                        }),
-                        isSelected: (range) => {
-                          const yesterday = new Date(
-                            new Date().setDate(new Date().getDate() - 1)
-                          );
-                          return (
-                            range.startDate.toDateString() ===
-                              yesterday.toDateString() &&
-                            range.endDate.toDateString() ===
-                              yesterday.toDateString()
-                          );
-                        },
-                      },
-                      {
-                        label: "Last 7 Days",
-                        range: () => ({
-                          startDate: new Date(
-                            new Date().setDate(new Date().getDate() - 7)
-                          ),
-                          endDate: new Date(),
-                          key: "selection",
-                        }),
-                        isSelected: (range) => {
-                          const start = new Date(
-                            new Date().setDate(new Date().getDate() - 7)
-                          );
-                          const end = new Date();
-                          return (
-                            range.startDate.toDateString() ===
-                              start.toDateString() &&
-                            range.endDate.toDateString() === end.toDateString()
-                          );
-                        },
-                      },
-                      {
-                        label: "Last 30 Days",
-                        range: () => ({
-                          startDate: new Date(
-                            new Date().setDate(new Date().getDate() - 30)
-                          ),
-                          endDate: new Date(),
-                          key: "selection",
-                        }),
-                        isSelected: (range) => {
-                          const start = new Date(
-                            new Date().setDate(new Date().getDate() - 30)
-                          );
-                          const end = new Date();
-                          return (
-                            range.startDate.toDateString() ===
-                              start.toDateString() &&
-                            range.endDate.toDateString() === end.toDateString()
-                          );
-                        },
-                      },
-                    ]
-              }
-              inputRanges={isMobile ? [] : undefined}
-              weekStartsOn={1}
-            />
-          </Popover>
+    open={Boolean(anchorEl)}
+    anchorEl={anchorEl}
+    onClose={() => setAnchorEl(null)}
+    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+    PaperProps={{
+      sx: {
+        width: isMobile ? '100vw' : '600px',
+        maxWidth: isMobile ? '100vw' : '600px',
+        maxHeight: isMobile ? '80vh' : '500px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: isMobile ? '5px' : '10px',
+        boxSizing: 'border-box',
+        borderRadius: isMobile ? '0' : '8px',
+        marginTop: isMobile ? '0' : '8px',
+        background: '#fff',
+      },
+    }}
+  >
+   <DateRangePicker
+  ranges={dateRange}
+  onChange={(item) => setDateRange([item.selection])}
+  moveRangeOnFirstSelection={false}
+  showSelectionPreview={true}
+  rangeColors={['#2575fc']}
+  editableDateInputs={true}
+  months={1}
+  direction="vertical"
+  className={isMobile ? 'mobile-date-picker' : ''}
+  calendarFocus="forwards"
+  staticRanges={
+    isMobile
+      ? []
+      : [
+          {
+            label: 'Today',
+            range: () => ({
+              startDate: new Date(),
+              endDate: new Date(),
+              key: 'selection',
+            }),
+            isSelected: (range) => {
+              const today = new Date();
+              return (
+                range.startDate.toDateString() === today.toDateString() &&
+                range.endDate.toDateString() === today.toDateString()
+              );
+            },
+          },
+          {
+            label: 'Yesterday',
+            range: () => ({
+              startDate: new Date(new Date().setDate(new Date().getDate() - 1)),
+              endDate: new Date(new Date().setDate(new Date().getDate() - 1)),
+              key: 'selection',
+            }),
+            isSelected: (range) => {
+              const yesterday = new Date(new Date().setDate(new Date().getDate() - 1));
+              return (
+                range.startDate.toDateString() === yesterday.toDateString() &&
+                range.endDate.toDateString() === yesterday.toDateString()
+              );
+            },
+          },
+          {
+            label: 'Last 7 Days',
+            range: () => ({
+              startDate: new Date(new Date().setDate(new Date().getDate() - 7)),
+              endDate: new Date(),
+              key: 'selection',
+            }),
+            isSelected: (range) => {
+              const start = new Date(new Date().setDate(new Date().getDate() - 7));
+              const end = new Date();
+              return (
+                range.startDate.toDateString() === start.toDateString() &&
+                range.endDate.toDateString() === end.toDateString()
+              );
+            },
+          },
+          {
+            label: 'Last 30 Days',
+            range: () => ({
+              startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
+              endDate: new Date(),
+              key: 'selection',
+            }),
+            isSelected: (range) => {
+              const start = new Date(new Date().setDate(new Date().getDate() - 30));
+              const end = new Date();
+              return (
+                range.startDate.toDateString() === start.toDateString() &&
+                range.endDate.toDateString() === end.toDateString()
+              );
+            },
+          },
+        ]
+  }
+  inputRanges={isMobile ? [] : undefined}
+  weekStartsOn={1}
+/>
+  </Popover>
         </div>
-        <select
-          className="enhanced-filter-dropdown"
-          value={selectedStateA}
-          onChange={handleStateChangeA}
-          style={{
-            width: { xs: "100%", sm: "auto" },
-            maxWidth: { xs: "300px", sm: "none" },
-          }}
-        >
-          <option value="">-- Select State --</option>
-          {Object.keys(statesAndCities).map((state) => (
-            <option key={state} value={state}>
-              {state}
-            </option>
-          ))}
-        </select>
-        <select
-          className="enhanced-filter-dropdown"
-          value={selectedCityA}
-          onChange={handleCityChangeA}
-          disabled={!selectedStateA}
-          style={{
-            width: { xs: "100%", sm: "auto" },
-            maxWidth: { xs: "300px", sm: "none" },
-          }}
-        >
-          <option value="">-- Select District --</option>
-          {selectedStateA &&
-            statesAndCities[selectedStateA].map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-        </select>
-        <button
-          className="reset-button"
-          onClick={handleReset}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: { xs: "6px 12px", sm: "8px 16px" },
-            borderRadius: "20px",
-            backgroundColor: "#007bff",
-            color: "#fff",
-            border: "none",
-            cursor: "pointer",
-            fontSize: { xs: "0.875rem", sm: "1rem" },
-            transition: "all 0.3s ease",
-            width: { xs: "100%", sm: "auto" },
-            maxWidth: { xs: "300px", sm: "none" },
-            justifyContent: "center",
-          }}
-        >
-          <span style={{ fontWeight: "bold" }}>Reset</span>
-          <span
-            className="rounded-arrow"
-            style={{
-              marginLeft: "8px",
-              display: "inline-flex",
-              alignItems: "center",
-              transition: "transform 0.3s ease",
-            }}
-          >
-            →
-          </span>
-        </button>
-      </Box>
-
+  <select
+    className="enhanced-filter-dropdown"
+    value={selectedStateA}
+    onChange={handleStateChangeA}
+    style={{ width: { xs: "100%", sm: "auto" }, maxWidth: { xs: "300px", sm: "none" } }}
+  >
+    <option value="">-- Select State --</option>
+    {Object.keys(statesAndCities).map((state) => (
+      <option key={state} value={state}>
+        {state}
+      </option>
+    ))}
+  </select>
+  <select
+    className="enhanced-filter-dropdown"
+    value={selectedCityA}
+    onChange={handleCityChangeA}
+    disabled={!selectedStateA}
+    style={{ width: { xs: "100%", sm: "auto" }, maxWidth: { xs: "300px", sm: "none" } }}
+  >
+    <option value="">-- Select District --</option>
+    {selectedStateA &&
+      statesAndCities[selectedStateA].map((city) => (
+        <option key={city} value={city}>
+          {city}
+        </option>
+      ))}
+  </select>
+  <button
+    className="reset-button"
+    onClick={handleReset}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      padding: { xs: "6px 12px", sm: "8px 16px" },
+      borderRadius: "20px",
+      backgroundColor: "#007bff",
+      color: "#fff",
+      border: "none",
+      cursor: "pointer",
+      fontSize: { xs: "0.875rem", sm: "1rem" },
+      transition: "all 0.3s ease",
+      width: { xs: "100%", sm: "auto" },
+      maxWidth: { xs: "300px", sm: "none" },
+      justifyContent: "center",
+    }}
+  >
+    <span style={{ fontWeight: "bold" }}>Reset</span>
+    <span
+      className="rounded-arrow"
+      style={{
+        marginLeft: "8px",
+        display: "inline-flex",
+        alignItems: "center",
+        transition: "transform 0.3s ease",
+      }}
+    >
+      →
+    </span>
+  </button>
+</Box>
+     
       <div
         className="dashboard-container"
         style={{ width: "90%", margin: "auto", padding: "20px" }}
@@ -1510,15 +1507,88 @@ function DashBoard() {
           onFilterClick={handleDashboardFilterClick}
           selectedCategory={dashboardFilter}
         />
-        <div style={{ textAlign: "center" }}>
-          <label
+        {/* Action Buttons Row */}
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            mb: 3,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <button
+            className="button"
+            onClick={() => setIsAddModalOpen(true)}
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              color: "white",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              border: "none",
+              fontSize: "1rem",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+            <FaPlus />
+            Add Entry
+          </button>
+
+         
+
+          {isSuperadmin && (
+            <button
+              className="button"
+              onClick={handleExport}
+              style={{
+                padding: "12px 20px",
+                background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+                color: "white",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                border: "none",
+                fontSize: "1rem",
+                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+              }}
+            >
+              <FaFileExport />
+              Export
+            </button>
+          )} <label
             className="button"
             style={{
               padding: "12px 20px",
               background: "linear-gradient(90deg, #6a11cb, #2575fc)",
               color: "white",
               borderRadius: "12px",
-
               cursor: "pointer",
               fontWeight: "bold",
               border: "none",
@@ -1539,80 +1609,16 @@ function DashBoard() {
             }}
           >
             <FaUpload />
-            Bulk Upload via Excel
+            Bulk Upload
             <input
               type="file"
               onChange={handleFileUpload}
               accept=".xlsx, .xls"
               style={{ display: "none" }}
             />
-          </label>{" "}
-          <button
-            className="button mx-1"
-            onClick={() => setIsAddModalOpen(true)}
-            style={{
-              padding: "12px 20px",
-              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
-              color: "white",
-              borderRadius: "12px",
-              cursor: "pointer",
-              fontWeight: "bold",
-              border: "none",
-              fontSize: "1rem",
-              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              display: "inline-flex",
-              alignItems: "center",
-              textAlign: "center",
-              gap: "8px",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-2px)";
-              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
-            }}
-          >
-            <FaPlus />
-            Add New Entry
-          </button>
-          {isSuperadmin && (
-            <button
-              className="button mx-1"
-              onClick={handleExport}
-              style={{
-                padding: "12px 20px",
-                background: "linear-gradient(90deg, #6a11cb, #2575fc)",
-                color: "white",
-                borderRadius: "12px",
-                cursor: "pointer",
-                fontWeight: "bold",
-                border: "none",
-                fontSize: "1rem",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                display: "inline-flex",
-                alignItems: "center",
-                textAlign: "center",
-                gap: "8px",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = "translateY(-2px)";
-                e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = "translateY(0)";
-                e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
-              }}
-            >
-              <FaFileExport />
-              Export To Excel
-            </button>
-          )}
-          <button
-            className="button mx-1"
+          </label>
+ <button
+            className="button"
             onClick={() => setIsAnalyticsModalOpen(true)}
             style={{
               padding: "12px 20px",
@@ -1627,7 +1633,6 @@ function DashBoard() {
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               display: "inline-flex",
               alignItems: "center",
-              textAlign: "center",
               gap: "8px",
             }}
             onMouseEnter={(e) => {
@@ -1642,8 +1647,134 @@ function DashBoard() {
             <FaChartBar />
             Analytics
           </button>
+
+          <button
+            className="button"
+            onClick={() => navigate("/analytics/calls")}
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              color: "white",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              border: "none",
+              fontSize: "1rem",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+             <FaPhoneAlt size={18} color="white" />   {role === "Others" ? "My Calls" : "Call Analytics"}
+          </button>
+
+          <button
+            className="button"
+            onClick={() => navigate("/scheduled-calls")}
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(90deg, #2575fc, #6a11cb)",
+              color: "white",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              border: "none",
+              fontSize: "1rem",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+            <FaCalendarAlt size={18} color="white" />
+  Scheduled Calls
+          </button>
+ <button
+            className="button"
+            onClick={() => navigate("/call-history")}
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+              color: "white",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              border: "none",
+              fontSize: "1rem",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+            <FaHistory size={18} color="white" />
+            Call History
+          </button>
+          {(isAdmin || isSuperadmin) && (
+            <button
+              className="button"
+              onClick={() => navigate("/admin/smartflo-mapping")}
+              style={{
+                padding: "12px 20px",
+                background: "linear-gradient(90deg, #6a11cb, #2575fc)",
+                color: "white",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                border: "none",
+                fontSize: "1rem",
+                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0px 6px 12px rgba(0, 0, 0, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+              }}
+            >
+                <FaProjectDiagram size={18} color="white" />   Mapping
+            </button>
+          )}
+         
+        </Box>
+
+        <div style={{ textAlign: "center" }}>
           {(isAdmin || isSuperadmin) && filteredData.length > 0 && (
-            <div style={{ marginTop: "10px", marginLeft: "0px" }}>
+            <div  style={{ marginTop: "10px", marginLeft: "0px" }}>
               {isSelectionMode && (
                 <Button
                   variant="info"
@@ -1667,7 +1798,8 @@ function DashBoard() {
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+                    e.target.style.boxShadow =
+                      "0px 4px 6px rgba(0, 0, 0, 0.1)";
                   }}
                 >
                   Select All
@@ -1676,7 +1808,7 @@ function DashBoard() {
               {selectedEntries.length > 0 && (
                 <>
                   <Button
-                    className="copy"
+                  className="copy"
                     variant="primary"
                     onClick={handleCopySelected}
                     style={{
@@ -1745,196 +1877,192 @@ function DashBoard() {
         </div>
 
         <DisableCopy isAdmin={isAdmin} />
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: { xs: 1, sm: 2 },
-            mb: { xs: 1, sm: 2 },
-            justifyContent: { xs: "center", sm: "flex-start" },
-            alignItems: { xs: "center", sm: "flex-start" },
-            px: { xs: 1, sm: 0 },
+       <Box
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        flexDirection: { xs: "column", sm: "row" },
+        gap: { xs: 1, sm: 2 },
+        mb: { xs: 1, sm: 2 },
+        justifyContent: { xs: "center", sm: "flex-start" },
+        alignItems: { xs: "center", sm: "flex-start" },
+        px: { xs: 1, sm: 0 },
+      }}
+    >
+      <Box
+        className="counter-badge"
+        sx={{
+          fontWeight: "600",
+          fontSize: { xs: "0.875rem", sm: "1rem" },
+          color: "#fff",
+          background:
+            dashboardFilter === "leads"
+              ? "linear-gradient(90deg, #ff4444, #cc0000)"
+              : "linear-gradient(90deg, #6a11cb, #2575fc)",
+          padding: { xs: "4px 12px", sm: "5px 15px" },
+          borderRadius: "20px",
+          boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+          textAlign: "center",
+          textTransform: "capitalize",
+          cursor: "pointer",
+          border: dashboardFilter === "leads" ? "2px solid #fff" : "none",
+          width: { xs: "100%", sm: "auto" },
+          maxWidth: { xs: "300px", sm: "none" },
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+          },
+        }}
+        onClick={() => handleCounterClick("leads")}
+      >
+        Total Leads:{" "}
+        {filteredDataWithoutTracker.filter((row) => row.status === "Not Found").length}
+      </Box>
+      <Box
+        className="counter-badge"
+        sx={{
+          fontWeight: "600",
+          fontSize: { xs: "0.875rem", sm: "1rem" },
+          color: "#fff",
+          background:
+            dashboardFilter === "results"
+              ? "linear-gradient(90deg, #ff4444, #cc0000)"
+              : "linear-gradient(90deg, #6a11cb, #2575fc)",
+          padding: { xs: "4px 12px", sm: "5px 15px" },
+          borderRadius: "20px",
+          boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+          textAlign: "center",
+          textTransform: "capitalize",
+          cursor: "pointer",
+          border: dashboardFilter === "results" ? "2px solid #fff" : "none",
+          width: { xs: "100%", sm: "auto" },
+          maxWidth: { xs: "300px", sm: "none" },
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+          },
+        }}
+        onClick={() => handleCounterClick("results")}
+      >
+        Total Results: {filteredData.length}
+      </Box>
+      <Box
+        className="counter-badge"
+        sx={{
+          fontWeight: "600",
+          fontSize: { xs: "0.875rem", sm: "1rem" },
+          color: "#fff",
+          background:
+            dashboardFilter === "monthly"
+              ? "linear-gradient(90deg, #ff4444, #cc0000)"
+              : "linear-gradient(90deg, #6a11cb, #2575fc)",
+          padding: { xs: "4px 12px", sm: "5px 15px" },
+          borderRadius: "20px",
+          boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+          textAlign: "center",
+          textTransform: "capitalize",
+          cursor: "pointer",
+          border: dashboardFilter === "monthly" ? "2px solid #fff" : "none",
+          width: { xs: "100%", sm: "auto" },
+          maxWidth: { xs: "300px", sm: "none" },
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+          },
+        }}
+        onClick={() => handleCounterClick("monthly")}
+      >
+        Monthly Calls: {monthlyCalls}
+      </Box>
+    </Box>
+<div
+  className="table-container"
+  style={{
+   width: "100%",
+    maxWidth: "100%", // Fit screen width
+    height: "75vh",
+    margin: "0 auto",
+    overflowX: "auto", // Enable horizontal scrolling
+    overflowY: "auto", // Enable vertical scrolling
+    boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
+    borderRadius: "15px",
+    marginTop: "20px",
+    backgroundColor: "#fff",
+    WebkitOverflowScrolling: "touch",
+  }}
+>
+  <div
+     className="table-header"
+    style={{
+      background: "linear-gradient(135deg, #2575fc, #6a11cb)",
+      color: "white",
+      padding: "15px 20px",
+      textAlign: "center",
+      position: "sticky",
+      top: 0,
+      zIndex: 2,
+      display: "grid",
+      fontWeight: "bold",
+      borderBottom: "2px solid #ddd",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: "1000px", // Wide enough to trigger scrolling
+    }}
+  >
+    <div>#</div>
+    <div>Date</div>
+    <div>Customer</div>
+    <div>Person</div>
+    <div>Mobile</div>
+    <div>Address</div>
+    <div>District</div>
+    <div>State</div>
+    <div>User</div>
+    <div>Actions</div>
+  </div>
+  {filteredData.length === 0 ? (
+    <div
+      style={{
+        height: "calc(100% - 60px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "1.5rem",
+        color: "#666",
+        fontWeight: "bold",
+        textAlign: "center",
+        padding: "20px",
+        minWidth: "1190px",
+      }}
+    >
+      No Entries Available
+    </div>
+  ) : (
+     <AutoSizer>
+      {({ height, width }) => (
+        <List
+          ref={listRef}
+          key={listKey}
+        width={Math.max(width, 1000)}
+          height={height - 60}
+          rowCount={filteredData.length}
+          rowHeight={60}
+          rowRenderer={rowRenderer}
+          overscanRowCount={10}
+          style={{ outline: "none", minWidth: "1000px" }} // Match header minWidth
+          onScroll={({ scrollTop, scrollLeft }) => {
+            setScrollPosition(scrollTop);
+            const header = document.querySelector(".table-header");
+            if (header) header.scrollLeft = scrollLeft;
           }}
-        >
-          <Box
-            className="counter-badge"
-            sx={{
-              fontWeight: "600",
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              color: "#fff",
-              background:
-                dashboardFilter === "leads"
-                  ? "linear-gradient(90deg, #ff4444, #cc0000)"
-                  : "linear-gradient(90deg, #6a11cb, #2575fc)",
-              padding: { xs: "4px 12px", sm: "5px 15px" },
-              borderRadius: "20px",
-              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-              textAlign: "center",
-              textTransform: "capitalize",
-              cursor: "pointer",
-              border: dashboardFilter === "leads" ? "2px solid #fff" : "none",
-              width: { xs: "100%", sm: "auto" },
-              maxWidth: { xs: "300px", sm: "none" },
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              "&:hover": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-              },
-            }}
-            onClick={() => handleCounterClick("leads")}
-          >
-            Total Leads:{" "}
-            {
-              filteredDataWithoutTracker.filter(
-                (row) => row.status === "Not Found"
-              ).length
-            }
-          </Box>
-          <Box
-            className="counter-badge"
-            sx={{
-              fontWeight: "600",
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              color: "#fff",
-              background:
-                dashboardFilter === "results"
-                  ? "linear-gradient(90deg, #ff4444, #cc0000)"
-                  : "linear-gradient(90deg, #6a11cb, #2575fc)",
-              padding: { xs: "4px 12px", sm: "5px 15px" },
-              borderRadius: "20px",
-              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-              textAlign: "center",
-              textTransform: "capitalize",
-              cursor: "pointer",
-              border: dashboardFilter === "results" ? "2px solid #fff" : "none",
-              width: { xs: "100%", sm: "auto" },
-              maxWidth: { xs: "300px", sm: "none" },
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              "&:hover": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-              },
-            }}
-            onClick={() => handleCounterClick("results")}
-          >
-            Total Results: {filteredData.length}
-          </Box>
-          <Box
-            className="counter-badge"
-            sx={{
-              fontWeight: "600",
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              color: "#fff",
-              background:
-                dashboardFilter === "monthly"
-                  ? "linear-gradient(90deg, #ff4444, #cc0000)"
-                  : "linear-gradient(90deg, #6a11cb, #2575fc)",
-              padding: { xs: "4px 12px", sm: "5px 15px" },
-              borderRadius: "20px",
-              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-              textAlign: "center",
-              textTransform: "capitalize",
-              cursor: "pointer",
-              border: dashboardFilter === "monthly" ? "2px solid #fff" : "none",
-              width: { xs: "100%", sm: "auto" },
-              maxWidth: { xs: "300px", sm: "none" },
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              "&:hover": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-              },
-            }}
-            onClick={() => handleCounterClick("monthly")}
-          >
-            Monthly Calls: {monthlyCalls}
-          </Box>
-        </Box>
-        <div
-          className="table-container"
-          style={{
-            width: "100%",
-            maxWidth: "100%", // Fit screen width
-            height: "75vh",
-            margin: "0 auto",
-            overflowX: "auto", // Enable horizontal scrolling
-            overflowY: "auto", // Enable vertical scrolling
-            boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-            borderRadius: "15px",
-            marginTop: "20px",
-            backgroundColor: "#fff",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          <div
-            className="table-header"
-            style={{
-              background: "linear-gradient(135deg, #2575fc, #6a11cb)",
-              color: "white",
-              padding: "15px 20px",
-              textAlign: "center",
-              position: "sticky",
-              top: 0,
-              zIndex: 2,
-              display: "grid",
-              fontWeight: "bold",
-              borderBottom: "2px solid #ddd",
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: "1000px", // Wide enough to trigger scrolling
-            }}
-          >
-            <div>#</div>
-            <div>Date</div>
-            <div>Customer</div>
-            <div>Person</div>
-            <div>Mobile</div>
-            <div>Address</div>
-            <div>District</div>
-            <div>State</div>
-            <div>User</div>
-            <div>Actions</div>
-          </div>
-          {filteredData.length === 0 ? (
-            <div
-              style={{
-                height: "calc(100% - 60px)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: { xs: "1.2rem", sm: "1.5rem" },
-                color: "#666",
-                fontWeight: "bold",
-                textAlign: "center",
-                padding: "20px",
-                minWidth: "1000px", // Match header minWidth
-              }}
-            >
-              No Entries Available
-            </div>
-          ) : (
-            <AutoSizer>
-              {({ height, width }) => (
-                <List
-                  ref={listRef}
-                  key={listKey}
-                  width={Math.max(width, 1000)}
-                  height={height - 60}
-                  rowCount={filteredData.length}
-                  rowHeight={60}
-                  rowRenderer={rowRenderer}
-                  overscanRowCount={10}
-                  style={{ outline: "none", minWidth: "1000px" }} // Match header minWidth
-                  onScroll={({ scrollTop, scrollLeft }) => {
-                    setScrollPosition(scrollTop);
-                    const header = document.querySelector(".table-header");
-                    if (header) header.scrollLeft = scrollLeft;
-                  }}
-                />
-              )}
-            </AutoSizer>
-          )}
-        </div>
+        />
+      )}
+    </AutoSizer>
+  )}
+</div>
 
         <AddEntry
           isOpen={isAddModalOpen}
@@ -1959,6 +2087,7 @@ function DashBoard() {
           onClose={handleClosed}
           entry={selectedEntry}
           isAdmin={isAdmin}
+          onEntryUpdated={handleEntryUpdated}
         />
         <AdminDrawer
           entries={entries}
@@ -1975,6 +2104,12 @@ function DashBoard() {
           role={role}
           userId={userId}
           dateRange={dateRange}
+        />
+         <MailOptionsModal
+          isOpen={isMailModalOpen}
+          onClose={handleMailModalClose}
+          entryId={selectedEntryForMail?._id}
+          entryData={selectedEntryForMail}
         />
         <Modal
           show={isAnalyticsModalOpen}
@@ -2029,43 +2164,39 @@ function DashBoard() {
           © 2025 DataManagement. All rights reserved.
         </p>
       </footer>
-      <style>
+       <style>
         {`
           
-  @media (max-width: 768px) {
-
  
-   
-   .button {
-    margin-top:5px;
-    margin-bottom: 8px;
-    width:250px
-  }
-   .copy { 
-    margin-bottom: 8px;
-  
-   width:250px
-  }
-   .select { 
-    margin-bottom: 8px;
+  /* Mobile Responsive Styles */
+  @media (max-width: 768px) {
+    .button {
+      margin-top: 5px;
+      margin-bottom: 8px;
+      width: 250px;
+    }
     
-   width:250px
-  }
-  .table-container {
-    width: 100%;
-    max-width: 100%; /* Fit screen width */
-    height: 75vh;
-    margin: 0 auto;
-    overflow-x: auto; /* Horizontal scrolling */
-    overflow-y: auto; /* Vertical scrolling */
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    border-radius: 15px;
-    margin-top: 20px;
-    background-color: #fff;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
-  }
+    .copy { 
+      margin-bottom: 8px;
+      width: 250px;
+    }
+    
+    .select { 
+      margin-bottom: 8px;
+      width: 250px;
+    }
 
-  .table-header {
+    .cursor-pointer {
+      width: 296px !important;
+    }
+
+    .table-container {
+      max-width: 100%;
+      overflow-x: auto;
+      border-radius: 10px;
+    }
+
+    .table-header {
     background: linear-gradient(135deg, #2575fc, #6a11cb);
     color: white;
     padding: 15px 20px;
@@ -2082,66 +2213,35 @@ function DashBoard() {
     min-width: 1000px; /* Wide enough for scrolling */
   }
 
-  .virtual-row {
-    display: grid;
-    grid-template-columns: 80px 120px 150px 120px 120px 150px 100px 100px 100px 200px; /* Match header exactly */
-    align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #eee;
-    min-width: 1000px; /* Match header minWidth */
-  }
-
-  .virtual-cell {
-    padding: 10px;
-    font-size: 1rem;
-    text-align: center;
-    white-space: nowrap; /* Prevent text wrapping */
-  }
-
-  .actions-cell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 200px;
-    padding: 0 5px;
-  }
-
-  @media (max-width: 768px) {
-
-   .cursor-pointer{
-    width: 296px !important;
-    }
-
-    .table-container {
-      max-width: 100%; /* Fit screen width */
-      overflow-x: auto; /* Ensure horizontal scrolling */
-    }
-
-    .table-header {
-      grid-template-columns: 60px 100px 120px 100px 100px 120px 80px 80px 80px 150px !important; /* Smaller columns for mobile */
-      font-size: 0.9rem !important;
-      min-width: 1000px; /* Wide enough for scrolling */
-    }
-
     .virtual-row {
-      grid-template-columns: 60px 100px 120px 100px 100px 120px 80px 80px 80px 150px !important; /* Match header exactly */
-      min-width: 1000px; /* Wide enough for scrolling */
+      grid-template-columns: 50px 90px 110px 90px 100px 120px 80px 80px 80px 200px !important;
+      padding: 8px 15px !important;
+      min-width: 1020px;
     }
 
     .virtual-cell {
       font-size: 0.75rem !important;
-      padding: 6px !important;
-      margin-left: -34px;
+      padding: 5px !important;
+      margin-left: -30px;
     }
 
     .actions-cell {
-      width: 186px !important;
-      gap: 0px !important;
-      margin-left: -40px !important;
+      width: 200px !important;
+      gap: 3px !important;
+      margin-left: -35px !important;
+    }
+
+    .actions-cell button,
+    .actions-cell .bin-button,
+    .actions-cell .editBtn {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      padding: 0 !important;
     }
 
     .table-container::-webkit-scrollbar {
-      height: 8px; /* Horizontal scrollbar height */
+      height: 6px;
     }
 
     .table-container::-webkit-scrollbar-thumb {
@@ -2152,9 +2252,19 @@ function DashBoard() {
     .table-container::-webkit-scrollbar-track {
       background-color: #f1f1f1;
     }
-  }
-    .enhanced-search-bar-container { flex-direction: column; align-items: center; }
-    .enhanced-search-bar, .enhanced-filter-dropdown, .reset-button { width: 100% !important; max-width: 300px !important; margin-bottom: 10px; }
+
+    .enhanced-search-bar-container { 
+      flex-direction: column; 
+      align-items: center; 
+    }
+    
+    .enhanced-search-bar, 
+    .enhanced-filter-dropdown, 
+    .reset-button { 
+      width: 100% !important; 
+      max-width: 300px !important; 
+      margin-bottom: 10px; 
+    }
   }
 
   .footer-container {
