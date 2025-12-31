@@ -137,12 +137,14 @@ const CallAnalyticsDashboard = () => {
     return hours * 3600 + minutes * 60 + seconds;
   };
 
-  // Helper function to check if agent has less than 6 hours in last 3 days
-  const isLowPerformance = (agent) => {
-    const totalSeconds = parseDurationToSeconds(agent.totalDurationFormatted);
-    const sixHoursInSeconds = 6 * 3600; // 6 hours = 21600 seconds
-    return totalSeconds < sixHoursInSeconds;
-  };
+
+// Helper function to check if agent has less than 3 hours in last 3 days
+const isLowPerformance = (agent) => {
+  const totalSeconds = parseDurationToSeconds(agent.totalDurationFormatted);
+  const threeHoursInSeconds = 3 * 3600; // 3 hours = 10800 seconds
+  return totalSeconds < threeHoursInSeconds;
+};
+
 
   // Export filtered data to CSV
   const handleExportCSV = () => {
@@ -670,7 +672,7 @@ const CallAnalyticsDashboard = () => {
                           {agent.totalDurationFormatted}
                           {lowPerf && (
                             <Chip 
-                              label="< 6hrs" 
+                              label="< 3hrs" 
                               size="small" 
                               sx={{ 
                                 background: "linear-gradient(135deg, #ef4444, #dc2626)",
