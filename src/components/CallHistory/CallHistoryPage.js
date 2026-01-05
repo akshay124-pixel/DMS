@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api, { getAuthData } from "../../api/api";
+import api, { getAuthData, setNavigationFunction, clearNavigationFunction } from "../../api/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import {
@@ -43,6 +43,15 @@ import RecordingPlayerModal from "./RecordingPlayerModal";
 
 const CallHistoryPage = () => {
   const navigate = useNavigate();
+  
+  // Set navigation function for API interceptors
+  useEffect(() => {
+    setNavigationFunction(navigate);
+    return () => {
+      clearNavigationFunction();
+    };
+  }, [navigate]);
+  
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -57,6 +66,7 @@ const CallHistoryPage = () => {
     startDate: "",
     endDate: "",
     destinationNumber: "",
+    virtualNumber: "", // NEW: Virtual number filter
     hasRecording: "",
   });
   
@@ -76,12 +86,20 @@ const CallHistoryPage = () => {
         setUserRole(decoded.role || "");
       } catch (error) {
         console.error("Token decode error:", error);
+        // If token is invalid, redirect to login
+        navigate("/login");
+        return;
       }
+    } else {
+      // No token, redirect to login
+      navigate("/login");
+      return;
     }
     
+    // Only fetch data if we have a valid token
     fetchCallHistory();
     fetchStats();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, navigate]);
   
   const fetchCallHistory = async () => {
     setLoading(true);
@@ -99,17 +117,32 @@ const CallHistoryPage = () => {
         }
       });
       
+      console.log("📞 Fetching call history with params:", params);
+      
       const response = await api.get("/api/calls", {
         params,
       });
       
+      // Call history response logged only in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log("📞 Call history response:", response.data);
+      }
+      
       if (response.data.success) {
         setCalls(response.data.data);
         setTotalCalls(response.data.pagination.total);
+      } else {
+        throw new Error(response.data.message || "Failed to fetch call history");
       }
     } catch (error) {
       console.error("Fetch call history error:", error);
-      toast.error("Failed to fetch call history");
+      if (error.response?.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+      toast.error(error.response?.data?.message || "Failed to fetch call history");
     } finally {
       setLoading(false);
     }
@@ -122,15 +155,57 @@ const CallHistoryPage = () => {
         endDate: filters.endDate || undefined,
       };
       
+      // Remove undefined values
+      Object.keys(params).forEach(key => {
+        if (params[key] === undefined) {
+          delete params[key];
+        }
+      });
+      
+      console.log("📊 Fetching call stats with params:", params);
+      
       const response = await api.get("/api/calls/stats", {
         params,
       });
       
+      // Call stats response logged only in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log("📊 Call stats response:", response.data);
+      }
+      
       if (response.data.success) {
-        setStats(response.data.data);
+        const statsData = response.data.data;
+        
+        // Ensure completionRate is a number
+        if (statsData.completionRate) {
+          statsData.completionRate = parseFloat(statsData.completionRate);
+        }
+        
+        console.log("📊 Processed stats data:", statsData);
+        setStats(statsData);
+      } else {
+        throw new Error(response.data.message || "Failed to fetch stats");
       }
     } catch (error) {
       console.error("Fetch stats error:", error);
+      if (error.response?.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+      // Set default stats to prevent UI issues
+      setStats({
+        totalCalls: 0,
+        inboundCalls: 0,
+        outboundCalls: 0,
+        completedCalls: 0,
+        answeredCalls: 0,
+        failedCalls: 0,
+        noAnswerCalls: 0,
+        completionRate: 0
+      });
+      console.warn("Stats fetch failed, using default stats");
     }
   };
   
@@ -148,6 +223,31 @@ const CallHistoryPage = () => {
     fetchStats();
   };
   
+  const handleRefreshData = async () => {
+    try {
+      setLoading(true);
+      
+      // Smart cache refresh - only refresh call-related data
+      await api.post("/api/calls/refresh-cache", {
+        dataType: 'calls',
+        userId: null // Refresh for current user
+      });
+      
+      // Immediately fetch fresh data
+      await Promise.all([
+        fetchCallHistory(),
+        fetchStats()
+      ]);
+      
+      toast.success("Fresh data loaded!");
+    } catch (error) {
+      console.error("Smart refresh error:", error);
+      toast.error("Failed to refresh data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearFilters = () => {
     const clearedFilters = {
       status: "",
@@ -155,6 +255,7 @@ const CallHistoryPage = () => {
       startDate: "",
       endDate: "",
       destinationNumber: "",
+      virtualNumber: "", // NEW: Clear virtual number filter
       hasRecording: "",
     };
     setFilters(clearedFilters);
@@ -181,7 +282,14 @@ const CallHistoryPage = () => {
         // Fetch stats without date filters
         const statsResponse = await api.get("/api/calls/stats");
         if (statsResponse.data.success) {
-          setStats(statsResponse.data.data);
+          const statsData = statsResponse.data.data;
+          
+          // Ensure completionRate is a number
+          if (statsData.completionRate) {
+            statsData.completionRate = parseFloat(statsData.completionRate);
+          }
+          
+          setStats(statsData);
         }
         
         toast.success("Filters reset successfully!");
@@ -412,6 +520,26 @@ const CallHistoryPage = () => {
             }}
           />
 
+          <TextField
+            label="Virtual Number"
+            value={filters.virtualNumber}
+            onChange={(e) => handleFilterChange("virtualNumber", e.target.value)}
+            placeholder="Filter by virtual number"
+            size="small"
+            sx={{ 
+              minWidth: { xs: "100%", sm: 150 },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "10px",
+                "&:hover fieldset": {
+                  borderColor: "#10b981",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#10b981",
+                }
+              }
+            }}
+          />
+
           <Button
             variant="contained"
             onClick={handleApplyFilters}
@@ -433,6 +561,35 @@ const CallHistoryPage = () => {
             }}
           >
             Apply Filter
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<Refresh />}
+            onClick={handleRefreshData}
+            disabled={loading}
+            sx={{
+              background: "linear-gradient(90deg, #10b981, #059669)",
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1,
+              borderRadius: "12px",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              width: { xs: "100%", sm: "auto" },
+              "&:hover": {
+                background: "linear-gradient(90deg, #059669, #047857)",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.2)",
+              },
+              "&:disabled": {
+                background: "#e0e0e0",
+                color: "#9e9e9e",
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
           </Button>
 
           <Button
@@ -462,188 +619,159 @@ const CallHistoryPage = () => {
         </Box>
       </Paper>
 
-      {/* Summary Cards */}
-      {stats && (
-        <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} sm={6} md={2.4}>
-            <Card 
-              sx={{ 
-                borderRadius: "15px",
-               boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-                 
-                "&:hover": { 
-                  transform: "translateY(-4px)", 
-                   boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
-                }
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
-                      Total Calls
-                    </Typography>
-                    <Typography variant="h3" fontWeight={700} color="#2575fc">
-                      {stats.totalCalls || 0}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    background: "linear-gradient(135deg, #e8f5e9, #afcce4ff)",  borderRadius: "50%", 
-                    p: 1.5,
-                    backdropFilter: "blur(10px)"
-                  }}>
-                    <Phone sx={{ fontSize: 32, color: "#2575fc" }} />
-                  </Box>
+      {/* Essential Statistics Cards */}
+      <Grid container spacing={3} mb={3}>
+        {/* Total Calls */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card 
+            sx={{ 
+              borderRadius: "15px",
+              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.3s ease",
+              background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+              "&:hover": { 
+                transform: "translateY(-4px)", 
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
+              }
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
+                    Total Calls
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700} color="#2575fc">
+                    {stats?.totalCalls || 0}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2.4}>
-            <Card 
-              sx={{ 
-                borderRadius: "15px",
-                 boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-              
-                "&:hover": { 
-                  transform: "translateY(-4px)", 
-                   boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
-                }
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
-                      Completed
-                    </Typography>
-                    <Typography variant="h3" fontWeight={700} color="#10b981">
-                      {stats.completedCalls || 0}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                     background: "linear-gradient(135deg, #e8f5e9, #c8e6c9)", 
-                    borderRadius: "50%", 
-                    p: 1.5,
-                    backdropFilter: "blur(10px)"
-                  }}>
-                    <CheckCircle sx={{ fontSize: 32, color: "#10b981" }} />
-                  </Box>
+                <Box sx={{ 
+                  background: "linear-gradient(135deg, #2575fc, #6a11cb)",
+                  borderRadius: "50%", 
+                  p: 1.5,
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <Phone sx={{ fontSize: 32, color: "white" }} />
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2.4}>
-            <Card 
-              sx={{ 
-                borderRadius: "15px",
-                 boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-                "&:hover": { 
-                  transform: "translateY(-4px)", 
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
-                }
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
-                      Failed
-                    </Typography>
-                    <Typography variant="h3" fontWeight={700} color="#6a11cb">
-                      {stats.failedCalls || 0}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    background: "linear-gradient(135deg, #f3e5f5, #e1bee7)", 
-                    borderRadius: "50%", 
-                    p: 1.5,
-                    backdropFilter: "blur(10px)"
-                  }}>
-                    <Cancel sx={{ fontSize: 32, color: "#6a11cb" }} />
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2.4}>
-            <Card 
-              sx={{ 
-                borderRadius: "15px",
-                boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-
-                "&:hover": { 
-                  transform: "translateY(-4px)", 
-                  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
-                }
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
-                      No Answer
-                    </Typography>
-                    <Typography variant="h3" fontWeight={700} color="#f59e0b">
-                      {stats.noAnswerCalls || 0}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                     background: "linear-gradient(135deg, #fff3e0, #ffe0b2)", 
-                    borderRadius: "50%", 
-                    p: 1.5,
-                    backdropFilter: "blur(10px)"
-                  }}>
-                    <Schedule sx={{ fontSize: 32, color: "#f59e0b" }} />
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2.4}>
-            <Card 
-              sx={{ 
-                borderRadius: "15px",
-                boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-
-                "&:hover": { 
-                  transform: "translateY(-4px)", 
-                     boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
-                }
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
-                      Success Rate
-                    </Typography>
-                    <Typography variant="h3" fontWeight={700} color="grey">
-                      {stats.completionRate || 0}%
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    background: "linear-gradient(135deg, #fff3e0, #ffe0b2)", 
-                    borderRadius: "50%", 
-                    p: 1.5,
-                    backdropFilter: "blur(10px)"
-                  }}>
-                    <TrendingUp sx={{ fontSize: 32, color: "grey" }} />
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
-      )}
+
+        {/* Completed Calls */}
+      
+        {/* Inbound Calls */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card 
+            sx={{ 
+              borderRadius: "15px",
+              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.3s ease",
+              background: "linear-gradient(135deg, #fff3e0, #ffe0b2)",
+              "&:hover": { 
+                transform: "translateY(-4px)", 
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
+              }
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
+                    Inbound Calls
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700} color="#f57c00">
+                    {stats?.inboundCalls || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ 
+                  background: "linear-gradient(135deg, #f57c00, #ef6c00)", 
+                  borderRadius: "50%", 
+                  p: 1.5,
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <Phone sx={{ fontSize: 32, color: "white", transform: "rotate(180deg)" }} />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Outbound Calls */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card 
+           sx={{ 
+  borderRadius: "15px",
+  boxShadow: "0 6px 18px rgba(46, 125, 50, 0.18)", // 🌿 green shadow
+  transition: "all 0.3s ease",
+  background: "linear-gradient(135deg, #e8f5e9, #c8e6c9)", // 🍃 light green gradient
+  "&:hover": { 
+    transform: "translateY(-4px)", 
+    boxShadow: "0 10px 28px rgba(46, 125, 50, 0.28)" // stronger green glow
+  }
+}}
+
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
+                    Outbound Calls
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700} color="#2e7d32">
+                    {stats?.outboundCalls || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ 
+                  background:"linear-gradient(135deg, #43cea2, #185a9d)", 
+                  borderRadius: "50%", 
+                  p: 1.5,
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <Phone sx={{ fontSize: 32, color: "white" }} />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Success Rate */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card 
+            sx={{ 
+              borderRadius: "15px",
+              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.3s ease",
+              background: "linear-gradient(135deg, #f3e5f5, #e1bee7)",
+              "&:hover": { 
+                transform: "translateY(-4px)", 
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" 
+              }
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="textSecondary" gutterBottom fontWeight={600} fontSize="0.9rem">
+                    Success Rate
+                  </Typography>
+                  <Typography variant="h3" fontWeight={700} color="#8e24aa">
+                    {stats?.completionRate ? `${stats.completionRate}%` : '0%'}
+                  </Typography>
+                </Box>
+                <Box sx={{ 
+                  background: "linear-gradient(135deg, #8e24aa, #7b1fa2)", 
+                  borderRadius: "50%", 
+                  p: 1.5,
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <TrendingUp sx={{ fontSize: 32, color: "white" }} />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {/* Call History Table */}
       <Paper 
@@ -689,6 +817,7 @@ const CallHistoryPage = () => {
                   <TableCell sx={{ fontWeight: 600, color: "white" }}>Date & Time</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: "white" }}>Customer</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: "white" }}>Phone</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Virtual Number</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: "white" }}>Agent</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: "white" }}>Direction</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: "white" }}>Status</TableCell>
@@ -699,7 +828,7 @@ const CallHistoryPage = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
                       <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
                         <CircularProgress size={40} sx={{ color: "#2575fc" }} />
                         <Typography variant="body2" color="textSecondary" fontWeight={600}>
@@ -710,7 +839,7 @@ const CallHistoryPage = () => {
                   </TableRow>
                 ) : calls.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
                       <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
                         <Typography variant="h6" color="textSecondary" fontWeight={600}>
                           📵 No Call History Available
@@ -750,8 +879,23 @@ const CallHistoryPage = () => {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" color="textSecondary">
-                          {call.destinationNumber}
+                          {call.callDirection === "inbound" ? call.callerId || call.destinationNumber : call.destinationNumber}
                         </Typography>
+                        {call.callDirection === "inbound" && (
+                          <Typography variant="caption" color="primary" display="block">
+                            📞 Incoming Call
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600} color="#10b981">
+                          {call.virtualNumber || call.agentNumber || "N/A"}
+                        </Typography>
+                        {call.queueId && (
+                          <Typography variant="caption" color="textSecondary" display="block">
+                            Queue: {call.queueId}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
@@ -760,7 +904,7 @@ const CallHistoryPage = () => {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={call.callDirection}
+                          label={call.callDirection === "inbound" ? "📞 Inbound" : "📱 Outbound"}
                           size="small"
                           sx={{
                             fontWeight: 600,
@@ -770,6 +914,11 @@ const CallHistoryPage = () => {
                             color: "white"
                           }}
                         />
+                        {call.routingReason && call.routingReason !== "outbound" && (
+                          <Typography variant="caption" color="textSecondary" display="block">
+                            via {call.routingReason}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Chip

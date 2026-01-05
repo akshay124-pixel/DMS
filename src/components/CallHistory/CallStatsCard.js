@@ -17,35 +17,29 @@ const CallStatsCard = ({ stats }) => {
       color: "#1976d2",
     },
     {
-      title: "Completed",
-      value: stats.completedCalls || 0,
-      icon: <CheckCircle />,
+      title: "Inbound Calls",
+      value: stats.inboundCalls || 0,
+      icon: <Phone style={{ transform: "rotate(180deg)" }} />,
       color: "#2e7d32",
     },
     {
-      title: "Failed",
-      value: stats.failedCalls || 0,
-      icon: <Cancel />,
-      color: "#d32f2f",
+      title: "Outbound Calls",
+      value: stats.outboundCalls || 0,
+      icon: <Phone />,
+      color: "#1976d2",
     },
     {
-      title: "No Answer",
-      value: stats.noAnswerCalls || 0,
-      icon: <Schedule />,
-      color: "#ed6c02",
-    },
-    {
-      title: "Completion Rate",
+      title: "Success Rate",
       value: `${stats.completionRate || 0}%`,
       icon: <TrendingUp />,
-      color: "#9c27b0",
+      color: "#2e7d32",
     },
   ];
   
   return (
     <Grid container spacing={2} sx={{ mb: 3 }}>
       {statCards.map((card, index) => (
-        <Grid item xs={12} sm={6} md={2.4} key={index}>
+        <Grid item xs={12} sm={6} md={3} key={index}>
           <Paper
             sx={{
               p: 2,

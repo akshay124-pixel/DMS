@@ -578,7 +578,43 @@ const isLowPerformance = (agent) => {
           border: "none",
           background: "white"
         }}
+      > <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 2, 
+          mb: 2, 
+          borderRadius: "12px",
+          background: "linear-gradient(90deg, #e8f5e9, #e3f2fd)",
+          border: "1px solid #10b981",
+          textAlign: "center"
+        }}
       >
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            fontWeight: 600, 
+            color: "#10b981",
+            fontSize: "1rem"
+          }}
+        >
+          📊 This Agent Performance - Displaying Today's Performance Data Only - {new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </Typography>
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: "#666", 
+            display: "block",
+            mt: 0.5
+          }}
+        >
+          Use date range filters below to analyze performance for different time periods
+        </Typography>
+      </Paper>
         <Typography 
           variant="h6" 
           gutterBottom 

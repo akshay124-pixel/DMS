@@ -43,7 +43,9 @@ function ChangePassword({ setIsAuthenticated }) {
 
       try {
         const response = await api.get("/auth/verify-token");
-        console.log("ChangePassword: Token verification successful", response.data);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("ChangePassword: Token verification successful", response.data);
+        }
       } catch (error) {
         console.error("ChangePassword: Token verification failed", error);
         toast.error("Session expired or invalid. Please log in again.", {
@@ -51,7 +53,7 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        logout();
+        logout(navigate);
       }
     };
 
@@ -140,7 +142,7 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        logout();
+        logout(navigate);
         return;
       }
 
@@ -164,7 +166,7 @@ function ChangePassword({ setIsAuthenticated }) {
 
         // Logout after 3 seconds (as per spec)
         setTimeout(() => {
-          logout();
+          logout(navigate);
         }, 3000);
       }
     } catch (error) {
@@ -194,7 +196,7 @@ function ChangePassword({ setIsAuthenticated }) {
           autoClose: 3000,
           theme: "colored",
         });
-        logout();
+        logout(navigate);
       } else {
         toast.error("Failed to change password. Please try again.", {
           position: "top-right",

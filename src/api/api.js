@@ -35,6 +35,25 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+// Navigation context for API interceptors
+let navigationFunction = null;
+
+/**
+ * Set navigation function for API interceptors
+ * This should be called from components that need to handle logout navigation
+ * @param {Function} navigate - React Router navigate function
+ */
+export const setNavigationFunction = (navigate) => {
+  navigationFunction = navigate;
+};
+
+/**
+ * Clear navigation function
+ */
+export const clearNavigationFunction = () => {
+  navigationFunction = null;
+};
+
 /**
  * Set authentication data in localStorage
  * @param {Object} data - { accessToken, refreshToken, user }
@@ -87,19 +106,32 @@ export const clearAuthData = () => {
 
 /**
  * Logout user - clear data and redirect
+ * Note: This function now returns a promise to allow components to handle navigation
  */
-export const logout = () => {
+export const logout = async (navigate = null) => {
   const { accessToken } = getAuthData();
   
   // Try to call logout endpoint (fire and forget)
   if (accessToken) {
-    axios.post(`${BASE_URL}/auth/logout`, {}, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }).catch(() => {}); // Ignore errors
+    try {
+      await axios.post(`${BASE_URL}/auth/logout`, {}, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+    } catch (error) {
+      // Ignore logout endpoint errors
+      console.log("Logout endpoint error (ignored):", error.message);
+    }
   }
   
   clearAuthData();
-  window.location.href = "/login";
+  
+  // Use React Router navigation if available, otherwise fallback to window.location
+  if (navigate && typeof navigate === 'function') {
+    navigate("/login", { replace: true });
+  } else {
+    // Fallback for cases where navigate is not available
+    window.location.href = "/login";
+  }
 };
 
 /**
@@ -154,14 +186,14 @@ api.interceptors.response.use(
       // Check if this is the refresh endpoint itself - if so, logout
       if (originalRequest.url?.includes("/refresh-token")) {
         console.log("Refresh token failed, logging out");
-        logout();
+        logout(navigationFunction);
         return Promise.reject(error);
       }
 
       // Check if request was already retried - if so, logout
       if (originalRequest._retry) {
         console.log("Request already retried, logging out");
-        logout();
+        logout(navigationFunction);
         return Promise.reject(error);
       }
 
@@ -196,7 +228,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed - process queue with error and logout
         processQueue(refreshError, null);
-        logout();
+        logout(navigationFunction);
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

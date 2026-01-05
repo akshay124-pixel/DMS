@@ -53,7 +53,10 @@ function Login({ setIsAuthenticated }) {
           isSuperadmin: user.isSuperadmin,
         };
 
-        console.log("Login: Storing auth data", { userId: userData.id, role: userData.role });
+        // Login successful (sensitive data not logged)
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Login: Storing auth data", { role: userData.role });
+        }
 
         // Store all tokens and user data using setAuthData
         setAuthData({

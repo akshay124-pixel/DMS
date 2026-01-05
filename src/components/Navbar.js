@@ -19,8 +19,8 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    // Use the centralized logout function
-    apiLogout();
+    // Use the centralized logout function with navigate
+    apiLogout(navigate);
   };
 
   // Close dropdown if clicked outside

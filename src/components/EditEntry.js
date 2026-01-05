@@ -1288,6 +1288,9 @@ const renderOptions = () => (
         <Form.Group controlId="mobileNumber">
           <Form.Label>📱 Mobile Number</Form.Label>
           <Form.Control
+           type="tel"
+           inputMode="numeric"
+           maxLength={10}
             {...register("mobileNumber", {
               maxLength: {
                 value: 10,
@@ -1314,6 +1317,9 @@ const renderOptions = () => (
         <Form.Group controlId="alterNumber">
           <Form.Label>📞 Alternate Number</Form.Label>
           <Form.Control
+          type="tel"
+          inputMode="numeric"
+          maxLength={10}
             {...register("AlterNumber", {
               maxLength: {
                 value: 10,

@@ -43,10 +43,11 @@ import {
   Box,
   Divider,
   Chip,
+  TablePagination,
 } from "@mui/material";
 import { normalizeId } from "./Anylitics/sharedUtilities";
 import { motion } from "framer-motion";
-import api, { getAuthData, logout } from "../api/api";
+import api, { getAuthData, logout, setNavigationFunction, clearNavigationFunction } from "../api/api";
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -66,66 +67,23 @@ const useIsMobile = () => {
 
 // Separate Call Tracking Dashboard Component
 const CallTrackingDashboard = ({
-  filteredEntriesWithoutTracker,
+  statusCounts,
+  closeTypeCounts,
   onFilterClick,
   selectedCategory,
 }) => {
   const callStats = useMemo(() => {
-    const stats = {
-      cold: 0,
-      warm: 0,
-      hot: 0,
-      closedWon: 0,
-      closedLost: 0,
-      Not: 0,
-      Service: 0,
-      total: filteredEntriesWithoutTracker.length,
+    return {
+      cold: statusCounts["Not Interested"] || 0,
+      warm: statusCounts["Maybe"] || 0,
+      hot: statusCounts["Interested"] || 0,
+      closedWon: closeTypeCounts["Closed Won"] || 0,
+      closedLost: closeTypeCounts["Closed Lost"] || 0,
+      Not: statusCounts["Not"] || 0,
+      Service: statusCounts["Service"] || 0,
+      total: 0, // Not used in display
     };
-
-    filteredEntriesWithoutTracker.forEach((entry) => {
-      switch (entry.status) {
-        case "Not Interested":
-          stats.cold += 1;
-          break;
-        case "Not":
-          stats.Not += 1;
-          break;
-        case "Service":
-          stats.Service += 1;
-          break;
-        case "Maybe":
-          stats.warm += 1;
-          break;
-        case "Interested":
-          stats.hot += 1;
-          break;
-        default:
-          break;
-      }
-      switch (entry.closetype) {
-        case "Closed Won":
-          stats.closedWon += 1;
-          break;
-        case "Closed Lost":
-          stats.closedLost += 1;
-          break;
-        default:
-          break;
-      }
-    });
-
-    stats.total =
-      stats.total -
-      (stats.cold +
-        stats.Not +
-        stats.warm +
-        stats.hot +
-        stats.Service +
-        stats.closedWon +
-        stats.closedLost);
-
-    return stats;
-  }, [filteredEntriesWithoutTracker]);
+  }, [statusCounts, closeTypeCounts]);
 
   return (
     <motion.div
@@ -287,7 +245,8 @@ function DashBoard() {
   const isMobile = useIsMobile();
   const [showDetails, setShowDetails] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Initial page load only
+  const [tableLoading, setTableLoading] = useState(false); // Table-only loading
   const [entries, setEntries] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
@@ -324,6 +283,27 @@ function DashBoard() {
   ]);
   const [listKey, setListKey] = useState(Date.now());
   const listRef = useRef(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [totalEntries, setTotalEntries] = useState(0);
+  
+  // Full dataset for analytics (not paginated)
+  const [allEntries, setAllEntries] = useState([]);
+  const [loadingAllEntries, setLoadingAllEntries] = useState(false);
+  
+  // All users for username dropdown (never filtered)
+  const [allUsers, setAllUsers] = useState([]);
+  
+  // Tracker counts state (from count-only API - ALWAYS unfiltered totals)
+  const [trackerCounts, setTrackerCounts] = useState({
+    totalLeads: 0,
+    totalResults: 0,
+    monthlyCalls: 0,
+    statusCounts: {},
+    closeTypeCounts: {},
+  });
   
   const callStats = useMemo(() => {
     const stats = {
@@ -387,106 +367,53 @@ function DashBoard() {
   }, [entries]);
   const navigate = useNavigate();
 
+  // Set navigation function for API interceptors
+  useEffect(() => {
+    setNavigationFunction(navigate);
+    return () => {
+      clearNavigationFunction();
+    };
+  }, [navigate]);
+
   const handleClosed = () => setShowDetails(false);
 
   const debouncedSearchChange = useMemo(
-    () => debounce((value) => setSearchTerm(value), 300),
+    () => debounce((value) => {
+      setSearchTerm(value);
+      setPage(0);
+    }, 300),
     []
   );
 
-  const filteredDataWithoutTracker = useMemo(() => {
-    return entries.filter((row) => {
-      const createdAt = new Date(row.createdAt);
-      const updatedAt = new Date(row.updatedAt);
-      const matchesSearch =
-        !searchTerm ||
-        row.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.mobileNumber.includes(searchTerm);
+  // Filtering is now done on the backend, so we don't need client-side filtering
 
-      const matchesOrganization =
-        !selectedOrganization || row.organization === selectedOrganization;
-
-      const matchesState = !selectedStateA || row.state === selectedStateA;
-      const matchesCity = !selectedCityA || row.city === selectedCityA;
-
-      const matchesDate =
-        (!dateRange[0]?.startDate && !dateRange[0]?.endDate) ||
-        (dateRange[0]?.startDate &&
-          dateRange[0]?.endDate &&
-          (() => {
-            const start = new Date(dateRange[0].startDate);
-            const end = new Date(dateRange[0].endDate);
-            end.setHours(23, 59, 59, 999);
-            return (
-              (createdAt >= start && createdAt <= end) ||
-              (updatedAt >= start && updatedAt <= end)
-            );
-          })());
-
-      const matchesCreatedBy =
-        !selectedCreatedBy || row.createdBy?.username === selectedCreatedBy;
-
-      return (
-        matchesSearch &&
-        matchesOrganization &&
-        matchesState &&
-        matchesCity &&
-        matchesDate &&
-        matchesCreatedBy
-      );
-    });
-  }, [
-    entries,
-    searchTerm,
-    selectedOrganization,
-    selectedStateA,
-    selectedCityA,
-    dateRange,
-    selectedCreatedBy,
-  ]);
-
-  // Update filteredData to use filteredDataWithoutTracker
+  // filteredData uses paginated entries (date range already applied client-side in fetchEntries)
   const filteredData = useMemo(() => {
-    return filteredDataWithoutTracker
-      .filter((row) => {
-        const createdAt = new Date(row.createdAt);
-        const updatedAt = new Date(row.updatedAt);
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+    return entries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [entries]);
 
-        // Handle different filter types
-        if (dashboardFilter === "total") {
-          return true; 
-        } else if (dashboardFilter === "leads") {
-          return row.status === "Not Found"; 
-        } else if (dashboardFilter === "results") {
-          return true;
-        } else if (dashboardFilter === "monthly") {
-          // Filter for current month's created or updated entries
-          return (
-            (createdAt.getMonth() === currentMonth &&
-              createdAt.getFullYear() === currentYear) ||
-            (updatedAt.getMonth() === currentMonth &&
-              updatedAt.getFullYear() === currentYear)
-          );
-        } else {
-          // Existing category filters (e.g., "Interested", "Closed Won", etc.)
-          return (
-            (dashboardFilter === "Closed Won" &&
-              row.closetype === "Closed Won") ||
-            (dashboardFilter === "Closed Lost" &&
-              row.closetype === "Closed Lost") ||
-            row.status === dashboardFilter
-          );
-        }
-      })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [filteredDataWithoutTracker, dashboardFilter]);
+  // Filtered all entries for analytics (with date range applied client-side)
+  const filteredAllEntries = useMemo(() => {
+    let filtered = allEntries;
+    
+    // Apply date range filter client-side - FIXED: Only filter by createdAt to prevent previous month entries
+    if (dateRange[0]?.startDate && dateRange[0]?.endDate) {
+      const start = new Date(dateRange[0].startDate);
+      const end = new Date(dateRange[0].endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      filtered = filtered.filter((row) => {
+        const createdAt = new Date(row.createdAt);
+        return (createdAt >= start && createdAt <= end);
+      });
+    }
+    
+    return filtered;
+  }, [allEntries, dateRange]);
 
   const handleCounterClick = (filterType) => {
     setDashboardFilter(filterType);
+    setPage(0); // Reset to first page when filter changes
     setListKey(Date.now());
     if (listRef.current) {
       listRef.current.scrollToPosition(0);
@@ -495,54 +422,47 @@ function DashBoard() {
     }
   };
 
-  const monthlyCalls = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    return filteredDataWithoutTracker.reduce((count, entry) => {
-      const createdAt = new Date(entry.createdAt);
-      const updatedAt = new Date(entry.updatedAt);
-
-      // Check if entry was created or updated in the current month
-      const isCreatedThisMonth =
-        createdAt.getMonth() === currentMonth &&
-        createdAt.getFullYear() === currentYear;
-      const isUpdatedThisMonth =
-        updatedAt.getMonth() === currentMonth &&
-        updatedAt.getFullYear() === currentYear;
-
-      // Count 1 for creation if created this month
-      let entryCount = isCreatedThisMonth ? 1 : 0;
-
-      // Add history length if entry was created or updated this month
-      if ((isCreatedThisMonth || isUpdatedThisMonth) && entry.history) {
-        entryCount += entry.history.length;
-      }
-
-      return count + entryCount;
-    }, 0);
-  }, [filteredDataWithoutTracker]);
-  const handleSearchChange = (e) => debouncedSearchChange(e.target.value);
+  // monthlyCalls now comes from trackerCounts API
+  const monthlyCalls = trackerCounts.monthlyCalls;
+  const handleSearchChange = (e) => {
+    debouncedSearchChange(e.target.value);
+    setPage(0); // Reset to first page on search
+  };
 
   const handleCreatedByChange = (e) => {
     setSelectedCreatedBy(e.target.value);
+    setPage(0);
   };
 
   const handleOrganizationChange = (e) => {
     setSelectedOrganization(e.target.value);
+    setPage(0);
   };
 
   const handleStateChangeA = (e) => {
     const state = e.target.value;
     setSelectedStateA(state);
     setSelectedCityA("");
+    setPage(0);
   };
 
-  const handleCityChangeA = (e) => setSelectedCityA(e.target.value);
+  const handleCityChangeA = (e) => {
+    setSelectedCityA(e.target.value);
+    setPage(0);
+  };
 
   const handleDashboardFilterClick = (category) => {
     setDashboardFilter(category);
+    setPage(0);
+  };
+  
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+  
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const handleReset = () => {
@@ -562,6 +482,7 @@ function DashBoard() {
         key: "selection",
       },
     ]);
+    setPage(0);
     setListKey(Date.now());
     if (listRef.current) {
       listRef.current.recomputeRowHeights();
@@ -570,11 +491,8 @@ function DashBoard() {
   };
 
   const [anchorEl, setAnchorEl] = useState(null);
-  const uniqueCreatedBy = [
-    ...new Set(
-      entries.map((entry) => entry.createdBy?.username).filter(Boolean)
-    ),
-  ];
+  // Use allUsers for username filter dropdown - always shows all users, never filtered
+  const uniqueCreatedBy = allUsers.map((user) => user.username).filter(Boolean);
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -586,34 +504,145 @@ function DashBoard() {
 
   const open = Boolean(anchorEl);
 
-  // Inside fetchEntries
+  // Fetch ALL entries with filters (for analytics drawers ONLY - optimized to fetch only when needed)
+  // Note: Username dropdown now uses allUsers, not this
+  // OPTIMIZATION: This should only be called when analytics drawer is opened, not on every filter change
+  const fetchAllEntries = useCallback(async () => {
+    setLoadingAllEntries(true);
+    try {
+      const params = new URLSearchParams();
+      
+      // Apply filters (but NOT date range - that will be client-side)
+      // Apply username filter to full dataset
+      if (selectedCreatedBy) params.append("selectedCreatedBy", selectedCreatedBy);
+      if (selectedOrganization) params.append("selectedOrganization", selectedOrganization);
+      if (selectedStateA) params.append("selectedStateA", selectedStateA);
+      if (selectedCityA) params.append("selectedCityA", selectedCityA);
+      if (searchTerm) params.append("searchTerm", searchTerm);
+      // Don't send date range to backend - will filter client-side like before
+      // Don't send dashboardFilter - analytics need all data
+
+      const response = await api.get(`/api/fetch-all-entries?${params.toString()}`);
+      
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setAllEntries(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching all entries:", error);
+      toast.error("Failed to load analytics data. Please try again.");
+      setAllEntries([]);
+    } finally {
+      setLoadingAllEntries(false);
+    }
+  }, [searchTerm, selectedOrganization, selectedStateA, selectedCityA, selectedCreatedBy]);
+
+  // Fetch all users for username dropdown (only once, never filtered)
+  const fetchAllUsers = useCallback(async () => {
+    try {
+      const response = await api.get("/api/users");
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setAllUsers(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setAllUsers([]);
+    }
+  }, []);
+
+  // Fetch entry counts for trackers (optimized count-only query)
+  // IMPORTANT: Do NOT pass dashboardFilter - tracker cards should show stable counts
+  // Total Results will be calculated client-side based on dashboardFilter
+  const fetchEntryCounts = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      
+      // Apply all filters to counts: date range, search, organization, state, city, user
+      // BUT NOT dashboardFilter - tracker cards must show stable counts
+      if (searchTerm) params.append("searchTerm", searchTerm);
+      if (selectedOrganization) params.append("selectedOrganization", selectedOrganization);
+      if (selectedStateA) params.append("selectedStateA", selectedStateA);
+      if (selectedCityA) params.append("selectedCityA", selectedCityA);
+      if (selectedCreatedBy) params.append("selectedCreatedBy", selectedCreatedBy);
+      // Apply date range filter to counts
+      if (dateRange[0]?.startDate && dateRange[0]?.endDate) {
+        // TIMEZONE FIX: Use local date formatting instead of UTC
+        const formatLocalDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append("startDate", formatLocalDate(dateRange[0].startDate));
+        params.append("endDate", formatLocalDate(dateRange[0].endDate));
+      }
+      // DO NOT pass dashboardFilter - tracker cards should always show stable counts
+      
+      const response = await api.get(`/api/entry-counts?${params.toString()}`);
+      
+      if (response.data.success) {
+        setTrackerCounts({
+          totalLeads: response.data.data.totalLeads || 0,
+          totalResults: response.data.data.totalResults || 0, // Base total (will be computed for display)
+          monthlyCalls: response.data.data.monthlyCalls || 0,
+          statusCounts: response.data.data.statusCounts || {},
+          closeTypeCounts: response.data.data.closeTypeCounts || {},
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching entry counts:", error);
+      // Don't show error toast for counts, just log it
+    }
+  }, [searchTerm, selectedOrganization, selectedStateA, selectedCityA, selectedCreatedBy, dateRange]);
+
+  // Fetch entries with pagination
+  // This uses tableLoading instead of loading to prevent full page refresh
   const fetchEntries = useCallback(async () => {
-    setLoading(true);
+    setTableLoading(true);
     try {
       const { accessToken } = getAuthData();
       if (!accessToken) throw new Error("No token found");
 
-      const decoded = jwtDecode(accessToken);
-      console.log("Decoded token:", decoded);
+      const params = new URLSearchParams();
+      params.append("page", (page + 1).toString());
+      params.append("limit", rowsPerPage.toString());
+      
+      // Apply all filters including date range (for correct pagination count)
+      if (searchTerm) params.append("searchTerm", searchTerm);
+      if (selectedOrganization) params.append("selectedOrganization", selectedOrganization);
+      if (selectedStateA) params.append("selectedStateA", selectedStateA);
+      if (selectedCityA) params.append("selectedCityA", selectedCityA);
+      if (selectedCreatedBy) params.append("selectedCreatedBy", selectedCreatedBy);
+      // Send date range to backend for correct pagination (only if both dates are set)
+      if (dateRange[0]?.startDate && dateRange[0]?.endDate) {
+        // TIMEZONE FIX: Use local date formatting instead of UTC
+        const formatLocalDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append("startDate", formatLocalDate(dateRange[0].startDate));
+        params.append("endDate", formatLocalDate(dateRange[0].endDate));
+      }
+      if (dashboardFilter && dashboardFilter !== "total" && dashboardFilter !== "results") {
+        params.append("dashboardFilter", dashboardFilter);
+      }
 
-      const response = await api.get("/api/fetch-entry");
+      const response = await api.get(`/api/fetch-entry?${params.toString()}`);
 
       if (!Array.isArray(response.data.data)) {
         console.error("Invalid entries data:", response.data);
         toast.error("Invalid data received from server.");
         setEntries([]);
+        setTotalEntries(0);
         return;
       }
 
-      let fetchedEntries = response.data.data;
-
-      if (role !== "Superadmin" && role !== "Admin") {
-        fetchedEntries = fetchedEntries.filter(
-          (entry) => normalizeId(entry.createdBy?._id) === userId
-        );
-      }
-
-      setEntries(fetchedEntries);
+      // Data is already filtered by backend, so use directly
+      setEntries(response.data.data);
+      setTotalEntries(response.data.pagination?.total || 0);
     } catch (error) {
       console.error("Error fetching data:", {
         message: error.message,
@@ -624,15 +653,16 @@ function DashBoard() {
         "Sorry, we couldn't load the entries right now. Please check your internet connection or try again later.";
       toast.error(friendlyMessage);
       setEntries([]);
+      setTotalEntries(0);
     } finally {
-      setLoading(false);
+      setTableLoading(false);
       setListKey(Date.now());
       if (listRef.current) {
         listRef.current.recomputeRowHeights();
         listRef.current.forceUpdateGrid();
       }
     }
-  }, [userId, role, navigate]);
+  }, [page, rowsPerPage, searchTerm, selectedOrganization, selectedStateA, selectedCityA, selectedCreatedBy, dateRange, dashboardFilter]);
 
   const fetchAdmin = useCallback(async () => {
     setAuthLoading(true);
@@ -659,7 +689,10 @@ function DashBoard() {
       setRole(userRole);
       setUserId(decodedUserId);
 
-      console.log("Fetched user info:", { userId: decodedUserId, role: userRole });
+      // User info fetched (sensitive data not logged)
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Fetched user info:", { role: userRole });
+      }
       localStorage.setItem("userId", decodedUserId);
       localStorage.setItem("role", userRole);
     } catch (error) {
@@ -677,19 +710,96 @@ function DashBoard() {
     }
   }, [navigate]);
 
+  // Initial data fetch (only on mount)
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
       await fetchAdmin();
       if (isMounted) {
-        await fetchEntries();
+        // Fetch initial data - OPTIMIZATION: Don't fetch all entries on mount
+        // Only fetch when analytics drawer is opened (prevents 17MB payload on initial load)
+        await Promise.all([
+          fetchEntries(), 
+          fetchEntryCounts(), 
+          fetchAllUsers()
+        ]);
+        setLoading(false); // Initial page load complete
       }
     };
     fetchData();
     return () => {
       isMounted = false;
     };
-  }, [fetchAdmin, fetchEntries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - functions are stable with useCallback
+
+  // Refetch entries when pagination or filters change (but not on initial mount)
+  // Consolidate all filter changes including date range
+  useEffect(() => {
+    if (!loading) { // Don't fetch if still on initial load
+      // Only fetch if date range is complete (both dates set) or both cleared (not set)
+      const hasStartDate = dateRange[0]?.startDate;
+      const hasEndDate = dateRange[0]?.endDate;
+      // Fetch if: (both dates are set) OR (both dates are not set/cleared)
+      if ((hasStartDate && hasEndDate) || (!hasStartDate && !hasEndDate)) {
+        fetchEntries();
+      }
+      // Don't fetch if only one date is set (waiting for user to select the other)
+    }
+  }, [page, rowsPerPage, searchTerm, selectedOrganization, selectedStateA, selectedCityA, selectedCreatedBy, dashboardFilter, dateRange, loading, fetchEntries]);
+
+  // Refetch counts when filters change (but NOT dashboardFilter - tracker cards stay stable)
+  // Total Results will be computed client-side based on dashboardFilter
+  useEffect(() => {
+    if (!loading) {
+      // Only fetch counts if date range is complete or both cleared
+      const hasStartDate = dateRange[0]?.startDate;
+      const hasEndDate = dateRange[0]?.endDate;
+      if ((hasStartDate && hasEndDate) || (!hasStartDate && !hasEndDate)) {
+        fetchEntryCounts();
+      }
+    }
+  }, [searchTerm, selectedOrganization, selectedStateA, selectedCityA, selectedCreatedBy, dateRange, loading, fetchEntryCounts]);
+
+  // Calculate Total Results based on dashboardFilter (computed client-side)
+  // This allows tracker cards to stay stable while Total Results fluctuates
+  const computedTotalResults = useMemo(() => {
+    if (!dashboardFilter || dashboardFilter === "total" || dashboardFilter === "results") {
+      // No tracker selected or "total"/"results" selected - show base total
+      return trackerCounts.totalResults;
+    }
+    
+    // Calculate based on selected tracker
+    if (dashboardFilter === "leads") {
+      return trackerCounts.totalLeads;
+    } else if (dashboardFilter === "Closed Won") {
+      return trackerCounts.closeTypeCounts["Closed Won"] || 0;
+    } else if (dashboardFilter === "Closed Lost") {
+      return trackerCounts.closeTypeCounts["Closed Lost"] || 0;
+    } else {
+      // Status-based tracker (Interested, Maybe, Not Interested, etc.)
+      return trackerCounts.statusCounts[dashboardFilter] || 0;
+    }
+  }, [dashboardFilter, trackerCounts]);
+
+  // OPTIMIZATION: Only fetch all entries when analytics drawer is opened
+  // This prevents the 17MB payload from being fetched on every filter change
+  // Show toast notification when analytics is loading
+  useEffect(() => {
+    if (!loading && (isAnalyticsOpen || isValueAnalyticsOpen)) {
+      // Show non-blocking toast notification for analytics loading
+      const toastId = toast.info("Updating analytics, please wait...", {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+      
+      // Only fetch when analytics drawer is actually open
+      fetchAllEntries().finally(() => {
+        toast.dismiss(toastId);
+        toast.success("Analytics updated successfully", { autoClose: 2000 });
+      });
+    }
+  }, [isAnalyticsOpen, isValueAnalyticsOpen, searchTerm, selectedOrganization, selectedStateA, selectedCityA, selectedCreatedBy, loading, fetchAllEntries]);
 
   useEffect(() => {
     return () => {
@@ -727,12 +837,19 @@ function DashBoard() {
       prev && deletedIds.includes(prev._id) ? null : prev
     );
     setSelectedEntries((prev) => prev.filter((id) => !deletedIds.includes(id)));
+    
+    // REAL-TIME UPDATE: Refresh tracker counts immediately after deleting entries
+    fetchEntryCounts();
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🔄 REAL-TIME: Refreshed tracker counts after entries deleted");
+    }
+    
     setListKey(Date.now());
     if (listRef.current) {
       listRef.current.recomputeRowHeights();
       listRef.current.forceUpdateGrid();
     }
-  }, []);
+  }, [fetchEntryCounts]);
 
   const handleEntryAdded = useCallback((newEntry) => {
     const completeEntry = {
@@ -762,13 +879,20 @@ function DashBoard() {
       },
     };
     setEntries((prev) => [completeEntry, ...prev]);
+    
+    // REAL-TIME UPDATE: Refresh tracker counts immediately after adding entry
+    fetchEntryCounts();
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🔄 REAL-TIME: Refreshed tracker counts after entry added");
+    }
+    
     setListKey(Date.now());
     if (listRef.current) {
       listRef.current.scrollToPosition(0); 
       listRef.current.recomputeRowHeights();
       listRef.current.forceUpdateGrid();
     }
-  }, []);
+  }, [fetchEntryCounts]);
 
   const handleEntryUpdated = useCallback(
     (updatedEntry) => {
@@ -788,6 +912,13 @@ function DashBoard() {
           prev && prev._id === updatedEntry._id ? { ...updatedEntry } : prev
         );
         setEditModalOpen(false);
+        
+        // REAL-TIME UPDATE: Refresh tracker counts immediately after updating entry
+        fetchEntryCounts();
+        if (process.env.NODE_ENV === 'development') {
+          console.log("🔄 REAL-TIME: Refreshed tracker counts after entry updated");
+        }
+        
         setListKey(Date.now());
         if (listRef.current) {
           const scrollIndex = filteredData.findIndex(
@@ -805,7 +936,7 @@ function DashBoard() {
         }
       }
     },
-    [entries, filteredData]
+    [entries, filteredData, fetchEntryCounts]
   );
   useEffect(() => {
     if (listRef.current && scrollPosition > 0) {
@@ -959,6 +1090,11 @@ function DashBoard() {
       // Refresh data after upload
       if (uploadedCount > 0) {
         fetchEntries();
+        // REAL-TIME UPDATE: Refresh tracker counts immediately after bulk upload
+        fetchEntryCounts();
+        if (process.env.NODE_ENV === 'development') {
+          console.log("🔄 REAL-TIME: Refreshed tracker counts after bulk upload");
+        }
       }
 
       if (uploadedCount === newEntries.length && errors.length === 0) {
@@ -998,36 +1134,103 @@ function DashBoard() {
 
 //Mail End
 
-  const handleExport = () => {
-    if (filteredData.length === 0) {
-      toast.error("No entries to export!");
-      return;
+  const handleExport = async () => {
+    try {
+      // Show loading toast
+      const loadingToast = toast.info("Preparing export data...", { autoClose: false });
+      
+      // Build the same parameters used for fetching entries, but without pagination
+      const params = new URLSearchParams();
+      
+      // Apply all current filters to get the complete filtered dataset
+      if (searchTerm) params.append("searchTerm", searchTerm);
+      if (selectedOrganization) params.append("selectedOrganization", selectedOrganization);
+      if (selectedStateA) params.append("selectedStateA", selectedStateA);
+      if (selectedCityA) params.append("selectedCityA", selectedCityA);
+      if (selectedCreatedBy) params.append("selectedCreatedBy", selectedCreatedBy);
+      
+      // Apply date range filter if set
+      if (dateRange[0]?.startDate && dateRange[0]?.endDate) {
+        const formatLocalDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append("startDate", formatLocalDate(dateRange[0].startDate));
+        params.append("endDate", formatLocalDate(dateRange[0].endDate));
+      }
+      
+      // Apply dashboard filter if set
+      if (dashboardFilter && dashboardFilter !== "total" && dashboardFilter !== "results") {
+        params.append("dashboardFilter", dashboardFilter);
+      }
+
+      // Fetch ALL filtered entries (not paginated)
+      const response = await api.get(`/api/fetch-all-entries?${params.toString()}`);
+      
+      if (!response.data.success || !Array.isArray(response.data.data)) {
+        toast.dismiss(loadingToast);
+        toast.error("Failed to fetch export data!");
+        return;
+      }
+
+      const allFilteredEntries = response.data.data;
+      
+      if (allFilteredEntries.length === 0) {
+        toast.dismiss(loadingToast);
+        toast.error("No entries to export with current filters!");
+        return;
+      }
+
+      // Format data for export
+      const exportData = allFilteredEntries.map((entry) => ({
+        "Customer Name": entry.customerName || "",
+        "Contact Person": entry.contactName || "",
+        Email: entry.email || "",
+        "Contact Number": entry.mobileNumber || "",
+        "Alternate Number": entry.AlterNumber || "",
+        Product: entry.product || "",
+        Address: entry.address || "",
+        Organization: entry.organization || "",
+        Category: entry.category || "",
+        District: entry.city || "",
+        State: entry.state || "",
+        Status: entry.status || "Not Found",
+        Remarks: entry.remarks || "",
+        "Created By": entry.createdBy?.username || "",
+        "Created At": entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "",
+      }));
+
+      // Create Excel file
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
+
+      // Generate filename based on filters
+      let filename = "Data";
+      if (selectedStateA) filename += `_${selectedStateA}`;
+      if (selectedOrganization) filename += `_${selectedOrganization}`;
+      if (dashboardFilter && dashboardFilter !== "total" && dashboardFilter !== "results") {
+        filename += `_${dashboardFilter}`;
+      }
+      if (dateRange[0]?.startDate && dateRange[0]?.endDate) {
+        const startDate = dateRange[0].startDate.toLocaleDateString().replace(/\//g, '-');
+        const endDate = dateRange[0].endDate.toLocaleDateString().replace(/\//g, '-');
+        filename += `_${startDate}_to_${endDate}`;
+      }
+      filename += ".xlsx";
+
+      XLSX.writeFile(workbook, filename);
+      
+      toast.dismiss(loadingToast);
+      toast.success(`Export complete! ${allFilteredEntries.length} entries exported to ${filename}`);
+      
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Export failed. Please try again.");
     }
-
-    const exportData = filteredData.map((entry) => ({
-      "Customer Name": entry.customerName || "",
-      "Contact Person": entry.contactName || "",
-      Email: entry.email || "",
-      "Contact Number": entry.mobileNumber || "",
-      "Alternate Number": entry.AlterNumber || "",
-      Product: entry.product || "",
-      Address: entry.address || "",
-      Organization: entry.organization || "",
-      Category: entry.category || "",
-      District: entry.city || "",
-      State: entry.state || "",
-      Status: entry.status || "Not Found",
-      Remarks: entry.remarks || "",
-      "Created By": entry.createdBy?.username || "",
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
-
-    const fileState = filteredData[0]?.state || "All";
-    XLSX.writeFile(workbook, `Data_of_${fileState}.xlsx`);
-    toast.success("Entries exported successfully!");
   };
 
   const formatDate = (date) => {
@@ -1129,7 +1332,7 @@ const rowRenderer = ({ index, key, style }) => {
       onDoubleClick={() => handleDoubleClick(row._id)}
       onClick={() => handleSingleClick(row._id)}
     >
-      <div className="virtual-cell">{index + 1}</div> {/* # */}
+      <div className="virtual-cell">{(page * rowsPerPage) + index + 1}</div> {/* # */}
       <div className="virtual-cell">{formatDate(row.createdAt)}</div> {/* Date */}
       <div className="virtual-cell">{row.customerName}</div> {/* Customer */}
       <div className="virtual-cell">{row.contactName}</div> {/* Person */}
@@ -1354,15 +1557,45 @@ const rowRenderer = ({ index, key, style }) => {
   >
    <DateRangePicker
   ranges={dateRange}
-  onChange={(item) => setDateRange([item.selection])}
+  onChange={(item) => {
+    // STRICT DATE CONTROL: Only use explicitly selected dates, no auto-injection
+    const selection = item.selection;
+    
+    // Create new date objects to prevent any reference mutations
+    let startDate = null;
+    let endDate = null;
+    
+    // Only set dates if they are valid Date objects and explicitly selected
+    if (selection.startDate instanceof Date && !isNaN(selection.startDate.getTime())) {
+      // Create a clean date object with only the selected date (no time mutations)
+      startDate = new Date(selection.startDate.getFullYear(), selection.startDate.getMonth(), selection.startDate.getDate());
+    }
+    
+    if (selection.endDate instanceof Date && !isNaN(selection.endDate.getTime())) {
+      // Create a clean date object with only the selected date (no time mutations)
+      endDate = new Date(selection.endDate.getFullYear(), selection.endDate.getMonth(), selection.endDate.getDate());
+    }
+    
+    // STRICT: Only update if we have valid dates
+    // This prevents auto-injection of dates (like previous month's 31st)
+    setDateRange([{
+      startDate: startDate,
+      endDate: endDate,
+      key: selection.key || 'selection',
+    }]);
+    
+    // Only trigger fetch when both dates are selected (handled in useEffect)
+    // This prevents page refresh when selecting start date
+  }}
   moveRangeOnFirstSelection={false}
   showSelectionPreview={true}
   rangeColors={['#2575fc']}
-  editableDateInputs={true}
+  editableDateInputs={false}
   months={1}
   direction="vertical"
   className={isMobile ? 'mobile-date-picker' : ''}
   calendarFocus="forwards"
+  maxDate={new Date()} // Prevent future dates
   staticRanges={
     isMobile
       ? []
@@ -1502,8 +1735,11 @@ const rowRenderer = ({ index, key, style }) => {
         className="dashboard-container"
         style={{ width: "90%", margin: "auto", padding: "20px" }}
       >
+      
+        
         <CallTrackingDashboard
-          filteredEntriesWithoutTracker={filteredDataWithoutTracker}
+          statusCounts={trackerCounts.statusCounts || {}}
+          closeTypeCounts={trackerCounts.closeTypeCounts || {}}
           onFilterClick={handleDashboardFilterClick}
           selectedCategory={dashboardFilter}
         />
@@ -1916,8 +2152,7 @@ const rowRenderer = ({ index, key, style }) => {
         }}
         onClick={() => handleCounterClick("leads")}
       >
-        Total Leads:{" "}
-        {filteredDataWithoutTracker.filter((row) => row.status === "Not Found").length}
+        Total Leads: {trackerCounts.totalLeads}
       </Box>
       <Box
         className="counter-badge"
@@ -1946,7 +2181,7 @@ const rowRenderer = ({ index, key, style }) => {
         }}
         onClick={() => handleCounterClick("results")}
       >
-        Total Results: {filteredData.length}
+        Total Results: {computedTotalResults}
       </Box>
       <Box
         className="counter-badge"
@@ -2023,7 +2258,32 @@ const rowRenderer = ({ index, key, style }) => {
     <div>User</div>
     <div>Actions</div>
   </div>
-  {filteredData.length === 0 ? (
+  {tableLoading ? (
+    <div
+      style={{
+        height: "calc(100% - 60px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "1rem",
+        color: "#666",
+        fontWeight: "bold",
+        textAlign: "center",
+        padding: "20px",
+        minWidth: "1190px",
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+        <div className="loading-wave">
+          <div className="loading-bar"></div>
+          <div className="loading-bar"></div>
+          <div className="loading-bar"></div>
+          <div className="loading-bar"></div>
+        </div>
+        <div>Loading data...</div>
+      </div>
+    </div>
+  ) : filteredData.length === 0 ? (
     <div
       style={{
         height: "calc(100% - 60px)",
@@ -2064,6 +2324,66 @@ const rowRenderer = ({ index, key, style }) => {
   )}
 </div>
 
+        {/* Pagination Controls */}
+        {filteredData.length > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 2 }}>
+            <TablePagination
+              component="div"
+              count={totalEntries}
+              page={page}
+              onPageChange={handlePageChange}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[25, 50, 100]}
+              sx={{
+                "& .MuiTablePagination-toolbar": {
+                  display: "flex",
+                  alignItems: "center",
+                  padding: 0,
+                },
+                "& .MuiTablePagination-selectLabel": {
+                  margin: 0,
+                  marginRight: "6px",
+                  fontWeight: 600,
+                  color: "#6b7280",
+                  lineHeight: "32px",
+                },
+                "& .MuiTablePagination-select": {
+                  margin: 0,
+                  padding: "4px 28px 4px 10px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  fontWeight: 600,
+                  borderRadius: "8px",
+                  background: "#f9fafb",
+                },
+                "& .MuiSelect-icon": {
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                },
+                "& .MuiTablePagination-displayedRows": {
+                  flexGrow: 1,
+                  textAlign: "center",
+                  fontWeight: 600,
+                  color: "#6b7280",
+                  margin: 0,
+                },
+                "& .MuiTablePagination-actions": {
+                  marginLeft: "auto",
+                },
+                "& .MuiIconButton-root": {
+                  color: "#2575fc",
+                  borderRadius: "8px",
+                  "&:hover": {
+                    background: "rgba(37,117,252,0.1)",
+                  },
+                },
+              }}
+            />
+          </Box>
+        )}
+
         <AddEntry
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
@@ -2090,16 +2410,16 @@ const rowRenderer = ({ index, key, style }) => {
           onEntryUpdated={handleEntryUpdated}
         />
         <AdminDrawer
-          entries={entries}
-          isOpen={isAnalyticsOpen && !loading}
+          entries={filteredAllEntries}
+          isOpen={isAnalyticsOpen && !loadingAllEntries}
           onClose={handleAnalyticsDrawerClose}
           role={role}
           userId={userId}
           dateRange={dateRange}
         />
         <ValueAnalyticsDrawer
-          entries={entries}
-          isOpen={isValueAnalyticsOpen && !loading}
+          entries={filteredAllEntries}
+          isOpen={isValueAnalyticsOpen && !loadingAllEntries}
           onClose={handleValueAnalyticsDrawerClose}
           role={role}
           userId={userId}

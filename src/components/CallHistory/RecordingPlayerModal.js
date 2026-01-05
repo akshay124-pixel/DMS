@@ -69,12 +69,15 @@ const RecordingPlayerModal = ({ open, onClose, call }) => {
   const fetchRecordingWithFallbacks = async () => {
     if (!call) return;
     
-    console.log("🎵 Fetching recording for call:", call._id, `(retry: ${retryCount})`);
-    console.log("🎵 Call data:", {
-      recordingUrl: call.recordingUrl,
-      callStatus: call.callStatus,
-      duration: call.duration
-    });
+    // Recording fetch logged only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🎵 Fetching recording for call:", call._id, `(retry: ${retryCount})`);
+      console.log("🎵 Call data:", {
+        recordingUrl: call.recordingUrl ? '[URL_PRESENT]' : '[NO_URL]',
+        callStatus: call.callStatus,
+        duration: call.duration
+      });
+    }
     
     try {
       // Strategy 1: Use enhanced server-side streaming endpoint (preferred)
@@ -182,8 +185,10 @@ const RecordingPlayerModal = ({ open, onClose, call }) => {
         },
       });
       
-      console.log("📡 Response status:", response.status);
-      console.log("📡 Response headers:", Object.fromEntries(response.headers.entries()));
+      // Response details logged only in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log("📡 Response status:", response.status);
+      }
       
       if (!response.ok) {
         let errorText = "Unknown error";
@@ -405,7 +410,9 @@ const RecordingPlayerModal = ({ open, onClose, call }) => {
     
     // For MEDIA_ERR_DECODE, try alternative approaches
     if (e.target?.error?.code === 3 && retryCount < maxRetries) {
-      console.log(`🔄 MEDIA_ERR_DECODE: Trying alternative approach (retry ${retryCount + 1}/${maxRetries})`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔄 MEDIA_ERR_DECODE: Trying alternative approach (retry ${retryCount + 1}/${maxRetries})`);
+      }
       
       // Clean up failed blob URL
       if (recordingUrl?.startsWith('blob:')) {
@@ -439,7 +446,9 @@ const RecordingPlayerModal = ({ open, onClose, call }) => {
       errorMessage += " The audio blob may be corrupted or invalid. Retrying...";
       
       // Try to revoke and recreate blob URL
-      console.log(`🔄 Attempting to recreate blob URL (retry ${retryCount + 1}/${maxRetries})...`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔄 Attempting to recreate blob URL (retry ${retryCount + 1}/${maxRetries})...`);
+      }
       URL.revokeObjectURL(recordingUrl);
       setRecordingUrl(null);
       setError(null);
@@ -808,7 +817,7 @@ const RecordingPlayerModal = ({ open, onClose, call }) => {
               </Box>
               
               {/* Recording Info */}
-              <Box sx={{ mt: 2, p: 2, backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+              {/* <Box sx={{ mt: 2, p: 2, backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
                 <Typography variant="caption" color="textSecondary" display="block">
                   Recording Source: {
                     audioSrc?.startsWith('blob:') ? 'Authenticated Stream' : 
@@ -830,7 +839,7 @@ const RecordingPlayerModal = ({ open, onClose, call }) => {
                 <Typography variant="caption" color="textSecondary" display="block">
                   Audio State: Ready: {audioRef.current?.readyState || 0} • Network: {audioRef.current?.networkState || 0} • Paused: {audioRef.current?.paused ? 'Yes' : 'No'}
                 </Typography>
-              </Box>
+              </Box> */}
             </>
           )}
         </Box>
