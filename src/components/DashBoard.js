@@ -1499,6 +1499,7 @@ const rowRenderer = ({ index, key, style }) => {
   type="text"
   className="enhanced-search-bar allow-copy-paste"
   placeholder="🔍 Search..."
+  value={searchTerm}
   onChange={handleSearchChange}
 />
   <select
