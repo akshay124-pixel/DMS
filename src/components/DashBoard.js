@@ -264,6 +264,9 @@ function DashBoard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isValueAnalyticsOpen, setIsValueAnalyticsOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  // New states to prevent drawer flicker during loading
+  const [isValueAnalyticsReady, setIsValueAnalyticsReady] = useState(false);
+  const [isAnalyticsReady, setIsAnalyticsReady] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
@@ -787,6 +790,10 @@ function DashBoard() {
   // Show toast notification when analytics is loading
   useEffect(() => {
     if (!loading && (isAnalyticsOpen || isValueAnalyticsOpen)) {
+      // Reset ready states when starting to load
+      if (isAnalyticsOpen) setIsAnalyticsReady(false);
+      if (isValueAnalyticsOpen) setIsValueAnalyticsReady(false);
+      
       // Show non-blocking toast notification for analytics loading
       const toastId = toast.info("Updating analytics, please wait...", {
         autoClose: 3000,
@@ -795,6 +802,10 @@ function DashBoard() {
       
       // Only fetch when analytics drawer is actually open
       fetchAllEntries().finally(() => {
+        // Set ready states after data is loaded
+        if (isAnalyticsOpen) setIsAnalyticsReady(true);
+        if (isValueAnalyticsOpen) setIsValueAnalyticsReady(true);
+        
         toast.dismiss(toastId);
         toast.success("Analytics updated successfully", { autoClose: 2000 });
       });
@@ -1244,6 +1255,7 @@ function DashBoard() {
 
   const handleAnalyticsDrawerClose = () => {
     setIsAnalyticsOpen(false);
+    setIsAnalyticsReady(false); // Reset ready state when closing
     setListKey(Date.now());
     if (listRef.current) {
       listRef.current.recomputeRowHeights();
@@ -1255,6 +1267,7 @@ function DashBoard() {
 
   const handleValueAnalyticsDrawerClose = () => {
     setIsValueAnalyticsOpen(false);
+    setIsValueAnalyticsReady(false); // Reset ready state when closing
     setListKey(Date.now());
     if (listRef.current) {
       listRef.current.recomputeRowHeights();
@@ -1264,7 +1277,7 @@ function DashBoard() {
     }
   };
   useEffect(() => {
-    if (isAnalyticsOpen || isValueAnalyticsOpen) {
+    if (isAnalyticsReady || isValueAnalyticsReady) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -1272,7 +1285,7 @@ function DashBoard() {
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [isAnalyticsOpen, isValueAnalyticsOpen]);
+  }, [isAnalyticsReady, isValueAnalyticsReady]);
 // Helper function to get row background color based on lead status
 const getRowBackgroundColor = (status) => {
   switch (status) {
@@ -2411,7 +2424,7 @@ const rowRenderer = ({ index, key, style }) => {
         />
         <AdminDrawer
           entries={filteredAllEntries}
-          isOpen={isAnalyticsOpen && !loadingAllEntries}
+          isOpen={isAnalyticsOpen && isAnalyticsReady}
           onClose={handleAnalyticsDrawerClose}
           role={role}
           userId={userId}
@@ -2419,7 +2432,7 @@ const rowRenderer = ({ index, key, style }) => {
         />
         <ValueAnalyticsDrawer
           entries={filteredAllEntries}
-          isOpen={isValueAnalyticsOpen && !loadingAllEntries}
+          isOpen={isValueAnalyticsOpen && isValueAnalyticsReady}
           onClose={handleValueAnalyticsDrawerClose}
           role={role}
           userId={userId}

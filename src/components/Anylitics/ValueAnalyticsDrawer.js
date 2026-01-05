@@ -29,7 +29,7 @@ const ValueAnalyticsDrawer = ({
   const normalizedRole = useMemo(() => normalizeRole(role), [role]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && entries && entries.length > 0) {
       console.log("ValueAnalyticsDrawer opened with props:", {
         entriesCount: entries?.length,
         role,
@@ -37,7 +37,7 @@ const ValueAnalyticsDrawer = ({
         dateRange,
       });
     }
-  }, [isOpen, entries, role, userId, dateRange]);
+  }, [isOpen, entries?.length, role, userId, dateRange]);
 
   const calculateValueStats = useCallback(async () => {
     setLoading(true);

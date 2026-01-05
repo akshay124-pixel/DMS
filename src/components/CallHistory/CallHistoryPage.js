@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api, { getAuthData, setNavigationFunction, clearNavigationFunction } from "../../api/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
@@ -37,9 +37,12 @@ import {
   Cancel,
   Schedule,
   TrendingUp,
+  Pause,
+  PlayCircle,
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import RecordingPlayerModal from "./RecordingPlayerModal";
+import "./CallHistoryPage.css";
 
 const CallHistoryPage = () => {
   const navigate = useNavigate();
@@ -66,7 +69,6 @@ const CallHistoryPage = () => {
     startDate: "",
     endDate: "",
     destinationNumber: "",
-    virtualNumber: "", // NEW: Virtual number filter
     hasRecording: "",
   });
   
@@ -77,32 +79,30 @@ const CallHistoryPage = () => {
   // User info
   const [userRole, setUserRole] = useState("");
   
-  useEffect(() => {
-    // Get user role from token
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setUserRole(decoded.role || "");
-      } catch (error) {
-        console.error("Token decode error:", error);
-        // If token is invalid, redirect to login
-        navigate("/login");
-        return;
-      }
-    } else {
-      // No token, redirect to login
-      navigate("/login");
-      return;
-    }
-    
-    // Only fetch data if we have a valid token
-    fetchCallHistory();
-    fetchStats();
-  }, [page, rowsPerPage, navigate]);
+  // Real-time updates - persist state in localStorage
+  const [autoRefresh, setAutoRefresh] = useState(() => {
+    const saved = localStorage.getItem('callHistoryAutoRefresh');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [refreshInterval, setRefreshInterval] = useState(null);
   
-  const fetchCallHistory = async () => {
-    setLoading(true);
+  // Persist auto-refresh state when it changes
+  useEffect(() => {
+    localStorage.setItem('callHistoryAutoRefresh', JSON.stringify(autoRefresh));
+  }, [autoRefresh]);
+
+  // Stable toggle function for auto-refresh
+  const toggleAutoRefresh = useCallback(() => {
+    setAutoRefresh(prev => {
+      const newValue = !prev;
+      console.log(`🔄 Auto-refresh ${newValue ? 'ENABLED' : 'DISABLED'}`);
+      return newValue;
+    });
+  }, []);
+  
+  // Define fetch functions first
+  const fetchCallHistory = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const params = {
         page: page + 1,
@@ -117,14 +117,17 @@ const CallHistoryPage = () => {
         }
       });
       
-      console.log("📞 Fetching call history with params:", params);
+      // Only log in development and not for silent refreshes
+      if (process.env.NODE_ENV === 'development' && !silent) {
+        console.log("📞 Fetching call history with params:", params);
+      }
       
       const response = await api.get("/api/calls", {
         params,
       });
       
-      // Call history response logged only in development
-      if (process.env.NODE_ENV === 'development') {
+      // Call history response logged only in development and not for silent refreshes
+      if (process.env.NODE_ENV === 'development' && !silent) {
         console.log("📞 Call history response:", response.data);
       }
       
@@ -142,13 +145,15 @@ const CallHistoryPage = () => {
         navigate("/login");
         return;
       }
-      toast.error(error.response?.data?.message || "Failed to fetch call history");
+      if (!silent) {
+        toast.error(error.response?.data?.message || "Failed to fetch call history");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, filters, navigate]);
   
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async (silent = false) => {
     try {
       const params = {
         startDate: filters.startDate || undefined,
@@ -162,14 +167,17 @@ const CallHistoryPage = () => {
         }
       });
       
-      console.log("📊 Fetching call stats with params:", params);
+      // Only log in development and not for silent refreshes
+      if (process.env.NODE_ENV === 'development' && !silent) {
+        console.log("📊 Fetching call stats with params:", params);
+      }
       
       const response = await api.get("/api/calls/stats", {
         params,
       });
       
-      // Call stats response logged only in development
-      if (process.env.NODE_ENV === 'development') {
+      // Call stats response logged only in development and not for silent refreshes
+      if (process.env.NODE_ENV === 'development' && !silent) {
         console.log("📊 Call stats response:", response.data);
       }
       
@@ -181,7 +189,9 @@ const CallHistoryPage = () => {
           statsData.completionRate = parseFloat(statsData.completionRate);
         }
         
-        console.log("📊 Processed stats data:", statsData);
+        if (!silent) {
+          console.log("📊 Processed stats data:", statsData);
+        }
         setStats(statsData);
       } else {
         throw new Error(response.data.message || "Failed to fetch stats");
@@ -205,9 +215,86 @@ const CallHistoryPage = () => {
         noAnswerCalls: 0,
         completionRate: 0
       });
-      console.warn("Stats fetch failed, using default stats");
+      if (!silent) {
+        console.warn("Stats fetch failed, using default stats");
+      }
     }
-  };
+  }, [filters, navigate]);
+
+  // Initial setup effect
+  useEffect(() => {
+    // Get user role from token
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUserRole(decoded.role || "");
+      } catch (error) {
+        console.error("Token decode error:", error);
+        // If token is invalid, redirect to login
+        navigate("/login");
+        return;
+      }
+    } else {
+      // No token, redirect to login
+      navigate("/login");
+      return;
+    }
+  }, [navigate]);
+  
+  // Initial data fetch effect - runs after user role is set
+  useEffect(() => {
+    if (userRole) {
+      fetchCallHistory();
+      fetchStats();
+    }
+  }, [userRole, fetchCallHistory, fetchStats]);
+  
+  // Effect for pagination and filter changes
+  useEffect(() => {
+    if (userRole) { // Only fetch when user role is set
+      fetchCallHistory();
+      fetchStats();
+    }
+  }, [page, rowsPerPage, userRole, fetchCallHistory, fetchStats]);
+
+  // Real-time updates effect
+  useEffect(() => {
+    let interval = null;
+    
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        // Only refresh if not currently loading and no modals are open
+        if (!loading && !playerOpen) {
+          fetchCallHistory(true); // Silent refresh
+          fetchStats(true); // Silent refresh
+        }
+      }, 30000); // Refresh every 30 seconds
+      
+      setRefreshInterval(interval);
+    } else {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
+      }
+    }
+    
+    // Cleanup function
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [autoRefresh, fetchCallHistory, fetchStats, loading, playerOpen]);
+  
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [refreshInterval]);
   
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -255,7 +342,6 @@ const CallHistoryPage = () => {
       startDate: "",
       endDate: "",
       destinationNumber: "",
-      virtualNumber: "", // NEW: Clear virtual number filter
       hasRecording: "",
     };
     setFilters(clearedFilters);
@@ -520,25 +606,33 @@ const CallHistoryPage = () => {
             }}
           />
 
-          <TextField
-            label="Virtual Number"
-            value={filters.virtualNumber}
-            onChange={(e) => handleFilterChange("virtualNumber", e.target.value)}
-            placeholder="Filter by virtual number"
-            size="small"
-            sx={{ 
-              minWidth: { xs: "100%", sm: 150 },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "10px",
-                "&:hover fieldset": {
-                  borderColor: "#10b981",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#10b981",
-                }
-              }
+          <Button
+            variant="contained"
+            startIcon={autoRefresh ? <Pause /> : <PlayCircle />}
+            onClick={toggleAutoRefresh}
+            sx={{
+              background: autoRefresh 
+                ? "linear-gradient(90deg, #f59e0b, #d97706)" 
+                : "linear-gradient(90deg, #10b981, #059669)",
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1,
+              borderRadius: "12px",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+              width: { xs: "100%", sm: "auto" },
+              "&:hover": {
+                background: autoRefresh 
+                  ? "linear-gradient(90deg, #d97706, #b45309)" 
+                  : "linear-gradient(90deg, #059669, #047857)",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease"
             }}
-          />
+          >
+            {autoRefresh ? "⏸️ Pause Auto-Refresh" : "▶️ Enable Auto-Refresh"}
+          </Button>
 
           <Button
             variant="contained"
@@ -658,8 +752,6 @@ const CallHistoryPage = () => {
           </Card>
         </Grid>
 
-        {/* Completed Calls */}
-      
         {/* Inbound Calls */}
         <Grid item xs={12} sm={6} md={3}>
           <Card 
@@ -785,6 +877,19 @@ const CallHistoryPage = () => {
       >
         <Typography variant="h6" gutterBottom fontWeight={600} color="#2575fc">
           📞 Call History
+          {autoRefresh && (
+            <Chip
+              label="🔄 Live Updates"
+              size="small"
+              sx={{
+                ml: 2,
+                background: "linear-gradient(90deg, #10b981, #059669)",
+                color: "white",
+                fontWeight: 600,
+                animation: "pulse 2s infinite"
+              }}
+            />
+          )}
         </Typography>
         <Typography variant="body2" color="textSecondary" paragraph>
           View and manage your call history with detailed information
@@ -883,7 +988,6 @@ const CallHistoryPage = () => {
                         </Typography>
                         {call.callDirection === "inbound" && (
                           <Typography variant="caption" color="primary" display="block">
-                            📞 Incoming Call
                           </Typography>
                         )}
                       </TableCell>
