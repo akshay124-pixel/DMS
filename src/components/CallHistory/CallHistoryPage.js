@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import api, { getAuthData, setNavigationFunction, clearNavigationFunction } from "../../api/api";
 import { jwtDecode } from "jwt-decode";
@@ -63,6 +64,7 @@ const CallHistoryPage = () => {
   const [stats, setStats] = useState(null);
   
   // Filters
+  // Filters UI state
   const [filters, setFilters] = useState({
     status: "",
     direction: "",
@@ -70,7 +72,22 @@ const CallHistoryPage = () => {
     endDate: "",
     destinationNumber: "",
     hasRecording: "",
+    userId: "",
   });
+
+  // Applied filters (active for data fetching)
+  const [appliedFilters, setAppliedFilters] = useState({
+    status: "",
+    direction: "",
+    startDate: "",
+    endDate: "",
+    destinationNumber: "",
+    hasRecording: "",
+    userId: "",
+  });
+  
+  // Agents list for filter
+  const [agents, setAgents] = useState([]);
   
   // Recording player
   const [selectedCall, setSelectedCall] = useState(null);
@@ -107,7 +124,7 @@ const CallHistoryPage = () => {
       const params = {
         page: page + 1,
         limit: rowsPerPage,
-        ...filters,
+        ...appliedFilters,
       };
       
       // Remove empty filters
@@ -151,13 +168,13 @@ const CallHistoryPage = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [page, rowsPerPage, filters, navigate]);
+  }, [page, rowsPerPage, appliedFilters, navigate]);
   
   const fetchStats = useCallback(async (silent = false) => {
     try {
       const params = {
-        startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined,
+        startDate: appliedFilters.startDate || undefined,
+        endDate: appliedFilters.endDate || undefined,
       };
       
       // Remove undefined values
@@ -219,7 +236,7 @@ const CallHistoryPage = () => {
         console.warn("Stats fetch failed, using default stats");
       }
     }
-  }, [filters, navigate]);
+  }, [appliedFilters, navigate]);
 
   // Initial setup effect
   useEffect(() => {
@@ -241,6 +258,26 @@ const CallHistoryPage = () => {
       return;
     }
   }, [navigate]);
+  
+  // Fetch agents if user is admin
+  useEffect(() => {
+    const fetchAgents = async () => {
+      if (userRole === "Admin" || userRole === "Superadmin") {
+        try {
+          const response = await api.get("/api/smartflo/users");
+          if (response.data.success) {
+            setAgents(response.data.data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch agents:", error);
+        }
+      }
+    };
+    
+    if (userRole) {
+      fetchAgents();
+    }
+  }, [userRole]);
   
   // Initial data fetch effect - runs after user role is set
   useEffect(() => {
@@ -306,8 +343,8 @@ const CallHistoryPage = () => {
       return;
     }
     setPage(0);
-    fetchCallHistory();
-    fetchStats();
+    setAppliedFilters(filters);
+    // Data fetch will be triggered by the useEffect listening to appliedFilters/page
   };
   
   const handleRefreshData = async () => {
@@ -336,58 +373,21 @@ const CallHistoryPage = () => {
   };
 
   const handleClearFilters = () => {
-    const clearedFilters = {
+    const defaultFilters = {
       status: "",
       direction: "",
       startDate: "",
       endDate: "",
       destinationNumber: "",
       hasRecording: "",
+      userId: "",
     };
-    setFilters(clearedFilters);
+    
+    setFilters(defaultFilters);
+    setAppliedFilters(defaultFilters);
     setPage(0);
-    
-    // Fetch immediately with cleared filters
-    const fetchWithClearedFilters = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page: 1,
-          limit: rowsPerPage,
-        };
-        
-        const response = await api.get("/api/calls", {
-          params,
-        });
-        
-        if (response.data.success) {
-          setCalls(response.data.data);
-          setTotalCalls(response.data.pagination.total);
-        }
-        
-        // Fetch stats without date filters
-        const statsResponse = await api.get("/api/calls/stats");
-        if (statsResponse.data.success) {
-          const statsData = statsResponse.data.data;
-          
-          // Ensure completionRate is a number
-          if (statsData.completionRate) {
-            statsData.completionRate = parseFloat(statsData.completionRate);
-          }
-          
-          setStats(statsData);
-        }
-        
-        toast.success("Filters reset successfully!");
-      } catch (error) {
-        console.error("Reset filters error:", error);
-        toast.error("Failed to reset filters");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchWithClearedFilters();
+    // Data fetch will be triggered by the useEffect listening to appliedFilters/page
+    toast.success("Filters reset successfully!");
   };
   
   const handleExport = async () => {
@@ -517,7 +517,7 @@ const CallHistoryPage = () => {
             Export CSV
           </Button>
 
-          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 120 } }}>
+          {/* <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 120 } }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={filters.status}
@@ -540,9 +540,9 @@ const CallHistoryPage = () => {
               <MenuItem value="no_answer">No Answer</MenuItem>
               <MenuItem value="busy">Busy</MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
 
-          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 120 } }}>
+          {/* <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 120 } }}>
             <InputLabel>Direction</InputLabel>
             <Select
               value={filters.direction}
@@ -562,7 +562,7 @@ const CallHistoryPage = () => {
               <MenuItem value="outbound">Outbound</MenuItem>
               <MenuItem value="inbound">Inbound</MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
 
           <TextField
             label="Start Date"
@@ -605,6 +605,33 @@ const CallHistoryPage = () => {
               }
             }}
           />
+
+          {(userRole === "Admin" || userRole === "Superadmin") && (
+            <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 150 } }}>
+              <InputLabel>Agent</InputLabel>
+              <Select
+                value={filters.userId || ""}
+                label="Agent"
+                onChange={(e) => handleFilterChange("userId", e.target.value)}
+                sx={{
+                  borderRadius: "10px",
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#2575fc",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#2575fc",
+                  }
+                }}
+              >
+                <MenuItem value="">All Agents</MenuItem>
+                {agents.map((agent) => (
+                  <MenuItem key={agent._id} value={agent._id}>
+                    {agent.username}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <Button
             variant="contained"
