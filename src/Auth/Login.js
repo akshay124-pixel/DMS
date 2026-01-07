@@ -1,9 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
-import api, { setAuthData } from "../api/api";
+import { setAuthData } from "../api/api";
+
 function Login({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({
     email: "",
@@ -33,9 +35,8 @@ function Login({ setIsAuthenticated }) {
     setLoading(true);
 
     try {
-    
-      const response = await api.post(
-        "/auth/login",
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/auth/login`,
         formData
       );
 
@@ -46,15 +47,24 @@ function Login({ setIsAuthenticated }) {
         const userData = {
           id: user.id,
           username: user.username,
-          email: formData.email, // Use the email from formData to ensure consistency
+          email: user.email || formData.email,
           role: user.role,
           isAdmin: user.isAdmin,
           isSuperadmin: user.isSuperadmin,
         };
 
-        console.log("Login: Storing user data", userData);
+        // Login successful (sensitive data not logged)
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Login: Storing auth data", { role: userData.role });
+        }
 
-        setAuthData(accessToken, refreshToken, userData)
+        // Store all tokens and user data using setAuthData
+        setAuthData({
+          accessToken,
+          refreshToken,
+          user: userData,
+        });
+
         setIsAuthenticated(true);
 
         toast.success("Login successful! Redirecting...", {
@@ -74,7 +84,13 @@ function Login({ setIsAuthenticated }) {
     } catch (error) {
       console.error("Error while logging in:", error);
 
-      if (error.response?.status === 401) {
+      if (error.response?.status === 400) {
+        toast.error(error.response.data.message || "Invalid email or password.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+      } else if (error.response?.status === 401) {
         toast.error("Invalid email or password. Please check and try again.", {
           position: "top-right",
           autoClose: 3000,

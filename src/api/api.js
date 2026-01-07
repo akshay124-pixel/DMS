@@ -1,216 +1,243 @@
+/**
+ * API Configuration with Axios Interceptors
+ * Implements automatic token refresh on 401 responses
+ */
 import axios from "axios";
 
+const BASE_URL = process.env.REACT_APP_URL || "http://localhost:4000";
 
-const BASE_URL = process.env.REACT_APP_URL;
-
-// Instance fro all apis
+// Create axios instance
 const api = axios.create({
-    baseURL:BASE_URL,
-    timeout:30000,
-    headers:{
-        "Content-Type":"application/json",
-    }
-})
+  baseURL: BASE_URL,
+  timeout: 120000, // 2 minutes timeout for bulk operations
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-// * ✅ FLAG: Refresh ho raha hai ya nahi
+// Queue management for concurrent requests during refresh
 let isRefreshing = false;
-//  * ✅ QUEUE: Failed requests jo refresh ke baad retry hongi
-let failedQueue= [];
+let failedQueue = [];
 
-// * ✅ QUEUE PROCESS KARNA
-const processQueue = (error,token = null)=>{
-    failedQueue.forEach((prom)=>{
-        if (error) {
-      prom.reject(error); // Refresh fail - sabko reject karo
+/**
+ * Process queued requests after token refresh
+ * @param {Error|null} error - Error if refresh failed
+ * @param {string|null} token - New access token if refresh succeeded
+ */
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
     } else {
-      prom.resolve(token); // Refresh success - sabko naya token do
+      prom.resolve(token);
     }
   });
-  failedQueue = []; // Queue clear karo
-}
+  failedQueue = [];
+};
 
-// ✅ REQUEST INTERCEPTOR add access Token in all Request
+// Navigation context for API interceptors
+let navigationFunction = null;
+
+/**
+ * Set navigation function for API interceptors
+ * This should be called from components that need to handle logout navigation
+ * @param {Function} navigate - React Router navigate function
+ */
+export const setNavigationFunction = (navigate) => {
+  navigationFunction = navigate;
+};
+
+/**
+ * Clear navigation function
+ */
+export const clearNavigationFunction = () => {
+  navigationFunction = null;
+};
+
+/**
+ * Set authentication data in localStorage
+ * @param {Object} data - { accessToken, refreshToken, user }
+ */
+export const setAuthData = (data) => {
+  if (data.accessToken) {
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("token", data.accessToken); // Backward compatibility
+  }
+  if (data.refreshToken) {
+    localStorage.setItem("refreshToken", data.refreshToken);
+  }
+  if (data.user) {
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("userId", data.user.id);
+    localStorage.setItem("role", data.user.role);
+    localStorage.setItem("username", data.user.username);
+  }
+};
+
+/**
+ * Get authentication data from localStorage
+ * @returns {Object} - { accessToken, refreshToken, user }
+ */
+export const getAuthData = () => {
+  const accessToken = localStorage.getItem("accessToken") || localStorage.getItem("token");
+  const refreshToken = localStorage.getItem("refreshToken");
+  const userStr = localStorage.getItem("user");
+  let user = null;
+  try {
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    user = null;
+  }
+  return { accessToken, refreshToken, user };
+};
+
+/**
+ * Clear all authentication data from localStorage
+ */
+export const clearAuthData = () => {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("role");
+  localStorage.removeItem("username");
+};
+
+/**
+ * Logout user - clear data and redirect
+ * Note: This function now returns a promise to allow components to handle navigation
+ */
+export const logout = async (navigate = null) => {
+  const { accessToken } = getAuthData();
+  
+  // Try to call logout endpoint (fire and forget)
+  if (accessToken) {
+    try {
+      await axios.post(`${BASE_URL}/auth/logout`, {}, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+    } catch (error) {
+      // Ignore logout endpoint errors
+      console.log("Logout endpoint error (ignored):", error.message);
+    }
+  }
+  
+  clearAuthData();
+  
+  // Use React Router navigation if available, otherwise fallback to window.location
+  if (navigate && typeof navigate === 'function') {
+    navigate("/login", { replace: true });
+  } else {
+    // Fallback for cases where navigate is not available
+    window.location.href = "/login";
+  }
+};
+
+/**
+ * Refresh access token using refresh token
+ * @returns {Promise<string>} - New access token
+ */
+const refreshAccessToken = async () => {
+  const { refreshToken } = getAuthData();
+  
+  if (!refreshToken) {
+    throw new Error("No refresh token available");
+  }
+
+  // CRITICAL: Use axios.post directly, NOT api.post to avoid interceptor loop
+  const response = await axios.post(`${BASE_URL}/auth/refresh-token`, {
+    refreshToken,
+  });
+
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+
+  // Store new tokens
+  setAuthData({
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  });
+
+  return newAccessToken;
+};
+
+// Request interceptor - attach access token to all requests
 api.interceptors.request.use(
-    (config) => {
-    // LocalStorage se access token lo
-    const accessToken = localStorage.getItem("accessToken");
-    
-    // Agar token hai toh header me add karo
+  (config) => {
+    const { accessToken } = getAuthData();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    
-    console.log(`📤 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
-  (error)=>{
-  console.error("📤 Request Error:", error);
-  return Promise.reject(error)
-  }    
-)
-
-// ✅ RESPONSE INTERCEPTOR - MAIN LOGIC ⭐ add Refresh Token in all 401 req
-api.interceptors.response.use(
-    // ✅ SUCCESS RESPONSE - Seedha return karo
-    (response)=>{
-    console.log(`📥 API Response: ${response.status} ${response.config.url}`);
-    return response},
- // ✅ ERROR RESPONSE - Yahan magic hota hai
-async(error)=>{
- const originalRequest = error.config; 
- console.log(`❌ API Error: ${error.response?.status} ${originalRequest?.url}`);
- // ✅ CHECK 1: Kya yeh 401 error hai?
- if(error.response?.status ===401){
-    // ✅ CHECK 2: Kya yeh refresh-token endpoint ki request thi?
-    if(originalRequest.url?.includes("/refresh-token")){
-         console.log("🚫 Refresh token bhi expire ho gaya - Logout required");
-         handleLogout();
-         return Promise.reject(error)
-    }
-   // ✅ CHECK 3: Kya yeh request pehle retry ho chuki hai?
-   if(originalRequest._retry){
-      console.log("🚫 Request already retried - Logout required");
-      handleLogout();
-      return Promise.reject(error);
-   }
-  // ✅ CHECK 4: Kya refresh already progress me hai?
-  if(isRefreshing){
-    console.log("⏳ Refresh in progress - Adding to queue");
-    return new Promise((resolve,reject)=>{
-        failedQueue.push({resolve,reject});
-    }).then((token)=>{
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        return api(originalRequest)
-    })
-    .catch((err)=>{
-        return Promise.reject(err)
-    })
-  }
-     // ✅ REFRESH PROCESS START
-    originalRequest._retry = true; // Mark: yeh request retry ho rahi hai
-      isRefreshing = true; // Flag: refresh ho raha hai
-
-      console.log("🔄 Starting token refresh...");
-
-      try {
-        // ✅ Refresh token lo localStorage se
-        const refreshToken = localStorage.getItem("refreshToken");
-        
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
-        }
-
-        // ✅ Refresh endpoint call karo
-        // Note: axios.post use karo, api.post nahi - warna interceptor loop
-        const response = await axios.post(`${BASE_URL}/auth/refresh-token`, {
-          refreshToken: refreshToken,
-        });
-
-        // ✅ Naye tokens save karo
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
-        
-        localStorage.setItem("accessToken", newAccessToken);
-        if (newRefreshToken) {
-          localStorage.setItem("refreshToken", newRefreshToken);
-        }
-
-        console.log("✅ Token refresh successful!");
-
-        // ✅ Queue me pending requests ko process karo
-        processQueue(null, newAccessToken);
-
-        // ✅ Original request retry karo naye token ke saath
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
-
-      } catch (refreshError) {
-        // ✅ Refresh fail ho gaya
-        console.error("❌ Token refresh failed:", refreshError.message);
-        
-        // Queue me pending requests ko reject karo
-        processQueue(refreshError, null);
-        
-        // User ko logout karo
-        handleLogout();
-        
-        return Promise.reject(refreshError);
-      } finally {
-        // ✅ Refresh complete - flag reset karo
-        isRefreshing = false;
-      }
-    }
-
-    // ✅ Non-401 errors - seedha reject karo
+  (error) => {
     return Promise.reject(error);
   }
 );
 
-//   ✅ LOGOUT HANDLER
-const handleLogout = ()=>{
-     console.log("🚪 Logging out user...");
-  
-  // Saare tokens aur user data clear karo
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-  localStorage.removeItem("token"); // Purana token bhi clear karo (backward compatibility)
-  
-  // Login page par redirect karo
-  // Note: React Router use nahi kar sakte yahan, toh window.location use karo
-  window.location.href = "/login";
-}
+// Response interceptor - handle 401 errors with token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-export const logout= async()=>{
-    try {
-        await api.post("/auth/logout")
-    } catch (error) {
-        console.error("Logout API error:", error);
-    } finally{
-        handleLogout()
+    // Check if error is 401 Unauthorized
+    if (error.response?.status === 401) {
+      // Check if this is the refresh endpoint itself - if so, logout
+      if (originalRequest.url?.includes("/refresh-token")) {
+        console.log("Refresh token failed, logging out");
+        logout(navigationFunction);
+        return Promise.reject(error);
+      }
+
+      // Check if request was already retried - if so, logout
+      if (originalRequest._retry) {
+        console.log("Request already retried, logging out");
+        logout(navigationFunction);
+        return Promise.reject(error);
+      }
+
+      // If refresh is already in progress, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      // Mark request as retried
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Attempt to refresh token
+        const newToken = await refreshAccessToken();
+        
+        // Process queued requests with new token
+        processQueue(null, newToken);
+        
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed - process queue with error and logout
+        processQueue(refreshError, null);
+        logout(navigationFunction);
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
-}
-// ✅ CHECK AUTH STATUS
-export const checkAuthStatus = async () => {
-  const accessToken = localStorage.getItem("accessToken");
-  const refreshToken = localStorage.getItem("refreshToken");
-  
-  // Koi token nahi hai - user logged out hai
-  if (!accessToken && !refreshToken) {
-    return { isAuthenticated: false, user: null };
+    return Promise.reject(error);
   }
-  
-  try {
-    // Access token verify karo - interceptor automatically refresh karega agar needed
-    const response = await api.get("/auth/verify-token");
-    return {
-      isAuthenticated: true,
-      user: response.data.user
-    };
-  } catch (error) {
-    console.error("Auth check failed:", error);
-    return { isAuthenticated: false, user: null };
-  }
-};
-
-// / ✅ GET CURRENT USER
-export const  getCurrentUser = ()=>{
-    const userStr = localStorage.getItem("user");
-    if(userStr){
-        try {
-            return JSON.parse(userStr)
-        } catch (error) {
-            return null
-        }
-    }
-    return null
-}
-
-export const setAuthData = (accessToken,refreshToken,user)=>{
-     localStorage.setItem("accessToken", accessToken);
-     localStorage.setItem("refreshToken", refreshToken);
-     localStorage.setItem("user", JSON.stringify(user));
-     localStorage.setItem("token", accessToken);
-}
+);
 
 export default api;
+export { BASE_URL };

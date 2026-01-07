@@ -662,7 +662,7 @@ background: linear-gradient(135deg, #2575fc, #6a11cb);
     top: 0;
     z-Index: 2;
     display: grid;
-     grid-template-columns: repeat(9, 1fr) 200px; /* Updated to match new actions cell width */
+     grid-template-columns: repeat(9, 1fr) 250px; /* Updated to match new actions cell width with 5 buttons */
     font-weight: bold;
     border-bottom: 2px solid #ddd;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -670,7 +670,7 @@ background: linear-gradient(135deg, #2575fc, #6a11cb);
 
 .virtual-row {
     display: grid;
-    grid-template-columns: repeat(9, 1fr) 200px;
+    grid-template-columns: repeat(9, 1fr) 250px;
     border-bottom: 1px solid #e0e0e0;
     align-items: center;
     padding: 10px 0;
@@ -699,6 +699,7 @@ background: linear-gradient(135deg, #2575fc, #6a11cb);
     align-items: center;
     gap: 5px; /* Consistent spacing between buttons */
     padding: 5px;
+    width: 250px; /* Match the column width */
 }
 
 .virtual-row .actions-cell button {
@@ -709,6 +710,7 @@ background: linear-gradient(135deg, #2575fc, #6a11cb);
     align-items: center;
     justify-content: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 
 .virtual-row .actions-cell button:hover {
@@ -733,6 +735,15 @@ background: linear-gradient(135deg, #2575fc, #6a11cb);
 
 .virtual-row .actions-cell .btn-success:hover {
     background-color: #218838;
+}
+
+.virtual-row .actions-cell .btn-info {
+    background-color: #17a2b8;
+    border: none;
+}
+
+.virtual-row .actions-cell .btn-info:hover {
+    background-color: #138496;
 }
 
 .virtual-row .actions-cell .editBtn {

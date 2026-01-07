@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
 import { Button } from "react-bootstrap";
-import { logout } from "../api/api";
+import { getAuthData, logout as apiLogout } from "../api/api";
+
 const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState("");
@@ -11,21 +12,15 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    setIsAuthenticated(!!token);
+    const { accessToken, user } = getAuthData();
+    setIsAuthenticated(!!accessToken);
     setUserName(user?.username || "User");
     setUserRole(user?.role || "");
   }, []);
 
-  const handleLogout = async() => {
-    try {
-      await logout()
-    } catch (error) {
-      
-    console.error("Logout error:", error);
-    }
+  const handleLogout = () => {
+    // Use the centralized logout function with navigate
+    apiLogout(navigate);
   };
 
   // Close dropdown if clicked outside
@@ -43,32 +38,11 @@ const Navbar = () => {
   const renderNavLinks = () => {
     if (!isAuthenticated) return null;
 
-    switch (userRole) {
-      case "Admin":
-        return (
-          <>
-            {/* <Link to="/entry" className="nav-link">
-              Entry
-            </Link>
-            <Link to="/stockdashboard" className="nav-link">
-              Stock Dashboard
-            </Link> */}
-          </>
-        );
-      case "Others":
-        return (
-          <>
-            {/* <Link to="/outstock" className="nav-link">
-              OutStock
-            </Link>
-            <Link to="/outdashboard" className="nav-link">
-              OutStock Dashboard
-            </Link> */}
-          </>
-        );
-      default:
-        return null;
-    }
+    // Only show Dashboard link in navbar
+    return (
+     
+     <></>
+    );
   };
 
   return (
@@ -79,7 +53,7 @@ const Navbar = () => {
           alt="Logo"
           className="logo-image"
           style={{
-            width: "143px",
+            width: "110px",
             height: "auto",
             marginLeft: "50px",
           }}
@@ -141,7 +115,7 @@ const Navbar = () => {
                   style={{
                     position: "absolute",
                     top: "100%",
-                    left: "1px",
+                    left:"1px",
                     backgroundColor: "white",
                     border: "none",
                     borderRadius: "12px",

@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import styled from "styled-components";
 import debounce from "lodash/debounce";
 import { FaEdit, FaSyncAlt, FaCog } from "react-icons/fa";
-import api from "../api/api";
+import api, { getAuthData } from "../api/api";
 
 // Styled Components
 const StyledModal = styled(Modal)`
@@ -81,7 +81,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       city: "",
       organization: "",
       category: "",
-
+     
       remarks: "",
     }),
     []
@@ -135,7 +135,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         city: entryToEdit.city || "",
         organization: entryToEdit.organization || "",
         category: entryToEdit.category || "",
-
+        
         remarks: entryToEdit.remarks || "",
       };
       const newUpdateData = {
@@ -167,7 +167,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     []
   );
 
-  const handleCopyPaste = useCallback((e) => {
+   const handleCopyPaste = useCallback((e) => {
     e.stopPropagation(); // Prevent interference with copy/paste
   }, []);
   const handleUpdateInputChange = useCallback((e) => {
@@ -185,8 +185,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const { accessToken } = getAuthData();
+      if (!accessToken) {
         throw new Error("You must be logged in to update an entry.");
       }
 
@@ -209,7 +209,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = null;
       }
 
-      // ✅ api instance use karo
       const response = await api.put(`/api/editentry/${entryToEdit._id}`, payload);
       const updatedEntry = response.data.data;
       toast.success("Entry updated successfully!");
@@ -246,8 +245,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const { accessToken } = getAuthData();
+      if (!accessToken) {
         throw new Error("You must be logged in to update an entry.");
       }
 
@@ -260,7 +259,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = updateData.closeamount;
       }
 
-      // ✅ api instance use karo
       const response = await api.put(`/api/editentry/${entryToEdit._id}`, payload);
       const updatedEntry = response.data.data;
       toast.success("Follow-up updated successfully!");
@@ -1178,7 +1176,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   );
 
   // Render Views
-  const renderOptions = () => (
+const renderOptions = () => (
     <div
       style={{
         display: "flex",
@@ -1195,6 +1193,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       <StyledButton
         variant="primary"
         onClick={() => setView("edit")}
+        
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Edit Full Details
@@ -1202,12 +1201,15 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       <StyledButton
         variant="info"
         onClick={() => setView("update")}
+     
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Update Follow-up
       </StyledButton>
     </div>
   );
+
+
 
   const renderEditForm = () => (
     <Form onSubmit={handleSubmit(onEditSubmit)}>
@@ -1260,6 +1262,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>📧 Email</Form.Label>
           <Form.Control
             {...register("email", {
+             
               pattern: {
                 value: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
                 message: "Please enter a valid email address",
@@ -1285,6 +1288,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="mobileNumber">
           <Form.Label>📱 Mobile Number</Form.Label>
           <Form.Control
+           type="tel"
+           inputMode="numeric"
+           maxLength={10}
             {...register("mobileNumber", {
               maxLength: {
                 value: 10,
@@ -1311,6 +1317,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         <Form.Group controlId="alterNumber">
           <Form.Label>📞 Alternate Number</Form.Label>
           <Form.Control
+          type="tel"
+          inputMode="numeric"
+          maxLength={10}
             {...register("AlterNumber", {
               maxLength: {
                 value: 10,
@@ -1450,9 +1459,9 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
             style={formControlStyle}
             aria-label="Organization"
           >
-            <option value="" disabled>
-              -- Select Organization --
-            </option>
+           <option value="" disabled>
+                -- Select Organization --
+              </option>
             <option value="School">School</option>
             <option value="College">College</option>
             <option value="University">University</option>
