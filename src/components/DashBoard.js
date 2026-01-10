@@ -495,7 +495,13 @@ function DashBoard() {
 
   const [anchorEl, setAnchorEl] = useState(null);
   // Use allUsers for username filter dropdown - always shows all users, never filtered
-  const uniqueCreatedBy = allUsers.map((user) => user.username).filter(Boolean);
+  // Create a deduped, case-insensitive sorted list of usernames for the dropdown
+  const uniqueCreatedBy = useMemo(() => {
+    const names = allUsers.map((user) => user.username).filter(Boolean).map(n => n.trim());
+    const unique = Array.from(new Set(names));
+    unique.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    return unique;
+  }, [allUsers]);
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
