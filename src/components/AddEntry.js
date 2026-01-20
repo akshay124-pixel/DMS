@@ -395,7 +395,7 @@ function AddEntry({ isOpen, onClose, onEntryAdded }) {
               <option value="School">School</option>
               <option value="College">College</option>
               <option value="University">University</option>
-              <option value="Office">Office</option>
+              <option value="Construction Agency">Construction Agency</option>
               <option value="Partner">Partner</option>
               <option value="Customer">Customer</option>
               <option value="Others">Others</option>

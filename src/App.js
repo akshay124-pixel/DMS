@@ -7,6 +7,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+
 import DashBoard from "./components/DashBoard";
 import ChangePassword from "./Auth/ChangePassword";
 import Login from "./Auth/Login";
@@ -15,28 +16,23 @@ import Navbar from "./components/Navbar";
 import CallAnalyticsDashboard from "./components/Analytics/CallAnalyticsDashboard";
 import SmartfloUserMapping from "./components/Smartflo/SmartfloUserMapping";
 import ScheduledCallsManager from "./components/Dialer/ScheduledCallsManager";
-import api, { getAuthData, logout } from "./api/api";
 import CallHistoryPage from "./components/CallHistory/CallHistoryPage";
+import api, { getAuthData, logout } from "./api/api";
 
 const PrivateRoute = ({ element, isAuthenticated, isLoading }) => {
-  if (isLoading) {
-    return <div></div>;
-  }
-  return isAuthenticated ? element : <Navigate to="/login" />;
+  if (isLoading) return null;
+  return isAuthenticated ? element : <Navigate to="/login" replace />;
 };
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const { accessToken, user } = getAuthData();
-    return !!accessToken && !!user?.email;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verify token on app load
+  // 🔐 Verify token on app load
   useEffect(() => {
     const verifyAuthOnLoad = async () => {
       const { accessToken, user } = getAuthData();
-      
+
       if (!accessToken || !user?.email) {
         setIsAuthenticated(false);
         setIsLoading(false);
@@ -44,13 +40,11 @@ function App() {
       }
 
       try {
-        // Verify token with backend - this will auto-refresh if expired
         await api.get("/auth/verify-token");
         setIsAuthenticated(true);
-        console.log("App: Token verified successfully on load");
+        console.log("Token verified on app load");
       } catch (error) {
-        console.error("App: Token verification failed on load", error);
-        // If verification fails even after refresh attempt, logout
+        console.error("Token verification failed", error);
         if (error.response?.status === 401) {
           logout();
         }
@@ -63,12 +57,11 @@ function App() {
     verifyAuthOnLoad();
   }, []);
 
+  // 🔄 Sync auth across tabs
   useEffect(() => {
     const handleStorageChange = () => {
       const { accessToken, user } = getAuthData();
-      const authenticated = !!accessToken && !!user?.email;
-      setIsAuthenticated(authenticated);
-      console.log("App: Storage changed, isAuthenticated:", authenticated);
+      setIsAuthenticated(!!accessToken && !!user?.email);
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -77,85 +70,107 @@ function App() {
 
   return (
     <Router>
-      <ConditionalNavbar isAuthenticated={isAuthenticated} />
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute
-              element={<DashBoard />}
-              isAuthenticated={isAuthenticated}
-              isLoading={isLoading}
-            />
-          }
-        />
-        <Route
-          path="/login"
-          element={<Login setIsAuthenticated={setIsAuthenticated} />}
-        />
-        <Route
-          path="/signup"
-          element={<SignUp setIsAuthenticated={setIsAuthenticated} />}
-        />
-        <Route
-          path="/change-password"
-          element={
-            <PrivateRoute
-              element={
-                <ChangePassword setIsAuthenticated={setIsAuthenticated} />
-              }
-              isAuthenticated={isAuthenticated}
-              isLoading={isLoading}
-            />
-          }
-        />
-        <Route
-          path="/analytics/calls"
-          element={
-            <PrivateRoute
-              element={<CallAnalyticsDashboard />}
-              isAuthenticated={isAuthenticated}
-              isLoading={isLoading}
-            />
-          }
-        />
-        <Route
-          path="/admin/smartflo-mapping"
-          element={
-            <PrivateRoute
-              element={<SmartfloUserMapping />}
-              isAuthenticated={isAuthenticated}
-              isLoading={isLoading}
-            />
-          }
-        />
-        <Route
-          path="/scheduled-calls"
-          element={
-            <PrivateRoute
-              element={<ScheduledCallsManager />}
-              isAuthenticated={isAuthenticated}
-              isLoading={isLoading}
-            />
-          }
-        />
+      <ConditionalNavbar
+        isAuthenticated={isAuthenticated}
+        isLoading={isLoading}
+      />
+
+     
+      {isLoading ? (
+        <div style={{ height: "100vh", background: "#fff" }} />
+      ) : (
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
           <Route
-          path="/call-history"
-          element={
-            <PrivateRoute
-              element={<CallHistoryPage />}
-              isAuthenticated={isAuthenticated}
-            />
-          }
-        />
-      </Routes>
+            path="/dashboard"
+            element={
+              <PrivateRoute
+                element={<DashBoard />}
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          />
+
+          <Route
+            path="/login"
+            element={<Login setIsAuthenticated={setIsAuthenticated} />}
+          />
+
+          <Route
+            path="/signup"
+            element={<SignUp setIsAuthenticated={setIsAuthenticated} />}
+          />
+
+          <Route
+            path="/change-password"
+            element={
+              <PrivateRoute
+                element={
+                  <ChangePassword setIsAuthenticated={setIsAuthenticated} />
+                }
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          />
+
+          <Route
+            path="/analytics/calls"
+            element={
+              <PrivateRoute
+                element={<CallAnalyticsDashboard />}
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          />
+
+          <Route
+            path="/admin/smartflo-mapping"
+            element={
+              <PrivateRoute
+                element={<SmartfloUserMapping />}
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          />
+
+          <Route
+            path="/scheduled-calls"
+            element={
+              <PrivateRoute
+                element={<ScheduledCallsManager />}
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          />
+
+          <Route
+            path="/call-history"
+            element={
+              <PrivateRoute
+                element={<CallHistoryPage />}
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          />
+        </Routes>
+      )}
     </Router>
   );
 }
 
-const ConditionalNavbar = ({ isAuthenticated }) => {
+
+const ConditionalNavbar = ({ isAuthenticated, isLoading }) => {
   const location = useLocation();
+
+  if (isLoading) return null;
+
   const isAuthPage =
     location.pathname === "/login" ||
     location.pathname === "/signup" ||

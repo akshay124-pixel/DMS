@@ -1465,8 +1465,8 @@ const renderOptions = () => (
             <option value="School">School</option>
             <option value="College">College</option>
             <option value="University">University</option>
-            <option value="Office">Office</option>
-            <option value="Corporates">Corporates</option>
+            <option value="Construction Agency">Construction Agency</option>
+            <option value="Corporate">Corporate</option>
             <option value="Partner">Partner</option>
             <option value="Others">Others</option>
           </Form.Control>
