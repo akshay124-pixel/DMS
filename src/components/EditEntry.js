@@ -1217,6 +1217,7 @@ const renderOptions = () => (
         <Form.Group controlId="customerName">
           <Form.Label>👤 Customer Name</Form.Label>
           <Form.Control
+           placeholder="Enter customer name"
             {...register("customerName", {
               maxLength: {
                 value: 100,
@@ -1239,6 +1240,7 @@ const renderOptions = () => (
         <Form.Group controlId="contactName">
           <Form.Label>🧑‍💼 Contact Person Name</Form.Label>
           <Form.Control
+            placeholder="Enter contact person name"
             {...register("contactName", {
               maxLength: {
                 value: 100,
@@ -1261,6 +1263,7 @@ const renderOptions = () => (
         <Form.Group controlId="email">
           <Form.Label>📧 Email</Form.Label>
           <Form.Control
+          placeholder="example@email.com"
             {...register("email", {
              
               pattern: {
@@ -1290,6 +1293,7 @@ const renderOptions = () => (
           <Form.Control
            type="tel"
            inputMode="numeric"
+          placeholder="Enter 10-digit mobile number"
            maxLength={10}
             {...register("mobileNumber", {
               maxLength: {
@@ -1319,6 +1323,7 @@ const renderOptions = () => (
           <Form.Control
           type="tel"
           inputMode="numeric"
+           placeholder="Enter alternate mobile number"
           maxLength={10}
             {...register("AlterNumber", {
               maxLength: {
@@ -1379,6 +1384,7 @@ const renderOptions = () => (
             isInvalid={!!errors.address}
             rows={2}
             style={formControlStyle}
+            placeholder="Enter complete address"
             aria-label="Address"
           />
           <Form.Control.Feedback type="invalid">
@@ -1548,6 +1554,7 @@ const renderOptions = () => (
                 onPaste={handleCopyPaste}
                 min="0"
                 step="0.01"
+                placeholder="Enter final deal amount"
                 style={formControlStyle}
                 aria-label="Close Amount"
               />
@@ -1566,6 +1573,7 @@ const renderOptions = () => (
             rows={3}
             maxLength={500}
             style={formControlStyle}
+             placeholder="Enter remarks or follow-up notes (max 500 characters)"
             aria-label="Remarks"
           />
           <Form.Text>{updateData.remarks.length}/500</Form.Text>
