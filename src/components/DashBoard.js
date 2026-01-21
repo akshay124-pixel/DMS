@@ -1328,6 +1328,43 @@ function DashBoard() {
     }
   };
 
+  // Helper function to get color based on call count
+  const getCallCountColor = (count) => {
+    if (!count || count <= 0) return "transparent"; // Default if 0 calls
+    if (count === 1) return "#fff3e0"; // Very light orange
+    if (count === 2) return "#ffe0b2"; // Light orange
+    if (count === 3) return "#ffcc80"; // Medium orange
+    if (count === 4) return "#ffb74d"; // Dark orange
+    return "#ffa726"; // Deepest orange (5+)
+  };
+
+  const handleCallInitiated = useCallback((response, leadId) => {
+    if (response && response.success) {
+      // Update the specific entry in the state with the new call count
+      setEntries((prevEntries) =>
+        prevEntries.map((entry) => {
+          if (entry._id === leadId) {
+            // Use the count from backend if available, otherwise increment locally
+            const newCount = response.newCallCount !== undefined
+              ? response.newCallCount
+              : (entry.totalCallsMade || 0) + 1;
+            return {
+              ...entry,
+              totalCallsMade: newCount,
+            };
+          }
+          return entry;
+        })
+      );
+
+      // Force grid update to reflect color change
+      setListKey(Date.now());
+      if (listRef.current) {
+        listRef.current.forceUpdateGrid();
+      }
+    }
+  }, []);
+
 
   const rowRenderer = ({ index, key, style }) => {
     const row = filteredData[index];
@@ -1351,7 +1388,30 @@ function DashBoard() {
         onDoubleClick={() => handleDoubleClick(row._id)}
         onClick={() => handleSingleClick(row._id)}
       >
-        <div className="virtual-cell">{(page * rowsPerPage) + index + 1}</div> {/* # */}
+        <div className="virtual-cell">
+          {row.totalCallsMade > 0 ? (
+            <span
+              style={{
+                backgroundColor: getCallCountColor(row.totalCallsMade),
+                padding: "4px 10px",
+                borderRadius: "20px",
+                fontWeight: "700",
+                color: "#4e342e", // Dark brown text for contrast on orange
+                boxShadow: "0 2px 5px rgba(239, 108, 0, 0.25)",
+                display: "inline-block",
+                minWidth: "70px", // Ensure standard width
+                fontSize: "0.9rem",
+                border: "1px solid rgba(255, 167, 38, 0.4)",
+              }}
+            >
+              {(page * rowsPerPage) + index + 1}
+            </span>
+          ) : (
+            <span style={{ padding: "4px 10px", display: "inline-block", minWidth: "35px" }}>
+              {(page * rowsPerPage) + index + 1}
+            </span>
+          )}
+        </div> {/* # */}
         <div className="virtual-cell">{formatDate(row.createdAt)}</div> {/* Date */}
         <div className="virtual-cell">{row.customerName}</div> {/* Customer */}
         <div className="virtual-cell">{row.contactName}</div> {/* Person */}
@@ -1459,6 +1519,7 @@ function DashBoard() {
             leadId={row._id}
             phoneNumber={row.mobileNumber}
             compact={true}
+            onCallInitiated={(response) => handleCallInitiated(response, row._id)}
           />
         </div>
       </div>
