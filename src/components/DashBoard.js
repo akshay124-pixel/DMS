@@ -606,8 +606,8 @@ function DashBoard() {
 
   // Fetch entries with pagination
   // This uses tableLoading instead of loading to prevent full page refresh
-  const fetchEntries = useCallback(async () => {
-    setTableLoading(true);
+  const fetchEntries = useCallback(async (isSilent = false) => {
+    if (!isSilent) setTableLoading(true);
     try {
       const { accessToken } = getAuthData();
       if (!accessToken) throw new Error("No token found");
@@ -847,13 +847,41 @@ function DashBoard() {
   };
 
   const handleDelete = useCallback((deletedIds) => {
-    setEntries((prev) =>
-      prev.filter((entry) => !deletedIds.includes(entry._id))
-    );
+    // 1. Optimistic Update - Remove deleted items immediately
+    // Use functional update to ensure we work with latest state if rapid deletes happen
+    // However, for complex logic below we use the dependencies 'entries'
+    const nextEntries = entries.filter((entry) => !deletedIds.includes(entry._id));
+    setEntries(nextEntries);
+
     setSelectedEntry((prev) =>
       prev && deletedIds.includes(prev._id) ? null : prev
     );
     setSelectedEntries((prev) => prev.filter((id) => !deletedIds.includes(id)));
+
+    // 2. Update Total Count (Optimistic)
+    const totalDeleted = deletedIds.length;
+    const nextTotalEntries = Math.max(0, totalEntries - totalDeleted);
+    setTotalEntries(nextTotalEntries);
+
+    // 3. Smart Pagination & Refill Logic (Unified Data Controller)
+    // Calculate validity of current page
+    const nextMaxPage = nextTotalEntries > 0 ? Math.ceil(nextTotalEntries / rowsPerPage) - 1 : 0;
+    const targetPage = Math.min(page, nextMaxPage);
+    const targetPageSafe = Math.max(0, targetPage);
+
+    if (targetPageSafe !== page) {
+      // Case A: Current page became invalid (e.g. deleted all items on last page)
+      // Action: Move to previous valid page.
+      // This will trigger the main useEffect which calls fetchEntries() (with loading spinner)
+      setPage(targetPageSafe);
+    } else {
+      // Case B: Current page is still valid (e.g. partial delete or not last page)
+      // Action: Refill the page to maintain pageSize (Seamless Auto-fill)
+      // We call fetchEntries silently so the user sees the remaining items while new ones load
+      if (totalDeleted > 0 && nextTotalEntries > 0) {
+        fetchEntries(true);
+      }
+    }
 
     // REAL-TIME UPDATE: Refresh tracker counts immediately after deleting entries
     fetchEntryCounts();
@@ -866,7 +894,7 @@ function DashBoard() {
       listRef.current.recomputeRowHeights();
       listRef.current.forceUpdateGrid();
     }
-  }, [fetchEntryCounts]);
+  }, [entries, page, rowsPerPage, totalEntries, fetchEntries, fetchEntryCounts]);
 
   const handleEntryAdded = useCallback((newEntry) => {
     const completeEntry = {
