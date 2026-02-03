@@ -897,9 +897,13 @@ function DashBoard() {
   }, [entries, page, rowsPerPage, totalEntries, fetchEntries, fetchEntryCounts]);
 
   const handleEntryAdded = useCallback((newEntry) => {
+    // Backend now returns complete populated entry, use it directly
+    // Only add default values for fields that might be missing
     const completeEntry = {
+      ...newEntry,
       _id: newEntry._id || Date.now().toString(),
       customerName: newEntry.customerName || "",
+      contactName: newEntry.contactName || "",
       mobileNumber: newEntry.mobileNumber || "",
       product: newEntry.product || "",
       address: newEntry.address || "",
@@ -915,12 +919,10 @@ function DashBoard() {
       remarks: newEntry.remarks || "",
       email: newEntry.email || "",
       AlterNumber: newEntry.AlterNumber || "",
-      createdBy: {
+      // Use populated createdBy from backend response
+      createdBy: newEntry.createdBy || {
         _id: localStorage.getItem("userId"),
-        username:
-          newEntry.createdBy?.username ||
-          localStorage.getItem("username") ||
-          "Unknown",
+        username: localStorage.getItem("username") || "Unknown",
       },
     };
     setEntries((prev) => [completeEntry, ...prev]);
