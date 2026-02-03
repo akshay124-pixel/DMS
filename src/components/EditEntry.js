@@ -3,7 +3,6 @@ import { Modal, Form, Spinner, Alert } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { useForm, Controller } from "react-hook-form";
 import styled from "styled-components";
-import debounce from "lodash/debounce";
 import { FaEdit, FaSyncAlt, FaCog } from "react-icons/fa";
 import api, { getAuthData } from "../api/api";
 
@@ -42,12 +41,12 @@ const StyledButton = styled.button`
     props.variant === "primary"
       ? "linear-gradient(135deg, #2575fc, #6a11cb)"
       : props.variant === "info"
-      ? "linear-gradient(135deg, #2575fc, #6a11cb)"
-      : props.variant === "danger"
-      ? "#dc3545"
-      : props.variant === "success"
-      ? "#28a745"
-      : "linear-gradient(135deg, rgb(252, 152, 11), rgb(244, 193, 10))"};
+        ? "linear-gradient(135deg, #2575fc, #6a11cb)"
+        : props.variant === "danger"
+          ? "#dc3545"
+          : props.variant === "success"
+            ? "#28a745"
+            : "linear-gradient(135deg, rgb(252, 152, 11), rgb(244, 193, 10))"};
 
   &:hover {
     opacity: 0.9;
@@ -81,7 +80,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       city: "",
       organization: "",
       category: "",
-     
+
       remarks: "",
     }),
     []
@@ -113,6 +112,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
     formState: { errors },
     reset,
     watch,
+    setValue,
   } = useForm({
     mode: "onChange",
     defaultValues: initialFormData,
@@ -135,7 +135,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         city: entryToEdit.city || "",
         organization: entryToEdit.organization || "",
         category: entryToEdit.category || "",
-        
+
         remarks: entryToEdit.remarks || "",
       };
       const newUpdateData = {
@@ -154,20 +154,30 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   }, [isOpen, entryToEdit, reset]);
 
   // Handlers
-  const debouncedHandleInputChange = useCallback(
-    debounce((name, value) => {
+  const handleInputChange = useCallback(
+    (name, value) => {
+      // Clean mobile number input
+      const processedValue =
+        name === "mobileNumber" || name === "AlterNumber"
+          ? value.replace(/\D/g, "").slice(0, 10)
+          : value;
+
+      // Update react-hook-form state with validation
+      setValue(name, processedValue, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      // Update local state for any non-RHF usage
       setFormData((prev) => ({
         ...prev,
-        [name]:
-          name === "mobileNumber"
-            ? value.replace(/\D/g, "").slice(0, 10)
-            : value,
+        [name]: processedValue,
       }));
-    }, 300),
-    []
+    },
+    [setValue]
   );
 
-   const handleCopyPaste = useCallback((e) => {
+  const handleCopyPaste = useCallback((e) => {
     e.stopPropagation(); // Prevent interference with copy/paste
   }, []);
   const handleUpdateInputChange = useCallback((e) => {
@@ -1176,7 +1186,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
   );
 
   // Render Views
-const renderOptions = () => (
+  const renderOptions = () => (
     <div
       style={{
         display: "flex",
@@ -1193,7 +1203,7 @@ const renderOptions = () => (
       <StyledButton
         variant="primary"
         onClick={() => setView("edit")}
-        
+
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Edit Full Details
@@ -1201,7 +1211,7 @@ const renderOptions = () => (
       <StyledButton
         variant="info"
         onClick={() => setView("update")}
-     
+
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Update Follow-up
@@ -1217,15 +1227,11 @@ const renderOptions = () => (
         <Form.Group controlId="customerName">
           <Form.Label>👤 Customer Name</Form.Label>
           <Form.Control
-           placeholder="Enter customer name"
+            placeholder="Enter customer name"
             {...register("customerName", {
-              maxLength: {
-                value: 100,
-                message: "Customer name cannot exceed 100 characters",
-              },
             })}
             onChange={(e) =>
-              debouncedHandleInputChange("customerName", e.target.value)
+              handleInputChange("customerName", e.target.value)
             }
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
@@ -1242,13 +1248,9 @@ const renderOptions = () => (
           <Form.Control
             placeholder="Enter contact person name"
             {...register("contactName", {
-              maxLength: {
-                value: 100,
-                message: "Contact name cannot exceed 100 characters",
-              },
             })}
             onChange={(e) =>
-              debouncedHandleInputChange("contactName", e.target.value)
+              handleInputChange("contactName", e.target.value)
             }
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
@@ -1263,9 +1265,9 @@ const renderOptions = () => (
         <Form.Group controlId="email">
           <Form.Label>📧 Email</Form.Label>
           <Form.Control
-          placeholder="example@email.com"
+            placeholder="example@email.com"
             {...register("email", {
-             
+
               pattern: {
                 value: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
                 message: "Please enter a valid email address",
@@ -1276,7 +1278,7 @@ const renderOptions = () => (
               },
             })}
             onChange={(e) =>
-              debouncedHandleInputChange("email", e.target.value)
+              handleInputChange("email", e.target.value)
             }
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
@@ -1291,10 +1293,10 @@ const renderOptions = () => (
         <Form.Group controlId="mobileNumber">
           <Form.Label>📱 Mobile Number</Form.Label>
           <Form.Control
-           type="tel"
-           inputMode="numeric"
-          placeholder="Enter 10-digit mobile number"
-           maxLength={10}
+            type="tel"
+            inputMode="numeric"
+            placeholder="Enter 10-digit mobile number"
+            maxLength={10}
             {...register("mobileNumber", {
               maxLength: {
                 value: 10,
@@ -1306,7 +1308,7 @@ const renderOptions = () => (
               },
             })}
             onChange={(e) =>
-              debouncedHandleInputChange("mobileNumber", e.target.value)
+              handleInputChange("mobileNumber", e.target.value)
             }
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
@@ -1321,10 +1323,10 @@ const renderOptions = () => (
         <Form.Group controlId="alterNumber">
           <Form.Label>📞 Alternate Number</Form.Label>
           <Form.Control
-          type="tel"
-          inputMode="numeric"
-           placeholder="Enter alternate mobile number"
-          maxLength={10}
+            type="tel"
+            inputMode="numeric"
+            placeholder="Enter alternate mobile number"
+            maxLength={10}
             {...register("AlterNumber", {
               maxLength: {
                 value: 10,
@@ -1336,7 +1338,7 @@ const renderOptions = () => (
               },
             })}
             onChange={(e) =>
-              debouncedHandleInputChange("AlterNumber", e.target.value)
+              handleInputChange("AlterNumber", e.target.value)
             }
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
@@ -1354,7 +1356,7 @@ const renderOptions = () => (
             as="select"
             {...register("product")}
             onChange={(e) =>
-              debouncedHandleInputChange("product", e.target.value)
+              handleInputChange("product", e.target.value)
             }
             isInvalid={!!errors.product}
             style={formControlStyle}
@@ -1377,7 +1379,7 @@ const renderOptions = () => (
             as="textarea"
             {...register("address")}
             onChange={(e) =>
-              debouncedHandleInputChange("address", e.target.value)
+              handleInputChange("address", e.target.value)
             }
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
@@ -1402,7 +1404,6 @@ const renderOptions = () => (
                 {...field}
                 onChange={(e) => {
                   field.onChange(e);
-                  debouncedHandleInputChange("state", e.target.value);
                 }}
                 isInvalid={!!errors.state}
                 style={formControlStyle}
@@ -1432,7 +1433,6 @@ const renderOptions = () => (
                 {...field}
                 onChange={(e) => {
                   field.onChange(e);
-                  debouncedHandleInputChange("city", e.target.value);
                 }}
                 isInvalid={!!errors.city}
                 disabled={!selectedState}
@@ -1459,15 +1459,15 @@ const renderOptions = () => (
             as="select"
             {...register("organization")}
             onChange={(e) =>
-              debouncedHandleInputChange("organization", e.target.value)
+              handleInputChange("organization", e.target.value)
             }
             isInvalid={!!errors.organization}
             style={formControlStyle}
             aria-label="Organization"
           >
-           <option value="" disabled>
-                -- Select Organization --
-              </option>
+            <option value="" disabled>
+              -- Select Organization --
+            </option>
             <option value="School">School</option>
             <option value="College">College</option>
             <option value="University">University</option>
@@ -1486,7 +1486,7 @@ const renderOptions = () => (
             as="select"
             {...register("category")}
             onChange={(e) =>
-              debouncedHandleInputChange("category", e.target.value)
+              handleInputChange("category", e.target.value)
             }
             isInvalid={!!errors.category}
             style={formControlStyle}
@@ -1573,7 +1573,7 @@ const renderOptions = () => (
             rows={3}
             maxLength={500}
             style={formControlStyle}
-             placeholder="Enter remarks or follow-up notes (max 500 characters)"
+            placeholder="Enter remarks or follow-up notes (max 500 characters)"
             aria-label="Remarks"
           />
           <Form.Text>{updateData.remarks.length}/500</Form.Text>

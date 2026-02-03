@@ -63,22 +63,19 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
 
     const productsText = Array.isArray(entry.products)
       ? entry.products
-          .map(
-            (product, index) =>
-              `Product ${index + 1}: Name: ${
-                product.name || "N/A"
-              }, Specification: ${product.specification || "N/A"}, Size: ${
-                product.size || "N/A"
-              }, Quantity: ${product.quantity || "N/A"}`
-          )
-          .join("\n")
+        .map(
+          (product, index) =>
+            `Product ${index + 1}: Name: ${product.name || "N/A"
+            }, Specification: ${product.specification || "N/A"}, Size: ${product.size || "N/A"
+            }, Quantity: ${product.quantity || "N/A"}`
+        )
+        .join("\n")
       : "N/A";
 
     const textToCopy = `
-      Date: ${
-        entry.createdAt
-          ? new Date(entry.createdAt).toLocaleDateString("en-GB")
-          : "N/A"
+      Date: ${entry.createdAt
+        ? new Date(entry.createdAt).toLocaleDateString("en-GB")
+        : "N/A"
       }
       Customer Name: ${entry.customerName || "N/A"}
       Mobile Number: ${entry.mobileNumber || "N/A"}
@@ -91,10 +88,9 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
       Category: ${entry.category || "N/A"}
       Status: ${entry.status || "Not Interested"}
       Remarks: ${entry.remarks || "N/A"}
-      Updated At: ${
-        entry.updatedAt
-          ? new Date(entry.updatedAt).toLocaleDateString("en-GB")
-          : "N/A"
+      Updated At: ${entry.updatedAt
+        ? new Date(entry.updatedAt).toLocaleDateString("en-GB")
+        : "N/A"
       }
     `.trim();
 
@@ -283,7 +279,7 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
                 toast.success("Call initiated! Your phone will ring first.");
               }}
             />
-            
+
             <Button
               variant="outline-primary"
               onClick={() => setCallLogOpen(true)}
@@ -298,9 +294,9 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
             >
               📞 Call History
             </Button>
-<Button
+            <Button
               variant="outline-secondary"
-             onClick={() => setScheduleCallOpen(true)}
+              onClick={() => setScheduleCallOpen(true)}
               style={{
                 borderRadius: "8px",
                 padding: "0.6rem 1.2rem",
@@ -313,153 +309,153 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
               📅 Schedule Callback
             </Button>
           </Box>
-           
-       
+
+
           {/* Call Statistics */}
-{(entry.totalCallsMade > 0 || entry.lastCallDate || nextScheduledCall) && (
-  <Box
-    sx={{
-      mt: 2,
-      p: 2,
-      background: "#ffffff",
-      borderRadius: "10px",
-      border: "1px solid #e5e7eb",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-    }}
-  >
-    <Grid sx={{ gap: "0.8rem" }}>
-
-      {/* Total Calls */}
-      {entry.totalCallsMade > 0 && (
-        <DataItem
-          label="Total Calls"
-          value={
-            <Box sx={{ fontWeight: 600, color: "#111827", fontSize: "0.9rem" }}>
-              {entry.totalCallsMade}
-            </Box>
-          }
-        />
-      )}
-
-      {/* Last Call Date */}
-      {entry.lastCallDate && (
-        <DataItem
-          label="Last Call"
-          value={
+          {(entry.totalCallsMade > 0 || entry.lastCallDate || nextScheduledCall) && (
             <Box
               sx={{
-                padding: "6px 10px",
-                background: "#f6f7f9",
-                borderLeft: "3px solid #6366f1",
-                borderRadius: "6px",
-                fontWeight: 500,
-                color: "#1f2937",
-                fontSize: "0.85rem",
+                mt: 2,
+                p: 2,
+                background: "#ffffff",
+                borderRadius: "10px",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
               }}
             >
-              {new Date(entry.lastCallDate).toLocaleString("en-GB")}
+              <Grid sx={{ gap: "0.8rem" }}>
+
+                {/* Total Calls */}
+                {entry.totalCallsMade > 0 && (
+                  <DataItem
+                    label="Total Calls"
+                    value={
+                      <Box sx={{ fontWeight: 600, color: "#111827", fontSize: "0.9rem" }}>
+                        {entry.totalCallsMade}
+                      </Box>
+                    }
+                  />
+                )}
+
+                {/* Last Call Date */}
+                {entry.lastCallDate && (
+                  <DataItem
+                    label="Last Call"
+                    value={
+                      <Box
+                        sx={{
+                          padding: "6px 10px",
+                          background: "#f6f7f9",
+                          borderLeft: "3px solid #6366f1",
+                          borderRadius: "6px",
+                          fontWeight: 500,
+                          color: "#1f2937",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {new Date(entry.lastCallDate).toLocaleString("en-GB")}
+                      </Box>
+                    }
+                  />
+                )}
+
+                {/* Last Call Status */}
+                {entry.lastCallStatus && (
+                  <DataItem
+                    label="Last Status"
+                    value={
+                      <Box
+                        sx={{
+                          padding: "6px 10px",
+                          background: "#eef2ff",
+                          borderLeft: "3px solid #4f46e5",
+                          borderRadius: "6px",
+                          fontWeight: 500,
+                          fontSize: "0.85rem",
+                          color: "#4338ca",
+                        }}
+                      >
+                        {entry.lastCallStatus.replace("_", " ").toUpperCase()}
+                      </Box>
+                    }
+                  />
+                )}
+
+                {/* Next Scheduled Call */}
+                {nextScheduledCall && (
+                  <DataItem
+                    label="Next Scheduled Call"
+                    value={
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={1.2}
+                        flexWrap="wrap"
+                        sx={{ mt: 0.5 }}
+                      >
+
+                        {/* Time */}
+                        <Box
+                          sx={{
+                            padding: "6px 10px",
+                            background: "#f6f7f9",
+                            borderLeft: "3px solid #6a11cb",
+                            borderRadius: "6px",
+                            fontWeight: 500,
+                            fontSize: "0.85rem",
+                            color: "#111827",
+                          }}
+                        >
+                          {new Date(nextScheduledCall.scheduledTime).toLocaleString("en-GB")}
+                        </Box>
+
+                        {/* Priority */}
+                        {nextScheduledCall.priority && (
+                          <Box
+                            sx={{
+                              padding: "6px 10px",
+                              background:
+                                nextScheduledCall.priority === "urgent"
+                                  ? "#fee2e2"
+                                  : nextScheduledCall.priority === "high"
+                                    ? "#ffedd5"
+                                    : nextScheduledCall.priority === "medium"
+                                      ? "#fef9c3"
+                                      : "#dcfce7",
+                              borderLeft:
+                                nextScheduledCall.priority === "urgent"
+                                  ? "3px solid #b91c1c"
+                                  : nextScheduledCall.priority === "high"
+                                    ? "3px solid #c2410c"
+                                    : nextScheduledCall.priority === "medium"
+                                      ? "3px solid #b45309"
+                                      : "3px solid #15803d",
+                              borderRadius: "6px",
+                              fontSize: "0.85rem",
+                              fontWeight: 600,
+                              color:
+                                nextScheduledCall.priority === "urgent"
+                                  ? "#991b1b"
+                                  : nextScheduledCall.priority === "high"
+                                    ? "#9a3412"
+                                    : nextScheduledCall.priority === "medium"
+                                      ? "#92400e"
+                                      : "#166534",
+                            }}
+                          >
+                            {nextScheduledCall.priority.toUpperCase()}
+                          </Box>
+                        )}
+
+
+                      </Box>
+                    }
+                  />
+                )}
+
+              </Grid>
             </Box>
-          }
-        />
-      )}
-
-      {/* Last Call Status */}
-      {entry.lastCallStatus && (
-        <DataItem
-          label="Last Status"
-          value={
-            <Box
-              sx={{
-                padding: "6px 10px",
-                background: "#eef2ff",
-                borderLeft: "3px solid #4f46e5",
-                borderRadius: "6px",
-                fontWeight: 500,
-                fontSize: "0.85rem",
-                color: "#4338ca",
-              }}
-            >
-              {entry.lastCallStatus.replace("_", " ").toUpperCase()}
-            </Box>
-          }
-        />
-      )}
-
-      {/* Next Scheduled Call */}
-     {nextScheduledCall && (
-  <DataItem
-    label="Next Scheduled Call"
-    value={
-      <Box
-        display="flex"
-        alignItems="center"
-        gap={1.2}
-        flexWrap="wrap"
-        sx={{ mt: 0.5 }}
-      >
-        
-        {/* Time */}
-        <Box
-          sx={{
-            padding: "6px 10px",
-            background: "#f6f7f9",
-            borderLeft: "3px solid #6a11cb",
-            borderRadius: "6px",
-            fontWeight: 500,
-            fontSize: "0.85rem",
-            color: "#111827",
-          }}
-        >
-          {new Date(nextScheduledCall.scheduledTime).toLocaleString("en-GB")}
-        </Box>
-
-        {/* Priority */}
-        {nextScheduledCall.priority && (
-          <Box
-            sx={{
-              padding: "6px 10px",
-              background:
-                nextScheduledCall.priority === "urgent"
-                  ? "#fee2e2"
-                  : nextScheduledCall.priority === "high"
-                  ? "#ffedd5"
-                  : nextScheduledCall.priority === "medium"
-                  ? "#fef9c3"
-                  : "#dcfce7",
-              borderLeft:
-                nextScheduledCall.priority === "urgent"
-                  ? "3px solid #b91c1c"
-                  : nextScheduledCall.priority === "high"
-                  ? "3px solid #c2410c"
-                  : nextScheduledCall.priority === "medium"
-                  ? "3px solid #b45309"
-                  : "3px solid #15803d",
-              borderRadius: "6px",
-              fontSize: "0.85rem",
-              fontWeight: 600,
-              color:
-                nextScheduledCall.priority === "urgent"
-                  ? "#991b1b"
-                  : nextScheduledCall.priority === "high"
-                  ? "#9a3412"
-                  : nextScheduledCall.priority === "medium"
-                  ? "#92400e"
-                  : "#166534",
-            }}
-          >
-            {nextScheduledCall.priority.toUpperCase()}
-          </Box>
-        )}
-
-       
-      </Box>
-    }
-  />
-)}
-
-    </Grid>
-  </Box>
-)}
+          )}
 
         </Section>
 
@@ -470,28 +466,28 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
               label="Status"
               value={
                 <Badge
-                 style={{
-  background:
-    entry.status === "Interested"
-      ? "linear-gradient(135deg, #00897b, #00695c)" // Interested (Green Teal)
-      : entry.status === "Not Interested"
-      ? "linear-gradient(135deg, #00838f, #006064)" // Cold Calls (Teal Blue)
-      : entry.status === "Maybe"
-      ? "linear-gradient(135deg, #ef6c00, #d84315)" // Warm Calls (Orange)
-      : entry.status === "Closed Won"
-      ? "linear-gradient(135deg, #388e3c, #2e7d32)" // Closed Won (Green)
-      : entry.status === "Closed Lost"
-      ? "linear-gradient(135deg, #7b1fa2, #6a1b9a)" // Closed Lost (Purple)
-      : entry.status === "Service"
-      ? "linear-gradient(135deg, #1976d2, #0d47a1)" // Service Calls (Blue)
-      : entry.status === "Not"
-      ? "linear-gradient(135deg, #d32f2f, #b71c1c)" // Not Connected (Red)
-      : "linear-gradient(135deg, #6b7280, #4b5563)", // Default Grey
-  color: "#fff",
-  padding: "0.4rem 0.8rem",
-  borderRadius: "6px",
-  fontWeight: 500,
-}}
+                  style={{
+                    background:
+                      entry.status === "Interested"
+                        ? "linear-gradient(135deg, #00897b, #00695c)" // Interested (Green Teal)
+                        : entry.status === "Not Interested"
+                          ? "linear-gradient(135deg, #00838f, #006064)" // Cold Calls (Teal Blue)
+                          : entry.status === "Maybe"
+                            ? "linear-gradient(135deg, #ef6c00, #d84315)" // Warm Calls (Orange)
+                            : entry.status === "Closed Won"
+                              ? "linear-gradient(135deg, #388e3c, #2e7d32)" // Closed Won (Green)
+                              : entry.status === "Closed Lost"
+                                ? "linear-gradient(135deg, #7b1fa2, #6a1b9a)" // Closed Lost (Purple)
+                                : entry.status === "Service"
+                                  ? "linear-gradient(135deg, #1976d2, #0d47a1)" // Service Calls (Blue)
+                                  : entry.status === "Not"
+                                    ? "linear-gradient(135deg, #d32f2f, #b71c1c)" // Not Connected (Red)
+                                    : "linear-gradient(135deg, #6b7280, #4b5563)", // Default Grey
+                    color: "#fff",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "6px",
+                    fontWeight: 500,
+                  }}
 
                 >
                   {entry.status && entry.status !== "Not"
@@ -628,16 +624,16 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
                               historyItem.status === "Interested"
                                 ? "linear-gradient(135deg, #10b981, #059669)" // green
                                 : historyItem.status === "Not Interested"
-                                ? "linear-gradient(135deg, #ef4444, #dc2626)" // red
-                                : historyItem.status === "Maybe"
-                                ? "linear-gradient(135deg, #f59e0b, #d97706)" // yellow
-                                : historyItem.status === "Closed"
-                                ? "linear-gradient(135deg, #6366f1, #4f46e5)" // violet-blue
-                                : historyItem.status === "Service"
-                                ? "linear-gradient(135deg, #0ea5e9, #0284c7)" // blue
-                                : historyItem.status === "Not Found"
-                                ? "linear-gradient(135deg, #f43f5e, #be123c)" // pink-red
-                                : "linear-gradient(135deg, #9ca3af, #6b7280)", // fallback gray
+                                  ? "linear-gradient(135deg, #ef4444, #dc2626)" // red
+                                  : historyItem.status === "Maybe"
+                                    ? "linear-gradient(135deg, #f59e0b, #d97706)" // yellow
+                                    : historyItem.status === "Closed"
+                                      ? "linear-gradient(135deg, #6366f1, #4f46e5)" // violet-blue
+                                      : historyItem.status === "Service"
+                                        ? "linear-gradient(135deg, #0ea5e9, #0284c7)" // blue
+                                        : historyItem.status === "Not Found"
+                                          ? "linear-gradient(135deg, #f43f5e, #be123c)" // pink-red
+                                          : "linear-gradient(135deg, #9ca3af, #6b7280)", // fallback gray
                             color: "#fff",
                             padding: "0.3rem 0.6rem",
                             borderRadius: "4px",
@@ -693,10 +689,10 @@ function ViewEntry({ isOpen, onClose, entry, isAdmin, onEntryUpdated }) {
           onCallScheduled={(data) => {
             // Trigger refresh to fetch latest scheduled call
             setRefreshTrigger((prev) => prev + 1);
-            
+
             toast.success("✅ Call scheduled successfully!");
             setScheduleCallOpen(false);
-            
+
             if (onEntryUpdated) {
               onEntryUpdated(entry);
             }
@@ -822,6 +818,7 @@ const DataItem = React.memo(({ label, value }) => (
       flexDirection: "column",
       gap: "0.3rem",
       padding: "0.5rem",
+      minWidth: 0,
     }}
     role="region"
     aria-label={`${label}: ${value || "N/A"}`}
@@ -842,6 +839,9 @@ const DataItem = React.memo(({ label, value }) => (
         fontSize: "0.95rem",
         color: "#4b5563",
         lineHeight: "1.5",
+        wordBreak: "break-word",
+        overflowWrap: "anywhere",
+        whiteSpace: "normal",
       }}
     >
       {value || "N/A"}
