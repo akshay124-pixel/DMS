@@ -505,7 +505,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
                 }}
               >
                 <option value="">-- Select State --</option>
-                {states.map((state) => (
+                {Object.keys(statesAndCities).map((state) => (
                   <option key={state} value={state}>
                     {state}
                   </option>
@@ -524,7 +524,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
               <Form.Control as="select" {...field} disabled={!selectedState}>
                 <option value="">-- Select District --</option>
                 {selectedState &&
-                  districtsByState[selectedState]?.map((district) => (
+                 statesAndCities[selectedState]?.map((district) => (
                     <option key={district} value={district}>
                       {district}
                     </option>
