@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import styled from "styled-components";
 import { FaEdit, FaSyncAlt, FaCog } from "react-icons/fa";
 import api, { getAuthData } from "../api/api";
+import { statesAndCities } from "./Options";
 
 // Styled Components
 const StyledModal = styled(Modal)`
@@ -83,7 +84,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
 
       remarks: "",
     }),
-    []
+    [],
   );
 
   const initialUpdateData = useMemo(
@@ -93,7 +94,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       closeamount: "",
       remarks: "",
     }),
-    []
+    [],
   );
 
   // State Management
@@ -174,7 +175,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         [name]: processedValue,
       }));
     },
-    [setValue]
+    [setValue],
   );
 
   const handleCopyPaste = useCallback((e) => {
@@ -209,7 +210,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       if (updateData.status === "Closed") {
         if (!updateData.closetype || !updateData.closeamount) {
           throw new Error(
-            "Close type and close amount are required when status is 'Closed'."
+            "Close type and close amount are required when status is 'Closed'.",
           );
         }
         payload.closetype = updateData.closetype;
@@ -219,7 +220,10 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = null;
       }
 
-      const response = await api.put(`/api/editentry/${entryToEdit._id}`, payload);
+      const response = await api.put(
+        `/api/editentry/${entryToEdit._id}`,
+        payload,
+      );
       const updatedEntry = response.data.data;
       toast.success("Entry updated successfully!");
       onEntryUpdated(updatedEntry); // Pass the updated entry to the parent
@@ -240,7 +244,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
 
       setError(errorMessage);
       toast.error(
-        detailedErrors ? `${errorMessage} (${detailedErrors})` : errorMessage
+        detailedErrors ? `${errorMessage} (${detailedErrors})` : errorMessage,
       );
     } finally {
       setLoading(false);
@@ -269,7 +273,10 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
         payload.closeamount = updateData.closeamount;
       }
 
-      const response = await api.put(`/api/editentry/${entryToEdit._id}`, payload);
+      const response = await api.put(
+        `/api/editentry/${entryToEdit._id}`,
+        payload,
+      );
       const updatedEntry = response.data.data;
       toast.success("Follow-up updated successfully!");
       onEntryUpdated(updatedEntry); // Pass the updated entry to the parent
@@ -288,902 +295,13 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
 
       setError(errorMessage);
       toast.error(
-        detailedErrors ? `${errorMessage} (${detailedErrors})` : errorMessage
+        detailedErrors ? `${errorMessage} (${detailedErrors})` : errorMessage,
       );
     } finally {
       setLoading(false);
       setShowConfirm(false);
     }
   };
-
-  // Mock Data (States and Districts)
-  const states = [
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chhattisgarh",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-    "Andaman and Nicobar Islands",
-    "Chandigarh",
-    "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi",
-    "Jammu and Kashmir",
-    "Ladakh",
-    "Lakshadweep",
-    "Puducherry",
-  ];
-
-  const districtsByState = useMemo(
-    () => ({
-      "Andhra Pradesh": [
-        "Alluri Sitharama Raju",
-        "Anakapalli",
-        "Anantapur",
-        "Annamayya",
-        "Bapatla",
-        "Chittoor",
-        "Dr. B.R. Ambedkar Konaseema",
-        "East Godavari",
-        "Eluru",
-        "Guntur",
-        "Kadapa",
-        "Kakinada",
-        "Krishna",
-        "Kurnool",
-        "Nandyal",
-        "Nellore",
-        "Palnadu",
-        "Parvathipuram Manyam",
-        "Prakasam",
-        "Sri Balaji",
-        "Sri Potti Sriramulu Nellore",
-        "Sri Sathya Sai",
-        "Srikakulam",
-        "Tirupati",
-        "Visakhapatnam",
-        "Vizianagaram",
-        "West Godavari",
-      ],
-      "Arunachal Pradesh": [
-        "Anjaw",
-        "Changlang",
-        "Dibang Valley",
-        "East Kameng",
-        "East Siang",
-        "Itanagar Capital Complex",
-        "Kamle",
-        "Kra Daadi",
-        "Kurung Kumey",
-        "Lepa Rada",
-        "Lohit",
-        "Longding",
-        "Lower Dibang Valley",
-        "Lower Siang",
-        "Lower Subansiri",
-        "Namsai",
-        "Pakke-Kessang",
-        "Papum Pare",
-        "Shi-Yomi",
-        "Siang",
-        "Tawang",
-        "Tirap",
-        "Upper Siang",
-        "Upper Subansiri",
-        "West Kameng",
-        "West Siang",
-      ],
-      Assam: [
-        "Bajali",
-        "Baksa",
-        "Barpeta",
-        "Biswanath",
-        "Bongaigaon",
-        "Cachar",
-        "Charaideo",
-        "Chirang",
-        "Darrang",
-        "Dhemaji",
-        "Dhubri",
-        "Dibrugarh",
-        "Dima Hasao",
-        "Goalpara",
-        "Golaghat",
-        "Hailakandi",
-        "Hojai",
-        "Jorhat",
-        "Kamrup",
-        "Kamrup Metropolitan",
-        "Karbi Anglong",
-        "Karimganj",
-        "Kokrajhar",
-        "Lakhimpur",
-        "Majuli",
-        "Morigaon",
-        "Nagaon",
-        "Nalbari",
-        "Sivasagar",
-        "Sonitpur",
-        "South Salmara-Mankachar",
-        "Tamulpur",
-        "Tinsukia",
-        "Udalguri",
-        "West Karbi Anglong",
-      ],
-      Bihar: [
-        "Araria",
-        "Arwal",
-        "Aurangabad",
-        "Banka",
-        "Begusarai",
-        "Bhagalpur",
-        "Bhojpur",
-        "Buxar",
-        "Darbhanga",
-        "East Champaran",
-        "Gaya",
-        "Gopalganj",
-        "Jamui",
-        "Jehanabad",
-        "Kaimur",
-        "Katihar",
-        "Khagaria",
-        "Kishanganj",
-        "Lakhisarai",
-        "Madhepura",
-        "Madhubani",
-        "Munger",
-        "Muzaffarpur",
-        "Nalanda",
-        "Nawada",
-        "Patna",
-        "Purnia",
-        "Rohtas",
-        "Saharsa",
-        "Samastipur",
-        "Saran",
-        "Sheikhpura",
-        "Sheohar",
-        "Sitamarhi",
-        "Siwan",
-        "Supaul",
-        "Vaishali",
-        "West Champaran",
-      ],
-      Chhattisgarh: [
-        "Balod",
-        "Baloda Bazar",
-        "Balrampur-Ramanujganj",
-        "Bastar",
-        "Bemetara",
-        "Bijapur",
-        "Bilaspur",
-        "Dantewada",
-        "Dhamtari",
-        "Durg",
-        "Gariaband",
-        "Gaurela-Pendra-Marwahi",
-        "Janjgir-Champa",
-        "Jashpur",
-        "Kanker",
-        "Khairagarh-Chhuri-Khalari",
-        "Kondagaon",
-        "Korba",
-        "Korea",
-        "Mahasamund",
-        "Manendragarh-Chirmiri-Bharatpur",
-        "Mohla-Manpur-Ambagarh Chowki",
-        "Mungeli",
-        "Narayanpur",
-        "Raigarh",
-        "Raipur",
-        "Rajnandgaon",
-        "Sakti",
-        "Sarangarh-Bilaigarh",
-        "Sukma",
-        "Surajpur",
-        "Surguja",
-      ],
-      Goa: ["North Goa", "South Goa"],
-      Gujarat: [
-        "Ahmedabad",
-        "Amreli",
-        "Anand",
-        "Aravalli",
-        "Banaskantha",
-        "Bharuch",
-        "Bhavnagar",
-        "Botad",
-        "Chhota Udaipur",
-        "Dahod",
-        "Dang",
-        "Devbhoomi Dwarka",
-        "Gandhinagar",
-        "Gir Somnath",
-        "Jamnagar",
-        "Junagadh",
-        "Kheda",
-        "Kutch",
-        "Mahisagar",
-        "Mehsana",
-        "Morbi",
-        "Narmada",
-        "Navsari",
-        "Panchmahal",
-        "Patan",
-        "Porbandar",
-        "Rajkot",
-        "Sabarkantha",
-        "Surat",
-        "Surendranagar",
-        "Tapi",
-        "Vadodara",
-        "Valsad",
-      ],
-      Haryana: [
-        "Ambala",
-        "Bhiwani",
-        "Charkhi Dadri",
-        "Faridabad",
-        "Fatehabad",
-        "Gurugram",
-        "Hisar",
-        "Jhajjar",
-        "Jind",
-        "Kaithal",
-        "Karnal",
-        "Kurukshetra",
-        "Mahendragarh",
-        "Nuh",
-        "Palwal",
-        "Panchkula",
-        "Panipat",
-        "Rewari",
-        "Rohtak",
-        "Sirsa",
-        "Sonipat",
-        "Yamunanagar",
-      ],
-      "Himachal Pradesh": [
-        "Bilaspur",
-        "Chamba",
-        "Hamirpur",
-        "Kangra",
-        "Kinnaur",
-        "Kullu",
-        "Lahaul and Spiti",
-        "Mandi",
-        "Shimla",
-        "Sirmaur",
-        "Solan",
-        "Una",
-      ],
-      Jharkhand: [
-        "Bokaro",
-        "Chatra",
-        "Deoghar",
-        "Dhanbad",
-        "Dumka",
-        "East Singhbhum",
-        "Garhwa",
-        "Giridih",
-        "Godda",
-        "Gumla",
-        "Hazaribagh",
-        "Jamtara",
-        "Khunti",
-        "Koderma",
-        "Latehar",
-        "Lohardaga",
-        "Pakur",
-        "Palamu",
-        "Ramgarh",
-        "Ranchi",
-        "Sahibganj",
-        "Seraikela-Kharsawan",
-        "Simdega",
-        "West Singhbhum",
-      ],
-      Karnataka: [
-        "Bagalkot",
-        "Ballari",
-        "Belagavi",
-        "Bengaluru Rural",
-        "Bengaluru Urban",
-        "Bidar",
-        "Chamarajanagar",
-        "Chikkaballapura",
-        "Chikkamagaluru",
-        "Chitradurga",
-        "Dakshina Kannada",
-        "Davanagere",
-        "Dharwad",
-        "Gadag",
-        "Hassan",
-        "Haveri",
-        "Kalaburagi",
-        "Kodagu",
-        "Kolar",
-        "Koppal",
-        "Mandya",
-        "Mysuru",
-        "Raichur",
-        "Ramanagara",
-        "Shivamogga",
-        "Tumakuru",
-        "Udupi",
-        "Uttara Kannada",
-        "Vijayanagara",
-        "Vijayapura",
-        "Yadgir",
-      ],
-      Kerala: [
-        "Alappuzha",
-        "Ernakulam",
-        "Idukki",
-        "Kannur",
-        "Kasaragod",
-        "Kollam",
-        "Kottayam",
-        "Kozhikode",
-        "Malappuram",
-        "Palakkad",
-        "Pathanamthitta",
-        "Thiruvananthapuram",
-        "Thrissur",
-        "Wayanad",
-      ],
-      "Madhya Pradesh": [
-        "Agar Malwa",
-        "Alirajpur",
-        "Anuppur",
-        "Ashoknagar",
-        "Balaghat",
-        "Barwani",
-        "Betul",
-        "Bhind",
-        "Bhopal",
-        "Burhanpur",
-        "Chhatarpur",
-        "Chhindwara",
-        "Damoh",
-        "Datia",
-        "Dewas",
-        "Dhar",
-        "Dindori",
-        "Guna",
-        "Gwalior",
-        "Harda",
-        "Hoshangabad",
-        "Indore",
-        "Jabalpur",
-        "Jhabua",
-        "Katni",
-        "Khandwa",
-        "Khargone",
-        "Mandla",
-        "Mandsaur",
-        "Maihar",
-        "Mauganj",
-        "Morena",
-        "Narsinghpur",
-        "Neemuch",
-        "Niwari",
-        "Pandhurna",
-        "Panna",
-        "Raisen",
-        "Rajgarh",
-        "Ratlam",
-        "Rewa",
-        "Sagar",
-        "Satna",
-        "Sehore",
-        "Seoni",
-        "Shahdol",
-        "Shajapur",
-        "Sheopur",
-        "Shivpuri",
-        "Sidhi",
-        "Singrauli",
-        "Tikamgarh",
-        "Ujjain",
-        "Umaria",
-        "Vidisha",
-      ],
-      Maharashtra: [
-        "Ahmednagar",
-        "Akola",
-        "Amravati",
-        "Aurangabad",
-        "Beed",
-        "Bhandara",
-        "Buldhana",
-        "Chandrapur",
-        "Dhule",
-        "Gadchiroli",
-        "Gondia",
-        "Hingoli",
-        "Jalgaon",
-        "Jalna",
-        "Kolhapur",
-        "Latur",
-        "Mumbai City",
-        "Mumbai Suburban",
-        "Nagpur",
-        "Nanded",
-        "Nandurbar",
-        "Nashik",
-        "Osmanabad",
-        "Palghar",
-        "Parbhani",
-        "Pune",
-        "Raigad",
-        "Ratnagiri",
-        "Sangli",
-        "Satara",
-        "Sindhudurg",
-        "Solapur",
-        "Thane",
-        "Wardha",
-        "Washim",
-        "Yavatmal",
-      ],
-      Manipur: [
-        "Bishnupur",
-        "Chandel",
-        "Churachandpur",
-        "Imphal East",
-        "Imphal West",
-        "Jiribam",
-        "Kakching",
-        "Kamjong",
-        "Kangpokpi",
-        "Noney",
-        "Pherzawl",
-        "Senapati",
-        "Tamenglong",
-        "Tengnoupal",
-        "Thoubal",
-        "Ukhrul",
-      ],
-      Meghalaya: [
-        "East Garo Hills",
-        "East Jaintia Hills",
-        "East Khasi Hills",
-        "North Garo Hills",
-        "Ri-Bhoi",
-        "South Garo Hills",
-        "South West Garo Hills",
-        "South West Khasi Hills",
-        "West Garo Hills",
-        "West Jaintia Hills",
-        "West Khasi Hills",
-      ],
-      Mizoram: [
-        "Aizawl",
-        "Champhai",
-        "Hnahthial",
-        "Khawzawl",
-        "Kolasib",
-        "Lawngtlai",
-        "Lunglei",
-        "Mamit",
-        "Saiha",
-        "Saitual",
-        "Serchhip",
-      ],
-      Nagaland: [
-        "Chumukedima",
-        "Dimapur",
-        "Kiphire",
-        "Kohima",
-        "Longleng",
-        "Mokokchung",
-        "Mon",
-        "Niuland",
-        "Noklak",
-        "Peren",
-        "Phek",
-        "Shamator",
-        "Tsemenyu",
-        "Tuensang",
-        "Wokha",
-        "Zunheboto",
-      ],
-      Odisha: [
-        "Angul",
-        "Balangir",
-        "Balasore",
-        "Bargarh",
-        "Bhadrak",
-        "Boudh",
-        "Cuttack",
-        "Deogarh",
-        "Dhenkanal",
-        "Gajapati",
-        "Ganjam",
-        "Jagatsinghpur",
-        "Jajpur",
-        "Jharsuguda",
-        "Kalahandi",
-        "Kandhamal",
-        "Kendrapara",
-        "Kendujhar",
-        "Khordha",
-        "Koraput",
-        "Malkangiri",
-        "Mayurbhanj",
-        "Nabarangpur",
-        "Nayagarh",
-        "Nuapada",
-        "Puri",
-        "Rayagada",
-        "Sambalpur",
-        "Subarnapur",
-        "Sundargarh",
-      ],
-      Punjab: [
-        "Amritsar",
-        "Barnala",
-        "Bathinda",
-        "Faridkot",
-        "Fatehgarh Sahib",
-        "Fazilka",
-        "Firozpur",
-        "Gurdaspur",
-        "Hoshiarpur",
-        "Jalandhar",
-        "Kapurthala",
-        "Ludhiana",
-        "Malerkotla",
-        "Nabha",
-        "Mansa",
-        "Moga",
-        "Muktsar",
-        "Banga",
-        "Ropar",
-        "Rajpura",
-        "Samana",
-        "Anandpur sahib",
-        "Mukerian",
-        "Phagwara",
-        "Manal",
-        "Dasuya",
-        "Nangal",
-        "Pathankot",
-        "Patiala",
-        "Rupnagar",
-        "S.A.S. Nagar",
-        "Sangrur",
-        "Shahid Bhagat Singh Nagar",
-        "Sri Muktsar Sahib",
-        "Tarn Taran",
-      ],
-      Rajasthan: [
-        "Ajmer",
-        "Alwar",
-        "Anupgarh",
-        "Balotra",
-        "Banswara",
-        "Baran",
-        "Barmer",
-        "Beawar",
-        "Bharatpur",
-        "Bhilwara",
-        "Bikaner",
-        "Bundi",
-        "Chittorgarh",
-        "Churu",
-        "Dausa",
-        "Deeg",
-        "Dholpur",
-        "Dudu",
-        "Dungarpur",
-        "Ganganagar",
-        "Gangapur City",
-        "Hanumangarh",
-        "Jaipur",
-        "Jaisalmer",
-        "Jalore",
-        "Jhalawar",
-        "Jhunjhunu",
-        "Jodhpur",
-        "Karauli",
-        "Kekri",
-        "Khairthal-Tijara",
-        "Kota",
-        "Nagaur",
-        "Neem ka Thana",
-        "Pali",
-        "Phalodi",
-        "Pratapgarh",
-        "Rajsamand",
-        "Sanchore",
-        "Sawai Madhopur",
-        "Shahpura",
-        "Sikar",
-        "Sirohi",
-        "Sri Ganganagar",
-        "Tonk",
-        "Udaipur",
-      ],
-      Sikkim: ["Gyalshing", "Mangan", "Namchi", "Pakyong", "Soreng"],
-      "Tamil Nadu": [
-        "Ariyalur",
-        "Chengalpattu",
-        "Chennai",
-        "Coimbatore",
-        "Cuddalore",
-        "Dharmapuri",
-        "Dindigul",
-        "Erode",
-        "Kallakurichi",
-        "Kancheepuram",
-        "Kanyakumari",
-        "Karur",
-        "Krishnagiri",
-        "Madurai",
-        "Mayiladuthurai",
-        "Nagapattinam",
-        "Namakkal",
-        "Nilgiris",
-        "Perambalur",
-        "Pudukkottai",
-        "Ramanathapuram",
-        "Ranipet",
-        "Salem",
-        "Sivaganga",
-        "Tenkasi",
-        "Thanjavur",
-        "Theni",
-        "Thoothukudi",
-        "Tiruchirappalli",
-        "Tirunelveli",
-        "Tirupathur",
-        "Tiruppur",
-        "Tiruvallur",
-        "Tiruvannamalai",
-        "Tiruvarur",
-        "Vellore",
-        "Viluppuram",
-        "Virudhunagar",
-      ],
-      Telangana: [
-        "Adilabad",
-        "Bhadradri Kothagudem",
-        "Hanumakonda",
-        "Hyderabad",
-        "Jagtial",
-        "Jangaon",
-        "Jayashankar Bhupalpally",
-        "Jogulamba Gadwal",
-        "Kamareddy",
-        "Karimnagar",
-        "Khammam",
-        "Komaram Bheem",
-        "Mahabubabad",
-        "Mahbubnagar",
-        "Mancherial",
-        "Medak",
-        "Medchal-Malkajgiri",
-        "Mulugu",
-        "Nagarkurnool",
-        "Nalgonda",
-        "Narayanpet",
-        "Nirmal",
-        "Nizamabad",
-        "Peddapalli",
-        "Rajanna Sircilla",
-        "Rangareddy",
-        "Sangareddy",
-        "Siddipet",
-        "Suryapet",
-        "Vikarabad",
-        "Wanaparthy",
-        "Warangal",
-        "Yadadri Bhuvanagiri",
-      ],
-      Tripura: [
-        "Dhalai",
-        "Gomati",
-        "Khowai",
-        "North Tripura",
-        "Sepahijala",
-        "South Tripura",
-        "Unakoti",
-        "West Tripura",
-      ],
-      "Uttar Pradesh": [
-        "Agra",
-        "Aligarh",
-        "Ambedkar Nagar",
-        "Amethi",
-        "Amroha",
-        "Auraiya",
-        "Ayodhya",
-        "Azamgarh",
-        "Baghpat",
-        "Bahraich",
-        "Ballia",
-        "Balrampur",
-        "Banda",
-        "Barabanki",
-        "Bareilly",
-        "Basti",
-        "Bhadohi",
-        "Bijnor",
-        "Budaun",
-        "Bulandshahr",
-        "Chandauli",
-        "Chitrakoot",
-        "Deoria",
-        "Etah",
-        "Etawah",
-        "Farrukhabad",
-        "Fatehpur",
-        "Firozabad",
-        "Gautam Buddha Nagar",
-        "Ghaziabad",
-        "Ghazipur",
-        "Gonda",
-        "Gorakhpur",
-        "Hamirpur",
-        "Hapur",
-        "Hardoi",
-        "Hathras",
-        "Jalaun",
-        "Jaunpur",
-        "Jhansi",
-        "Kannauj",
-        "Kanpur Dehat",
-        "Kanpur Nagar",
-        "Kasganj",
-        "Kaushambi",
-        "Kushinagar",
-        "Lakhimpur Kheri",
-        "Lalitpur",
-        "Lucknow",
-        "Maharajganj",
-        "Mahoba",
-        "Mainpuri",
-        "Mathura",
-        "Mau",
-        "Meerut",
-        "Mirzapur",
-        "Moradabad",
-        "Muzaffarnagar",
-        "Pilibhit",
-        "Pratapgarh",
-        "Prayagraj",
-        "Raebareli",
-        "Rampur",
-        "Saharanpur",
-        "Sambhal",
-        "Sant Kabir Nagar",
-        "Shahjahanpur",
-        "Shamli",
-        "Shravasti",
-        "Siddharthnagar",
-        "Sitapur",
-        "Sonbhadra",
-        "Sultanpur",
-        "Unnao",
-        "Varanasi",
-      ],
-      Uttarakhand: [
-        "Almora",
-        "Bageshwar",
-        "Chamoli",
-        "Champawat",
-        "Dehradun",
-        "Haridwar",
-        "Nainital",
-        "Pauri Garhwal",
-        "Pithoragarh",
-        "Rudraprayag",
-        "Tehri Garhwal",
-        "Udham Singh Nagar",
-        "Uttarkashi",
-      ],
-      "West Bengal": [
-        "Alipurduar",
-        "Bankura",
-        "Birbhum",
-        "Cooch Behar",
-        "Dakshin Dinajpur",
-        "Darjeeling",
-        "Hooghly",
-        "Howrah",
-        "Jalpaiguri",
-        "Jhargram",
-        "Kalimpong",
-        "Kolkata",
-        "Maldah",
-        "Murshidabad",
-        "Nadia",
-        "North 24 Parganas",
-        "Paschim Bardhaman",
-        "Paschim Medinipur",
-        "Purba Bardhaman",
-        "Purba Medinipur",
-        "Purulia",
-        "South 24 Parganas",
-        "Uttar Dinajpur",
-      ],
-      "Andaman and Nicobar Islands": [
-        "Nicobar",
-        "North and Middle Andaman",
-        "South Andaman",
-      ],
-      Chandigarh: ["Chandigarh"],
-      "Dadra and Nagar Haveli and Daman and Diu": [
-        "Dadra and Nagar Haveli",
-        "Daman",
-        "Diu",
-      ],
-      Delhi: [
-        "Central Delhi",
-        "East Delhi",
-        "New Delhi",
-        "North Delhi",
-        "North East Delhi",
-        "North West Delhi",
-        "Shahdara",
-        "South Delhi",
-        "South East Delhi",
-        "South West Delhi",
-        "West Delhi",
-      ],
-      "Jammu and Kashmir": [
-        "Anantnag",
-        "Bandipora",
-        "Baramulla",
-        "Budgam",
-        "Doda",
-        "Ganderbal",
-        "Jammu",
-        "Kathua",
-        "Kishtwar",
-        "Kulgam",
-        "Kupwara",
-        "Poonch",
-        "Pulwama",
-        "Rajouri",
-        "Ramban",
-        "Reasi",
-        "Samba",
-        "Shopian",
-        "Srinagar",
-        "Udhampur",
-      ],
-      Ladakh: ["Kargil", "Leh"],
-      Lakshadweep: ["Lakshadweep"],
-      Puducherry: ["Karaikal", "Mahe", "Puducherry", "Yanam"],
-    }),
-    []
-  );
 
   // Render Views
   const renderOptions = () => (
@@ -1203,7 +321,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       <StyledButton
         variant="primary"
         onClick={() => setView("edit")}
-
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Edit Full Details
@@ -1211,15 +328,12 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
       <StyledButton
         variant="info"
         onClick={() => setView("update")}
-
         style={{ width: "100%", maxWidth: "250px" }}
       >
         Update Follow-up
       </StyledButton>
     </div>
   );
-
-
 
   const renderEditForm = () => (
     <Form onSubmit={handleSubmit(onEditSubmit)}>
@@ -1228,11 +342,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>👤 Customer Name</Form.Label>
           <Form.Control
             placeholder="Enter customer name"
-            {...register("customerName", {
-            })}
-            onChange={(e) =>
-              handleInputChange("customerName", e.target.value)
-            }
+            {...register("customerName", {})}
+            onChange={(e) => handleInputChange("customerName", e.target.value)}
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
             isInvalid={!!errors.customerName}
@@ -1247,11 +358,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Label>🧑‍💼 Contact Person Name</Form.Label>
           <Form.Control
             placeholder="Enter contact person name"
-            {...register("contactName", {
-            })}
-            onChange={(e) =>
-              handleInputChange("contactName", e.target.value)
-            }
+            {...register("contactName", {})}
+            onChange={(e) => handleInputChange("contactName", e.target.value)}
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
             isInvalid={!!errors.contactName}
@@ -1267,7 +375,6 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Control
             placeholder="example@email.com"
             {...register("email", {
-
               pattern: {
                 value: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
                 message: "Please enter a valid email address",
@@ -1277,9 +384,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
                 message: "Email cannot exceed 100 characters",
               },
             })}
-            onChange={(e) =>
-              handleInputChange("email", e.target.value)
-            }
+            onChange={(e) => handleInputChange("email", e.target.value)}
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
             isInvalid={!!errors.email}
@@ -1307,9 +412,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
                 message: "Mobile number must be exactly 10 digits",
               },
             })}
-            onChange={(e) =>
-              handleInputChange("mobileNumber", e.target.value)
-            }
+            onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
             isInvalid={!!errors.mobileNumber}
@@ -1337,9 +440,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
                 message: "Alternate number must be exactly 10 digits",
               },
             })}
-            onChange={(e) =>
-              handleInputChange("AlterNumber", e.target.value)
-            }
+            onChange={(e) => handleInputChange("AlterNumber", e.target.value)}
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
             isInvalid={!!errors.AlterNumber}
@@ -1355,9 +456,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Control
             as="select"
             {...register("product")}
-            onChange={(e) =>
-              handleInputChange("product", e.target.value)
-            }
+            onChange={(e) => handleInputChange("product", e.target.value)}
             isInvalid={!!errors.product}
             style={formControlStyle}
             aria-label="Product"
@@ -1378,9 +477,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Control
             as="textarea"
             {...register("address")}
-            onChange={(e) =>
-              handleInputChange("address", e.target.value)
-            }
+            onChange={(e) => handleInputChange("address", e.target.value)}
             onCopy={handleCopyPaste}
             onPaste={handleCopyPaste}
             isInvalid={!!errors.address}
@@ -1404,10 +501,8 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
                 {...field}
                 onChange={(e) => {
                   field.onChange(e);
+                  setValue("city", ""); // reset district
                 }}
-                isInvalid={!!errors.state}
-                style={formControlStyle}
-                aria-label="State"
               >
                 <option value="">-- Select State --</option>
                 {states.map((state) => (
@@ -1418,27 +513,15 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
               </Form.Control>
             )}
           />
-          <Form.Control.Feedback type="invalid">
-            {errors.state?.message}
-          </Form.Control.Feedback>
         </Form.Group>
+
         <Form.Group controlId="city">
           <Form.Label>🌆 District</Form.Label>
           <Controller
             name="city"
             control={control}
             render={({ field }) => (
-              <Form.Control
-                as="select"
-                {...field}
-                onChange={(e) => {
-                  field.onChange(e);
-                }}
-                isInvalid={!!errors.city}
-                disabled={!selectedState}
-                style={formControlStyle}
-                aria-label="District"
-              >
+              <Form.Control as="select" {...field} disabled={!selectedState}>
                 <option value="">-- Select District --</option>
                 {selectedState &&
                   districtsByState[selectedState]?.map((district) => (
@@ -1449,18 +532,14 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
               </Form.Control>
             )}
           />
-          <Form.Control.Feedback type="invalid">
-            {errors.city?.message}
-          </Form.Control.Feedback>
         </Form.Group>
+
         <Form.Group controlId="organization" className="mb-3">
           <Form.Label>🏢 Organization</Form.Label>
           <Form.Control
             as="select"
             {...register("organization")}
-            onChange={(e) =>
-              handleInputChange("organization", e.target.value)
-            }
+            onChange={(e) => handleInputChange("organization", e.target.value)}
             isInvalid={!!errors.organization}
             style={formControlStyle}
             aria-label="Organization"
@@ -1485,9 +564,7 @@ function EditEntry({ isOpen, onClose, onEntryUpdated, entryToEdit }) {
           <Form.Control
             as="select"
             {...register("category")}
-            onChange={(e) =>
-              handleInputChange("category", e.target.value)
-            }
+            onChange={(e) => handleInputChange("category", e.target.value)}
             isInvalid={!!errors.category}
             style={formControlStyle}
             aria-label="Category"
