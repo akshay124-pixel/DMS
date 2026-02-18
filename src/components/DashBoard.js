@@ -1084,6 +1084,8 @@ function DashBoard() {
             State: item["State"] || "",
             Status: item["Status"] || "Not Found",
             Remarks: item["Remarks"] || "",
+            createdAt: item["Created At"] || null,
+            updatedAt: item["Updated At"] || null,
           }))
           .filter((entry) =>
             Object.values(entry).some(
