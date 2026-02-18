@@ -1033,7 +1033,8 @@ function DashBoard() {
           entry.city,
           entry.organization,
           entry.category,
-          new Date(entry.createdAt).toLocaleDateString(),
+          entry.category,
+          entry.createdAt ? new Date(entry.createdAt).toLocaleDateString("en-GB").replace(/\//g, "-") : "", // Strict DD-MM-YYYY for copy
         ].join("\t")
       )
       .join("\n");
@@ -1064,7 +1065,7 @@ function DashBoard() {
     reader.onload = async (event) => {
       try {
         const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
+        const workbook = XLSX.read(data, { type: "array", cellDates: true }); // Parse dates as objects
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const parsedData = XLSX.utils.sheet_to_json(worksheet);
@@ -1249,11 +1250,12 @@ function DashBoard() {
         Status: entry.status || "Not Found",
         Remarks: entry.remarks || "",
         "Created By": entry.createdBy?.username || "",
-        "Created At": entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : "",
+        "Created At": entry.createdAt ? new Date(entry.createdAt) : "", // Pass Date object
       }));
 
       // Create Excel file
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      // Create Excel file with strict date formatting
+      const worksheet = XLSX.utils.json_to_sheet(exportData, { dateNF: "dd-mm-yyyy" });
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
 
