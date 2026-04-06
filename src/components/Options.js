@@ -211,6 +211,7 @@ export const statesAndCities = {
     "Fatehabad",
     "Gurugram",
     "Hisar",
+    "Palwal",
     "Jhajjar",
     "Jind",
     "Kaithal",
